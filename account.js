@@ -153,7 +153,7 @@ function updateResult(obj) {
     dataType: 'json',
     error: onTimeout,
     success: function(data){ updateDividendForecast(data, obj.stocks); },
-    timeout: 6000
+    timeout: 10000
   });
 
   return;

@@ -477,7 +477,7 @@ function updateStockReport() {
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,
-    timeout: 6000
+    timeout: 10000
   });
 }
 
@@ -488,7 +488,7 @@ function updateReportByInput() {
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,
-    timeout: 6000
+    timeout: 10000
   });
 }
 

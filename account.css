@@ -1,0 +1,85 @@
+
+#result table {
+  display: inline-block;
+  border-collapse: collapse;
+  margin: 5px;
+  vertical-align: top;
+}
+
+#result th, #result td {
+  font-size: 20px;
+  border: 1px solid;
+  padding: 0px 10px;
+}
+
+#result td {
+  text-align: right;
+}
+
+#result tr:nth-child(odd) {
+  background-color: #FFFAFA;
+}
+
+#result tr:nth-child(even) {
+  background-color: #F5DEB3;
+}
+
+#result tr:nth-child(1) {
+  background-color: #FF8C00;
+}
+
+#result hr {
+  height:2px;
+  border-width:0;
+  background-color:gray;
+}
+
+#result .note {
+  text-align: left;
+  background-color: silver;
+  border-style: none;
+}
+
+#result .total {
+  text-align: right;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+#DividendForecast .total {
+  background-color: silver;
+  border-style: none;
+}
+
+.green {
+  color: green;
+}
+
+.red {
+  color: red;
+}
+
+.grey {
+  color: grey;
+}
+
+.blue {
+  color: blue;
+}
+
+.bg_green {
+  background-color: green;
+}
+
+.bg_red {
+  background-color: red;
+}
+
+.bg_gold {
+  background-color: gold;
+}
+
+.bg_yellow {
+  background-color: yellow;
+}
+

@@ -1,0 +1,97 @@
+
+#topbar {
+  width: 100%;
+}
+
+#exrs tr:nth-child(odd) {
+  background-color: #FFFAFA;
+}
+
+#exrs tr:nth-child(even) {
+  background-color: #F5DEB3;
+}
+
+#exrs tr:nth-child(1) {
+  background-color: #FF8C00;
+}
+
+#exrs table {
+  border-collapse: collapse;
+}
+
+#exrs th, #exrs td {
+  font-size: 22px;
+  padding: 0px 10px;
+  border: 1px solid;
+}
+
+#tags button {
+  background-color: #4682B4;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  padding: 5px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 32px;
+  margin: 12px 12px;
+  cursor: pointer;
+}
+
+#result table {
+  display: inline;
+  border-collapse: collapse;
+}
+
+#result th {
+  font-size: 22px;
+  border: 1px solid;
+  width: 150px;
+}
+
+#result td {
+  font-size: 22px;
+  border: 1px solid;
+  width: 250px;
+}
+
+.green {
+  color: green;
+}
+
+.red {
+  color: red;
+}
+
+.grey {
+  color: grey;
+}
+
+.bg_green {
+  background-color: green;
+}
+
+.bg_red {
+  background-color: red;
+}
+
+.bg_gold {
+  background-color: gold;
+}
+
+.bg_yellow {
+  background-color: yellow;
+}
+
+.link {
+  font-size: 20px;
+  margin-right: 10px;
+}
+
+.loading {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 20px;
+}
+

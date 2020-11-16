@@ -30,7 +30,7 @@ class defvals:
     wget_opt_ua         = '-U \'%s\'' %(ua)
     wget_opt_lang       = '--header=\'Accept-Language:zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7\''
     wget                = '%s %s' %(wget_opt_base, wget_opt_ua)
-    expiration          = 14400
+    expiration          = 28800
 
 class delayObj:
     def __init__(self, flt, delay):

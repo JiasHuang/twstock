@@ -35,7 +35,7 @@ function updateDividendForecast(obj, stocks) {
       let total_dividend_cash_ratio = dividend_cash / s.avg_pz * 100;
       let ref_sell_pz = s.avg_pz + dividend_cash * 2;
       all_total_dividend_cash += total_dividend_cash;
-      text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}%</td><td>{8}</td></tr>',
+      text += String.format('<tr><td><a href=report.html?c={0} target="_blank">{0}</a></td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}%</td><td>{8}</td></tr>',
         s.code, s.name, s.avg_pz.toFixed(2), s.total_qty.toFixed(2),
         dividend_cash.toFixed(2), dividend_stock.toFixed(2),
         total_dividend_cash.toLocaleString(2), total_dividend_cash_ratio.toFixed(2),
@@ -153,7 +153,7 @@ function updateResult(obj) {
     dataType: 'json',
     error: onTimeout,
     success: function(data){ updateDividendForecast(data, obj.stocks); },
-    timeout: 10000
+    timeout: 20000
   });
 
   return;

@@ -62,6 +62,7 @@ class stock_report:
         self.dividend = []
         self.revenue = []
         self.pz_vol_pairs = []
+        self.news = []
     def show(self):
         for x in self.wap:
             print(x)
@@ -70,6 +71,8 @@ class stock_report:
         for x in self.dividend:
             print(x)
         for x in self.revenue:
+            print(x)
+        for x in self.news:
             print(x)
 
 def get_stat_from_fubon(code, cacheOnly):
@@ -314,6 +317,18 @@ def update_stock_report_revenue(obj):
             obj.revenue.insert(0, (Y, M, m2[0].replace(',','')))
     return
 
+def update_stock_report_news(obj):
+    url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_%s.djhtm' %(obj.code)
+    txt = xurl.load(url)
+    for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
+        date = m.group(1)
+        link = 'https://fubon-ebrokerdj.fbs.com.tw' + m.group(2)
+        title = m.group(3).decode('big5').encode('utf8')
+        if re.search(r'(自結|重要)', title):
+            obj.news.append((date, title, link))
+    return
+
+
 def get_stock_report(code):
     obj = stock_report(code)
     info = get_stock_info_by_code(code)
@@ -325,6 +340,7 @@ def get_stock_report(code):
     update_stock_report_eps(obj)
     update_stock_report_dividend(obj)
     update_stock_report_revenue(obj)
+    update_stock_report_news(obj)
     return obj
 
 def init():

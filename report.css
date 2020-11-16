@@ -7,6 +7,11 @@
   display: inline;
 }
 
+.news {
+  font-size: 20px;
+  display: block;
+}
+
 .title {
   font-size: 24px;
   font-weight: bold;

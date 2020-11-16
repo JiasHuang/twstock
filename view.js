@@ -214,7 +214,7 @@ function initStockInfo() {
     dataType: 'json',
     error: onTimeout,
     success: parseStockJSON,
-    timeout: 10000
+    timeout: 20000
   });
 }
 

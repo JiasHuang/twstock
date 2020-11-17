@@ -323,8 +323,8 @@ def update_stock_report_news(obj):
     for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
         date = m.group(1)
         link = 'https://fubon-ebrokerdj.fbs.com.tw' + m.group(2)
-        title = m.group(3).decode('big5').encode('utf8')
-        if re.search(r'(自結|重要)', title):
+        title = m.group(3).decode('big5', 'replace').encode('utf8')
+        if re.search(r'(每股|重要)', title):
             obj.news.append((date, title, link))
     return
 

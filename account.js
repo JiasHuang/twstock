@@ -121,7 +121,7 @@ function updateResult(obj) {
     text += String.format('現金股利：{0}<br>', total_cash_dividend.toLocaleString());
     text += String.format('買賣損益：{0}<br>', total_stock_gain.toLocaleString());
     if (total_qty > 0) {
-      s.avg_pz = total_stock_cost/ (total_qty * 1000);
+      s.avg_pz = total_stock_cost / (total_qty * 1000);
       text += String.format('目前張數：{0}<br>', total_qty);
       text += String.format('目前均價：{0}<br>', s.avg_pz.toLocaleString());
       stocks_with_qty.push(obj.stocks[i].code);
@@ -143,8 +143,8 @@ function updateResult(obj) {
   text += '<hr><div id="DividendForecast"></div>';
 
   text += '<hr>'
-  text += String.format('<div class=total>總損益：{0}</div>', all_total_gain.toLocaleString());
-  text += String.format('<div class=total>總成本：{0}</div>', all_total_cost.toLocaleString());
+  text += String.format('<div class=total>總損益：{0}</div>', Math.round(all_total_gain).toLocaleString());
+  text += String.format('<div class=total>總成本：{0}</div>', Math.round(all_total_cost).toLocaleString());
 
   $('#result').html(text);
 

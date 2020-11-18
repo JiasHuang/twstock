@@ -7,7 +7,6 @@ Chart.defaults.global.title.display = true;
 Chart.defaults.global.title.fontSize = 16;
 Chart.defaults.global.events = ['click'];
 
-
 String.format = function() {
   var s = arguments[0];
   for (var i = 0; i < arguments.length - 1; i++) {
@@ -116,9 +115,10 @@ function updateInfo(obj) {
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm" target="_blank">基本</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm" target="_blank">營收</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_{0}.djhtm" target="_blank">訊息</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcw_{0}.djhtm" target="_blank">Ｋ線</a></span>', obj.code);
+  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcw1_{0}.djhtm" target="_blank">Ｋ線</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcwg/zcwg_{0}.djhtm" target="_blank">分價</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}" target="_blank">損益</a></span>', obj.code);
+  text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockDividendPolicy.asp?STOCK_ID={0}" target="_blank">股利</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}" target="_blank">GoodInfo</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://www.moneydj.com/KMDJ/search/searchHome.aspx?_Query_={0}&_QueryType_=Main" target="_blank">MoneyDJ</a></span>', obj.nf);
   text += String.format('<span class="link"><a href="https://www.twse.com.tw/pdf/ch/{0}_ch.pdf" target="_blank">整合資訊</a></span>', obj.code);
@@ -363,8 +363,8 @@ function getEPSHTMLText(obj) {
             last4Q_eps += parseFloat(eps[eps.length-1-j][3]); // After Tax
           }
           note += String.format('近四季累計EPS：{0}<br>', last4Q_eps.toFixed(2));
-          let price_to_earning = (obj.z / last4Q_eps).toLocaleString();
-          let earning_yield = (last4Q_eps / obj.z * 100).toLocaleString();
+          let price_to_earning = (obj.z / last4Q_eps).toFixed(2);
+          let earning_yield = (last4Q_eps / obj.z * 100).toFixed(2);
           note += String.format('近四季本益比：{0}<br>', price_to_earning);
           note += String.format('近四季收益率：{0}%<br>', earning_yield);
         }
@@ -388,16 +388,22 @@ function getDividendHTMLText(obj) {
   var div = obj.dividend;
 
   text += '<table>';
-  text += '<tr><th rowspan=2>股利所屬年度</th><th colspan=3>現金股利</th><th colspan=3>股票股利</th><th rowspan=2>現金殖利率</th></tr>';
+  text += '<tr><th rowspan=2>股利所屬年度</th><th colspan=3>現金股利</th><th colspan=3>股票股利</th><th rowspan=2>現金殖利率(%)</th><th rowspan=2>盈餘分配率(%)</th></tr>';
   text += '<tr><th class=tbl_title>盈餘</th><th class=tbl_title>公積</th><th class=tbl_title>合計</th><th class=tbl_title>盈餘</th><th class=tbl_title>公積</th><th class=tbl_title>合計</th></tr>';
 
   for (var i=0; i<div.length; i++) {
     let d = div[i];
     let cash_dividend = (parseFloat(d[1]) + parseFloat(d[2])).toFixed(2);
     let stock_dividend = (parseFloat(d[3]) + parseFloat(d[4])).toFixed(2);
-    let dividend_yield = (cash_dividend / obj.z * 100).toLocaleString();
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}%</td></tr>',
-      d[0], d[1], d[2], cash_dividend, d[3], d[4], stock_dividend, dividend_yield);
+    let dividend_yield = (cash_dividend / obj.z * 100).toFixed(2);
+    let era = parseInt(d[0]) - 1911;
+    let eps = getEPSsByYear(obj.eps, era, true);
+    let payout_ratio = '-';
+    if (eps.length > 0) {
+      payout_ratio = (cash_dividend / eps[3].y * 100).toFixed(2);
+    }
+    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td></tr>',
+      era, d[1], d[2], cash_dividend, d[3], d[4], stock_dividend, dividend_yield, payout_ratio);
   }
 
   text += '</table><br>';

@@ -110,11 +110,19 @@ def get_stat_from_goodinfo(code, cacheOnly):
     print('%.2f %s %s' %(time.time(), code, str(obj)))
     return obj
 
+def get_ex_ch_by_code(code):
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'otc_code_list.txt')
+    with open(local) as fd:
+        for line in fd.readlines():
+            if line.rstrip() == code:
+                return 'otc_%s.tw' %(code)
+    return 'tse_%s.tw' %(code)
+
 def get_stock_infos(data):
     info = []
     for s in data['stocks']:
         info.append(stock_info(s['code'], s.get('flts'), s.get('tags')))
-    ex_ch = '|'.join(['tse_%s.tw' %(i.code) for i in info])
+    ex_ch = '|'.join([get_ex_ch_by_code(i.code) for i in info])
     url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
     txt = xurl.load(url, cache=False)
     data = json.loads(txt)

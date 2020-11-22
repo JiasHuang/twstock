@@ -55,6 +55,7 @@ class stock_report:
         self.z = 0
         self.n = None
         self.nf = None
+        self.ex = None
         self.hi = []
         self.lo = []
         self.wap = []
@@ -284,6 +285,22 @@ def update_stock_report_wap(obj):
             obj.wap.append((Y, M, h, l, a, A, B))
     return
 
+def update_stock_report_wap_otc(obj):
+    now = datetime.datetime.now()
+    years = [now.year - 2, now.year - 1, now.year]
+    for year in years:
+        url = 'https://www.tpex.org.tw/web/stock/statistics/monthly/download_st44.php?yy=%s' %(year)
+        txt = xurl.curl(url, opts=['--data-raw \'yy=%s&stk_no=%s\'' %(year, obj.code)])
+        # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
+        for m in re.finditer(r'"(\d+)","(\d+)","(.*?)","(.*?)","(.*?)",".*?","(.*?)","(.*?)",', txt):
+            Y, M = m.group(1), m.group(2)
+            h, l, = m.group(3), m.group(4)
+            A = m.group(6).replace(',','')
+            B = m.group(7).replace(',','')
+            a = '%.2f' %(float(A) / float(B))
+            obj.wap.append((Y, M, h, l, a, A + '000', B + '000'))
+    return
+
 def update_stock_report_eps(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - 3
@@ -343,8 +360,12 @@ def get_stock_report(code):
     obj.z = info.z
     obj.n = info.msg['n']
     obj.nf = info.msg['nf']
+    obj.ex = info.msg['ex']
     obj.pz_vol_pairs = info.avg['30d_pz_vol_pairs']
-    update_stock_report_wap(obj)
+    if obj.ex == 'otc':
+        update_stock_report_wap_otc(obj)
+    else:
+        update_stock_report_wap(obj)
     update_stock_report_eps(obj)
     update_stock_report_dividend(obj)
     update_stock_report_revenue(obj)

@@ -67,6 +67,10 @@ function getWAPHTMLText(wap, z) {
   var Y = null;
   var parsed = null;
 
+  if (!wap.length) {
+    return '';
+  }
+
   text += '<table>';
 
   for (var i=0; i<wap.length; i++) {

@@ -20,7 +20,7 @@
 }
 
 #exrs th, #exrs td {
-  font-size: 22px;
+  font-size: 18px;
   padding: 0px 10px;
   border: 1px solid;
 }
@@ -51,7 +51,7 @@
 }
 
 #result td {
-  font-size: 22px;
+  font-size: 20px;
   border: 1px solid;
   width: 250px;
 }

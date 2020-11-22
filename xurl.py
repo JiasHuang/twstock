@@ -123,6 +123,7 @@ def load(url, local=None, headers=None, cache=True, cacheOnly=False):
         opener.addheaders += headers
 
     try:
+        t0 = time.time()
         f = opener.open(url, None, 10) # timeout=10
         if f.info().get('Content-Encoding') == 'gzip':
             buf = StringIO(f.read())
@@ -130,6 +131,8 @@ def load(url, local=None, headers=None, cache=True, cacheOnly=False):
         else:
             txt = f.read()
         saveLocal(local, txt)
+        t1 = time.time()
+        print('%s (%s)' %(url, t1 - t0))
         return txt
     except HTTPError as e:
         return 'Exception HTTPError: ' + str(e.code)

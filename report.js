@@ -25,11 +25,11 @@ function getBiasText(pz, ma) {
 function parseWAPByYear(wap, Y) {
   var hi = null;
   var lo = null;
+  var year_wap = null;
   var a_hi = null;
   var a_lo = null;
   var total_A = 0;
   var total_B = 0;
-  var year_wap = 0;
 
   for (var i=0; i<wap.length; i++) {
     if (wap[i][0] == Y) {
@@ -57,7 +57,9 @@ function parseWAPByYear(wap, Y) {
     }
   }
 
-  year_wap = total_A / total_B;
+  if (total_A && total_B) {
+    year_wap = total_A / total_B;
+  }
 
   return [hi, lo, year_wap, a_hi, a_lo];
 }
@@ -127,7 +129,7 @@ function updateInfo(obj) {
   text += String.format('<span class="link"><a href="https://www.moneydj.com/KMDJ/search/searchHome.aspx?_Query_={0}&_QueryType_=Main" target="_blank">MoneyDJ</a></span>', obj.nf);
   text += String.format('<span class="link"><a href="https://www.twse.com.tw/pdf/ch/{0}_ch.pdf" target="_blank">整合資訊</a></span>', obj.code);
 
-  $('title').html(obj.n);
+  $('title').html(String.format('{0} {1} (${2})', obj.code, obj.n, obj.z));
   $('#info').html(text);
 }
 
@@ -355,8 +357,8 @@ function getEPSHTMLText(obj) {
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
         let year_wap = parseWAPByYear(obj.wap, Y)[2].toFixed(2);
-        note += String.format('累季EPS：{0}<br>', year_eps);
         if (cumulative_eps.length == 4) {
+          note += String.format('年度EPS：{0}<br>', year_eps);
           note += String.format('年度均價：{0}<br>', year_wap);
           note += String.format('本益比：{0}<br>', (year_wap / year_eps).toFixed(2));
           note += String.format('收益率：{0}%<br>', (year_eps / year_wap * 100).toFixed(2));
@@ -366,9 +368,10 @@ function getEPSHTMLText(obj) {
           for (var j=0; j<4; j++) {
             last4Q_eps += parseFloat(eps[eps.length-1-j][3]); // After Tax
           }
-          note += String.format('近四季累計EPS：{0}<br>', last4Q_eps.toFixed(2));
           let price_to_earning = (obj.z / last4Q_eps).toFixed(2);
           let earning_yield = (last4Q_eps / obj.z * 100).toFixed(2);
+          note += String.format('累季EPS：{0}<br>', year_eps);
+          note += String.format('近四季累計EPS：{0}<br>', last4Q_eps.toFixed(2));
           note += String.format('近四季本益比：{0}<br>', price_to_earning);
           note += String.format('近四季收益率：{0}%<br>', earning_yield);
         }
@@ -399,12 +402,16 @@ function getDividendHTMLText(obj) {
     let d = div[i];
     let cash_dividend = (parseFloat(d[1]) + parseFloat(d[2])).toFixed(2);
     let stock_dividend = (parseFloat(d[3]) + parseFloat(d[4])).toFixed(2);
-    let dividend_yield = (cash_dividend / obj.z * 100).toFixed(2);
+    let dividend_yield = '-';
     let era = parseInt(d[0]) - 1911;
     let eps = getEPSsByYear(obj.eps, era, true);
+    let parsed = parseWAPByYear(obj.wap, era);
     let payout_ratio = '-';
     if (eps.length > 0) {
       payout_ratio = (cash_dividend / eps[3].y * 100).toFixed(2);
+    }
+    if (parsed[2]) {
+      dividend_yield = (cash_dividend / parsed[2] * 100).toFixed(2);
     }
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td></tr>',
       era, d[1], d[2], cash_dividend, d[3], d[4], stock_dividend, dividend_yield, payout_ratio);

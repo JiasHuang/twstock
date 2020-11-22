@@ -348,18 +348,20 @@ def update_stock_report_revenue(obj):
     return
 
 def update_stock_report_news(obj):
-    for i in range(1, 4):
+    for i in range(1, 3):
         url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_%s_E_%d.djhtm' %(obj.code, i)
         txt = xurl.load(url)
         for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
             date = m.group(1)
             link = 'https://fubon-ebrokerdj.fbs.com.tw' + m.group(2)
             title = m.group(3).decode('big5', 'replace').encode('utf8')
-            if re.search(r'(每股|重要)', title):
+            if re.search(r'(每股稅後|每股盈餘)', title):
                 obj.news.append((date, title, link))
     return
 
 def update_stock_report_eps_from_news(obj):
+    if not len(obj.eps):
+        return
     eps = obj.eps[len(obj.eps) - 1]
     if eps[1] == '4':
         Y = str(int(eps[0]) + 1)

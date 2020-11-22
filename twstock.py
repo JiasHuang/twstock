@@ -65,14 +65,19 @@ class stock_report:
         self.pz_vol_pairs = []
         self.news = []
     def show(self):
+        print('-- wap --')
         for x in self.wap:
             print(x)
+        print('-- eps --')
         for x in self.eps:
             print(x)
+        print('-- dividend --')
         for x in self.dividend:
             print(x)
+        print('-- revenue --')
         for x in self.revenue:
             print(x)
+        print('-- news --')
         for x in self.news:
             print(x)
 
@@ -343,16 +348,41 @@ def update_stock_report_revenue(obj):
     return
 
 def update_stock_report_news(obj):
-    url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_%s.djhtm' %(obj.code)
-    txt = xurl.load(url)
-    for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
-        date = m.group(1)
-        link = 'https://fubon-ebrokerdj.fbs.com.tw' + m.group(2)
-        title = m.group(3).decode('big5', 'replace').encode('utf8')
-        if re.search(r'(每股|重要)', title):
-            obj.news.append((date, title, link))
+    for i in range(1, 4):
+        url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_%s_E_%d.djhtm' %(obj.code, i)
+        txt = xurl.load(url)
+        for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
+            date = m.group(1)
+            link = 'https://fubon-ebrokerdj.fbs.com.tw' + m.group(2)
+            title = m.group(3).decode('big5', 'replace').encode('utf8')
+            if re.search(r'(每股|重要)', title):
+                obj.news.append((date, title, link))
     return
 
+def update_stock_report_eps_from_news(obj):
+    eps = obj.eps[len(obj.eps) - 1]
+    if eps[1] == '4':
+        Y = str(int(eps[0]) + 1)
+        Q = '1'
+    else:
+        Y = eps[0]
+        Q = str(int(eps[1]) + 1)
+    for n in obj.news:
+        # 自結第一季合併獲利229.4億元，每股稅後2.24元
+        # 富邦金前三季合併獲利682.06億元，每股稅後6.38元
+        # 富邦金自結108年合併獲利587.3億元，每股稅後5.48元
+        m = re.search(r'(第1季|第一季|上半年|前3季|前三季|\d+年)合併.*?每股稅後(.*?)元', n[1])
+        if m:
+            if (Q == '1' and m.group(1) in ['第1季', '第一季']) \
+                or (Q == '2' and m.group(1) in ['上半年']) \
+                or (Q == '3' and m.group(1) in ['前3季', '前三季']) \
+                or (Q == '4' and re.search(r'\d+年', m.group(1))):
+                x = float(m.group(2))
+                for i in range(1, int(Q)):
+                    x = x - float(obj.eps[len(obj.eps) - i][3])
+                obj.eps.append((Y, Q, '-', str(x)))
+            break
+    return
 
 def get_stock_report(code):
     obj = stock_report(code)
@@ -370,6 +400,7 @@ def get_stock_report(code):
     update_stock_report_dividend(obj)
     update_stock_report_revenue(obj)
     update_stock_report_news(obj)
+    update_stock_report_eps_from_news(obj)
     return obj
 
 def init():

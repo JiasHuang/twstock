@@ -51,7 +51,7 @@ function getStockTableText(s) {
   text += '<td rowspan=2>';
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm" target="_blank">基本</a></span>', s.code);
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_{0}.djhtm" target="_blank">訊息</a></span>', s.code);
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcw1_{0}.djhtm" target="_blank">Ｋ線</a></span>', s.code);
+  text += String.format('<span class="link"><a href="https://invest.cnyes.com/twstock/TWS/{0}/technical" target="_blank">Ｋ線</a></span>', s.code);
   text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}" target="_blank">損益</a></span>', s.code);
   text += String.format('<span class="link"><a href="report.html?c={0}" target="_blank">Report</a></span>', s.code);
   text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}" target="_blank">GoodInfo</a></span>', s.code);

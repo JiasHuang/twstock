@@ -121,12 +121,13 @@ function updateInfo(obj) {
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm" target="_blank">基本</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm" target="_blank">營收</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_{0}.djhtm" target="_blank">訊息</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcw1_{0}.djhtm" target="_blank">Ｋ線</a></span>', obj.code);
+  text += String.format('<span class="link"><a href="https://invest.cnyes.com/twstock/TWS/{0}/technical" target="_blank">Ｋ線</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcwg/zcwg_{0}.djhtm" target="_blank">分價</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}" target="_blank">損益</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockDividendPolicy.asp?STOCK_ID={0}" target="_blank">股利</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}" target="_blank">GoodInfo</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://www.moneydj.com/KMDJ/search/searchHome.aspx?_Query_={0}&_QueryType_=Main" target="_blank">MoneyDJ</a></span>', obj.nf);
+  text += String.format('<span class="link"><a href="https://invest.cnyes.com/twstock/TWS/{0}/overview" target="_blank">鉅亨</a></span>', obj.code);
   text += String.format('<span class="link"><a href="https://www.twse.com.tw/pdf/ch/{0}_ch.pdf" target="_blank">整合資訊</a></span>', obj.code);
 
   $('title').html(String.format('{0} {1} (${2})', obj.code, obj.n, obj.z));

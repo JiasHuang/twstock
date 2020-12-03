@@ -75,14 +75,14 @@ def saveM3U8(local, result):
     fd.close()
     return
 
-def checkExpire(local):
+def checkExpire(local, expiration):
     if not os.path.exists(local):
         return True
     if os.path.getsize(local) <= 0:
         return True
     t0 = int(os.path.getmtime(local))
     t1 = int(time.time())
-    if (t1 - t0) > defvals.expiration:
+    if (t1 - t0) > expiration:
         return True
     return False
 
@@ -97,8 +97,8 @@ def parse(url):
     return prefix, basename
 
 def getContentType(url):
-    txt = curlHdr(url)
-    m = re.search(r'Content-Type: (.*?)(;|\s)', txt)
+    txt = load(url, opts=['--head'], cmd='curl')
+    m = re.search(r'Content-Type: (.*?)(;|\s)', txt, re.IGNORECASE)
     if m:
         return m.group(1)
     return None
@@ -106,86 +106,7 @@ def getContentType(url):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-def load(url, local=None, headers=None, cache=True, cacheOnly=False):
-    local = local or genLocal(url)
-
-    if cacheOnly:
-        return readLocal(local)
-
-    if cache and not checkExpire(local):
-        return readLocal(local)
-
-    checkDelay(url)
-    opener = build_opener()
-    opener.addheaders = [('User-agent', defvals.ua)]
-
-    if headers:
-        opener.addheaders += headers
-
-    try:
-        t0 = time.time()
-        f = opener.open(url, None, 10) # timeout=10
-        if f.info().get('Content-Encoding') == 'gzip':
-            buf = StringIO(f.read())
-            txt = gzip.GzipFile(fileobj=buf).read()
-        else:
-            txt = f.read()
-        saveLocal(local, txt)
-        t1 = time.time()
-        print('%s (%s)' %(url, t1 - t0))
-        return txt
-    except HTTPError as e:
-        return 'Exception HTTPError: ' + str(e.code)
-    except URLError as e:
-        return 'Exception URLError: ' + str(e.reason)
-    except:
-        return 'Exception'
-
-def post(url, payload, local=None, headers=None, cache=True):
-    local = local or genLocal(url)
-    if cache and not checkExpire(local):
-        return readLocal(local)
-
-    opener = build_opener()
-    opener.addheaders = [('User-agent', defvals.ua)]
-
-    if headers:
-        opener.addheaders += headers
-
-    data = urlencode(payload)
-    try:
-        f = opener.open(url, data)
-        txt = f.read()
-        saveLocal(local, txt)
-        return txt
-    except:
-        return 'Exception'
-
-def wget(url, local=None, opts=[], cache=True, ref=None):
-    local = local or genLocal(url)
-    log('[wget] %s -> %s' %(url, local))
-    if cache and not checkExpire(local):
-        return readLocal(local)
-    if ref:
-        opts.append('--referer=\'%s\'' %(ref))
-    opts.append('-U \'%s\'' %(defvals.ua))
-    cmd = 'wget -T 10 -S -O %s.part %s \'%s\'' %(local, ' '.join(opts), url)
-    try:
-        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
-        if re.search('Content-Encoding: gzip', output):
-            cmd2 = 'mv %s %s.gz; gunzip %s.gz' %(local, local, local)
-            subprocess.check_output(cmd2, shell=True)
-        os.rename(local+'.part', local)
-        return readLocal(local)
-    except:
-        log('Exception:\n'+cmd)
-        return None
-
-def curl(url, local=None, opts=[], cache=True, ref=None):
-    local = local or genLocal(url)
-    log('[curl] %s -> %s' %(url, local))
-    if cache and not checkExpire(local):
-        return readLocal(local)
+def curl(url, local, opts, ref):
     if ref:
         opts.append('-e \'%s\'' %(ref))
     opts.append('-H \'User-Agent: %s\'' %(defvals.ua))
@@ -200,22 +121,17 @@ def curl(url, local=None, opts=[], cache=True, ref=None):
         log('Exception:\n' + cmd)
         return None
 
-def curlHdr(url, opts=[], cache=True, ref=None):
-    local = genLocal(url, suffix='.hdr')
-    log('[curlHdr] %s -> %s' %(url, local))
-    if cache and not checkExpire(local):
+def load(url, local=None, opts=[], ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl'):
+    local = local or genLocal(url)
+    expiration = expiration or defvals.expiration
+    if cacheOnly or (cache and not checkExpire(local, expiration)):
+        log('%s -> %s (cache)' %(url, local))
         return readLocal(local)
-    if ref:
-        opts.append('-e \'%s\'' %(ref))
-    opts.append('-H \'User-Agent: %s\'' %(defvals.ua))
-    cmd = 'curl -IkLs -o %s.part %s \'%s\'' %(local, ' '.join(opts), url)
-    try:
-        subprocess.check_output(cmd, shell=True)
-        os.rename(local+'.part', local)
-        return readLocal(local)
-    except:
-        log('Exception:\n' + cmd)
-        return None
+    t0 = time.time()
+    ret = eval('%s(url, local, opts=opts, ref=ref)' %(cmd))
+    t1 = time.time()
+    log('%s -> %s (%s)' %(url, local, t1 - t0))
+    return ret
 
 def addDelayObj(flt, delay):
     delayObj.objs.append(delayObj(flt, delay))

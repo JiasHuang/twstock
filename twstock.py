@@ -84,7 +84,7 @@ class stock_report:
 def get_stat_from_fubon(code, cacheOnly):
     obj = {}
     url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCW/ZCWG/ZCWG_%s_30.djhtm' %(code)
-    txt = xurl.load(url, cacheOnly=cacheOnly)
+    txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000)
     m = re.search(r'GetBcdData\(\'([^ ]*) ([^\']*)\'', txt)
     if m:
         pzs = map(float, m.group(1).split(','))
@@ -279,14 +279,17 @@ def update_stock_report_wap(obj):
     now = datetime.datetime.now()
     years = [now.year - 2, now.year - 1, now.year]
     for year in years:
-        url = 'https://www.twse.com.tw/exchangeReport/FMSRFK?response=csv&stockNo=%s&date=%4d0101' %(obj.code, year)
+        url = 'https://www.twse.com.tw/exchangeReport/FMSRFK?response=json&stockNo=%s&date=%4d0101' %(obj.code, year)
         txt = xurl.load(url)
+        data = json.loads(txt)
+        if 'data' not in data:
+            continue
         # 年度,月份,最高價,最低價,加權(A/B)平均價,成交筆數,成交金額(A),成交股數(B),週轉率(%),
-        for m in re.finditer(r'"(\d+)","(\d+)","(.*?)","(.*?)","(.*?)",".*?","(.*?)","(.*?)",', txt):
-            Y, M = m.group(1), m.group(2)
-            h, l, a, = m.group(3), m.group(4), m.group(5)
-            A = m.group(6).replace(',','')
-            B = m.group(7).replace(',','')
+        for d in data['data']:
+            Y, M = d[0], d[1]
+            h, l, a, = d[2], d[3], d[4]
+            A = d[6].replace(',','')
+            B = d[7].replace(',','')
             obj.wap.append((Y, M, h, l, a, A, B))
     return
 
@@ -295,7 +298,7 @@ def update_stock_report_wap_otc(obj):
     years = [now.year - 2, now.year - 1, now.year]
     for year in years:
         url = 'https://www.tpex.org.tw/web/stock/statistics/monthly/download_st44.php?yy=%s' %(year)
-        txt = xurl.curl(url, opts=['--data-raw \'yy=%s&stk_no=%s\'' %(year, obj.code)])
+        txt = xurl.load(url, opts=['--data-raw \'yy=%s&stk_no=%s\'' %(year, obj.code)])
         # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
         for m in re.finditer(r'"(\d+)","(\d+)","(.*?)","(.*?)","(.*?)",".*?","(.*?)","(.*?)",', txt):
             Y, M = m.group(1), m.group(2)
@@ -409,6 +412,7 @@ def init():
     xurl.addDelayObj(r'fbs.com.tw', 0.1)
     xurl.addDelayObj(r'goodinfo.tw', 2)
     xurl.addDelayObj(r'twse.com.tw', 0.5)
+    xurl.addDelayObj(r'cnyes.com', 0.5)
     return
 
 def main():

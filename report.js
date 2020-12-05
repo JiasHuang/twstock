@@ -415,17 +415,18 @@ function getDividendHTMLText(obj) {
     let stock_dividend = (parseFloat(d[3]) + parseFloat(d[4])).toFixed(2);
     let dividend_yield = '-';
     let era = parseInt(d[0]) - 1911;
+    let era_txt = d[0].replace(parseInt(d[0]), era);
     let eps = getEPSsByYear(obj.eps, era, true);
     let parsed = parseWAPByYear(obj.wap, era);
     let payout_ratio = '-';
-    if (eps.length > 0) {
+    if (eps.length == 4) {
       payout_ratio = (cash_dividend / eps[3].y * 100).toFixed(2);
     }
     if (parsed[2]) {
       dividend_yield = (cash_dividend / parsed[2] * 100).toFixed(2);
     }
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td></tr>',
-      era, d[1], d[2], cash_dividend, d[3], d[4], stock_dividend, dividend_yield, payout_ratio);
+      era_txt, d[1], d[2], cash_dividend, d[3], d[4], stock_dividend, dividend_yield, payout_ratio);
   }
 
   text += '</table><br>';

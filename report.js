@@ -194,7 +194,7 @@ function getWAPsByYear(wap, Y) {
   var ret = [];
   for (var i=0; i<wap.length; i++) {
     if (wap[i][0] == Y) {
-      ret.push({x: wap[i][1], y: wap[i][4]});
+      ret.push({x: wap[i][1].toString(), y: wap[i][4]});
     }
   }
   return ret;
@@ -381,8 +381,8 @@ function getEPSHTMLText(obj) {
           }
           let price_to_earning = (obj.z / last4Q_eps).toFixed(2);
           let earning_yield = (last4Q_eps / obj.z * 100).toFixed(2);
-          note += String.format('累季EPS：{0}<br>', year_eps);
-          note += String.format('近四季累計EPS：{0}<br>', last4Q_eps.toFixed(2));
+          note += String.format('近四季EPS：{0} (累季：{1})<br>', last4Q_eps.toFixed(2), year_eps);
+          note += String.format('目前股價：{0}<br>', obj.z);
           note += String.format('近四季本益比：{0}<br>', price_to_earning);
           note += String.format('近四季收益率：{0}%<br>', earning_yield);
         }

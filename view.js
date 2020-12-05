@@ -14,9 +14,17 @@ String.format = function() {
 
 function getFltText(flts, flts_ret, class_name, class_name_false = '') {
   var vec = [];
-    for (var i=0; i<flts.length; i++) {
+  for (var i=0; i<flts.length; i++) {
       vec.push(String.format('<span class="{0}">{1}</span>', flts_ret[i] ? class_name : class_name_false, flts[i]));
-    }
+  }
+  return vec.join(', ');
+}
+
+function getNoteText(notes, class_name) {
+  var vec = [];
+  for (var i=0; i<notes.length; i++) {
+      vec.push(String.format('<span class="{0}">{1}</span>', class_name, notes[i]));
+  }
   return vec.join(', ');
 }
 
@@ -44,7 +52,7 @@ function getStockTableText(s) {
 
   text += '<td>';
   ratio = s.v / s.avg['30d_vol'] * 100;
-  c = (ratio > 100) ? 'bg_gold' : '';
+  c = (ratio >= 120) ? 'bg_gold' : '';
   text += String.format('<span class={0}>#{1} ({2}%)</span>', c, s.v, ratio.toFixed(2));
   text += '</td>';
 
@@ -88,6 +96,10 @@ function getStockTableText(s) {
 
   text += '<td>';
   text += getFltText(s.flts, s.flts_ret, 'bg_yellow');
+  if (s.flts.length && s.notes.length) {
+    text += '<br>'
+  }
+  text += getNoteText(s.notes, 'bg_yellow');
   text += '</td>';
 
 
@@ -153,7 +165,6 @@ function getExchangeRateTableText(objs) {
 }
 
 function parseStockJSON(obj) {
-
   var text = '';
 
   if (!is_StockTags_loaded) {

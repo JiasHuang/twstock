@@ -35,11 +35,12 @@ class exchange_rate_info:
         self.sell_spot = sell_spot
 
 class stock_info:
-    def __init__(self, code, flts = None, tags = None):
+    def __init__(self, code, flts = None, tags = None, notes = None):
         self.code = code
         self.flts = flts or []
         self.flts_ret = [0] * len(self.flts)
         self.tags = tags or []
+        self.notes = notes or []
         self.msg = None
         self.z = 0
         self.y = 0
@@ -125,7 +126,7 @@ def get_ex_ch_by_code(code):
 def get_stock_infos(data):
     info = []
     for s in data['stocks']:
-        info.append(stock_info(s['code'], s.get('flts'), s.get('tags')))
+        info.append(stock_info(s['code'], s.get('flts'), s.get('tags'), s.get('notes')))
     ex_ch = '|'.join([get_ex_ch_by_code(i.code) for i in info])
     url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
     txt = xurl.load(url, cache=False)
@@ -219,6 +220,9 @@ def show_stock_info(info):
         if x in info.avg:
             chg, ratio, txt = chg_ratio_txt(info.z, info.avg[x])
             print('\t\t%s: %s' %(x, txt))
+
+    if len(info.notes):
+        print('\t\t%s' %('|'.join(info.notes)))
 
     return
 
@@ -418,6 +422,7 @@ def init(logfile='/var/tmp/twstock.log'):
 def main():
     parser = OptionParser()
     parser.add_option("-i", "--input", dest="input")
+    parser.add_option("-e", "--exr", dest="exr")
     parser.add_option("-c", "--codes", dest="codes")
     parser.add_option("-s", "--stat", dest="stat", action="store_true", default=False)
     parser.add_option("-r", "--report", dest="report", action="store_true", default=False)
@@ -439,9 +444,11 @@ def main():
     update_stock_stats(stock_infos, not options.stat)
     for info in stock_infos:
         show_stock_info(info)
-    exr_infos = get_exchange_rate_infos(data)
-    for info in exr_infos:
-        show_exr_info(info)
+    if options.exr:
+        data = get_json_from_file(options.exr)
+        exr_infos = get_exchange_rate_infos(data)
+        for info in exr_infos:
+            show_exr_info(info)
     return
 
 if __name__ == '__main__':

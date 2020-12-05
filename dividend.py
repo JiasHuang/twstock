@@ -12,7 +12,7 @@ def index(req):
     req.content_type = 'text/html; charset=utf-8'
     form = req.form or util.FieldStorage(req)
     code = form.get('c', None)
-    twstock.init()
+    twstock.init(logfile='/var/tmp/twstock-dividend.log')
     objs = []
     if code:
         for c in code.split(','):

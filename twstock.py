@@ -111,7 +111,7 @@ def get_stat_from_goodinfo(code, cacheOnly):
                 vals.append(float(num.group(1)))
             if len(vals) == 6:
                 obj[k+'_pz'] = vals[4]
-    print('%.2f %s %s' %(time.time(), code, str(obj)))
+    log('%.2f %s %s' %(time.time(), code, str(obj)))
     return obj
 
 def get_ex_ch_by_code(code):
@@ -406,8 +406,8 @@ def get_stock_report(code):
     update_stock_report_eps_from_news(obj)
     return obj
 
-def init():
-    xurl.defvals.logfile = '/var/tmp/twstock.log'
+def init(logfile='/var/tmp/twstock.log'):
+    xurl.defvals.logfile = logfile
     xurl.log(datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'), mode='w+')
     xurl.addDelayObj(r'fbs.com.tw', 0.1)
     xurl.addDelayObj(r'goodinfo.tw', 2)

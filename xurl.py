@@ -23,13 +23,8 @@ except ImportError:
 
 class defvals:
     workdir             = '/var/tmp/'
-    wget_path_cookie    = workdir+'vod_wget.cookie'
+    logfile             = workdir+'xurl.log'
     ua                  = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
-    wget_opt_base       = 'wget -T 10 -S'
-    wget_opt_cookie     = '--save-cookies %s --load-cookies %s' %(wget_path_cookie, wget_path_cookie)
-    wget_opt_ua         = '-U \'%s\'' %(ua)
-    wget_opt_lang       = '--header=\'Accept-Language:zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7\''
-    wget                = '%s %s' %(wget_opt_base, wget_opt_ua)
     expiration          = 28800
 
 class delayObj:
@@ -45,11 +40,9 @@ class xurlObj(object):
         self.cookies = cookies
         self.ref = ref
 
-def log(s):
-    if not isinstance(sys.stdout, file):
-        print('\n<!--\n%s\n-->\n' %(s.strip()))
-    else:
-        print(s)
+def log(s, mode='a'):
+    with open(defvals.logfile, mode) as fd:
+        fd.write(s + '\n')
 
 def readLocal(local, buffering=-1):
     if os.path.exists(local):
@@ -107,21 +100,21 @@ def getContentType(url):
 # -----------------------------------------------------------------------------
 
 def curl(url, local, opts, ref):
+    opts = opts or []
     if ref:
         opts.append('-e \'%s\'' %(ref))
     opts.append('-H \'User-Agent: %s\'' %(defvals.ua))
     opts.append('-H \'Accept-Encoding: gzip, deflate\'')
     opts.append('--compressed')
-    cmd = 'curl -kLs -o %s.part %s \'%s\'' %(local, ' '.join(opts), url)
+    cmd = 'curl -kLs -o %s %s \'%s\'' %(local, ' '.join(opts), url)
     try:
         subprocess.check_output(cmd, shell=True)
-        os.rename(local+'.part', local)
         return readLocal(local)
     except:
         log('Exception:\n' + cmd)
         return None
 
-def load(url, local=None, opts=[], ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl'):
+def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl'):
     local = local or genLocal(url)
     expiration = expiration or defvals.expiration
     if cacheOnly or (cache and not checkExpire(local, expiration)):

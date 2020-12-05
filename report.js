@@ -113,22 +113,32 @@ function getMAs(obj) {
   return MAs;
 }
 
+function getLinkDict(code, nf) {
+  var dict = [];
+  dict.push({key:'基本', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm', code)});
+  dict.push({key:'營收', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm', code)});
+  dict.push({key:'訊息', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_{0}.djhtm', code)});
+  dict.push({key:'Ｋ線', val:String.format('https://invest.cnyes.com/twstock/TWS/{0}/technical', code)});
+  dict.push({key:'分價', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcwg/zcwg_{0}.djhtm', code)});
+  dict.push({key:'損益', val:String.format('https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}', code)});
+  dict.push({key:'股利', val:String.format('https://goodinfo.tw/StockInfo/StockDividendPolicy.asp?STOCK_ID={0}', code)});
+  dict.push({key:'除權息', val:String.format('https://goodinfo.tw/StockInfo/StockDividendSchedule.asp?STOCK_ID={0}', code)});
+  dict.push({key:'GoodInfo', val:String.format('https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}', code)});
+  dict.push({key:'MoneyDJ', val:String.format('https://www.moneydj.com/KMDJ/search/searchHome.aspx?_Query_={0}&_QueryType_=Main', nf)});
+  dict.push({key:'Anue', val:String.format('https://invest.cnyes.com/twstock/TWS/{0}/overview', code)});
+  dict.push({key:'整合資訊', val:String.format('https://www.twse.com.tw/pdf/ch/{0}_ch.pdf', code)});
+  return dict;
+}
+
 function updateInfo(obj) {
   var text = '';
+  var dict = getLinkDict(obj.code, obj.nf);
 
   text += String.format('<span class="title">{0} {1} (${2})</span>', obj.code, obj.n, obj.z);
 
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm" target="_blank">基本</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm" target="_blank">營收</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_{0}.djhtm" target="_blank">訊息</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://invest.cnyes.com/twstock/TWS/{0}/technical" target="_blank">Ｋ線</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcwg/zcwg_{0}.djhtm" target="_blank">分價</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}" target="_blank">損益</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockDividendPolicy.asp?STOCK_ID={0}" target="_blank">股利</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}" target="_blank">GoodInfo</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://www.moneydj.com/KMDJ/search/searchHome.aspx?_Query_={0}&_QueryType_=Main" target="_blank">MoneyDJ</a></span>', obj.nf);
-  text += String.format('<span class="link"><a href="https://invest.cnyes.com/twstock/TWS/{0}/overview" target="_blank">鉅亨</a></span>', obj.code);
-  text += String.format('<span class="link"><a href="https://www.twse.com.tw/pdf/ch/{0}_ch.pdf" target="_blank">整合資訊</a></span>', obj.code);
+  for (var i=0; i<dict.length; i++) {
+    text += String.format('<span class="link"><a href="{0}" target="_blank">{1}</a></span>', dict[i].val, dict[i].key);
+  }
 
   $('title').html(String.format('{0} {1} (${2})', obj.code, obj.n, obj.z));
   $('#info').html(text);
@@ -498,12 +508,24 @@ function onTimeout () {
   console.log('timeout');
 }
 
-function showLoading() {
-  $('#info').html('<span class=title>Loading ...</span>');
+function showLoading(code) {
+  var text = '';
+  var dict = getLinkDict(code, '');
+
+  text += String.format('<span class="title">Loading ...</span>');
+
+  for (var i=0; i<dict.length; i++) {
+    text += String.format('<span class="link"><a href="{0}" target="_blank">{1}</a></span>', dict[i].val, dict[i].key);
+  }
+
+  $('title').html('Loading ...');
+  $('#info').html(text);
 }
 
 function updateStockReport() {
-  showLoading();
+  var params = (new URL(window.location)).searchParams;
+  var code = params.get('c');
+  showLoading(code);
   $.ajax({
     url: 'report.py' + window.location.search,
     dataType: 'json',
@@ -514,9 +536,10 @@ function updateStockReport() {
 }
 
 function updateReportByInput() {
-  showLoading();
+  var code = document.getElementById('input_code').value;
+  showLoading(code);
   $.ajax({
-    url: 'report.py?c=' + document.getElementById('input_code').value,
+    url: 'report.py?c=' + code,
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,

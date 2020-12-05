@@ -56,8 +56,6 @@ class stock_report:
         self.n = None
         self.nf = None
         self.ex = None
-        self.hi = []
-        self.lo = []
         self.wap = []
         self.eps = []
         self.dividend = []
@@ -409,6 +407,8 @@ def get_stock_report(code):
     return obj
 
 def init():
+    xurl.defvals.logfile = '/var/tmp/twstock.log'
+    xurl.log(datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'), mode='w+')
     xurl.addDelayObj(r'fbs.com.tw', 0.1)
     xurl.addDelayObj(r'goodinfo.tw', 2)
     xurl.addDelayObj(r'twse.com.tw', 0.5)

@@ -30,7 +30,7 @@ function getStockTableText(s) {
   text += '<tr>';
 
   text += '<th rowspan=2>';
-  text += String.format('{0}<br>{1}', s.code, s.msg.n);
+  text += String.format('<a href="report.html?c={0}" target="_blank">{0}<br>{1}</a>', s.code, s.msg.n);
   text += '</th>';
 
   text += '<td>';
@@ -46,16 +46,6 @@ function getStockTableText(s) {
   ratio = s.v / s.avg['30d_vol'] * 100;
   c = (ratio > 100) ? 'bg_gold' : '';
   text += String.format('<span class={0}>#{1} ({2}%)</span>', c, s.v, ratio.toFixed(2));
-  text += '</td>';
-
-  text += '<td rowspan=2>';
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm" target="_blank">基本</a></span>', s.code);
-  text += String.format('<span class="link"><a href="https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_{0}.djhtm" target="_blank">訊息</a></span>', s.code);
-  text += String.format('<span class="link"><a href="https://invest.cnyes.com/twstock/TWS/{0}/technical" target="_blank">Ｋ線</a></span>', s.code);
-  text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}" target="_blank">損益</a></span>', s.code);
-  text += String.format('<span class="link"><a href="report.html?c={0}" target="_blank">Report</a></span>', s.code);
-  text += String.format('<span class="link"><a href="https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}" target="_blank">GoodInfo</a></span>', s.code);
-  text += String.format('<span class="link"><a href="https://www.moneydj.com/KMDJ/search/searchHome.aspx?_Query_={0}&_QueryType_=Main" target="_blank">MoneyDJ</a></span>', s.msg.nf);
   text += '</td>';
 
   text += '</tr>';

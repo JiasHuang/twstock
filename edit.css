@@ -1,0 +1,44 @@
+
+button {
+  background-color: #4682B4;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  padding: 5px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 32px;
+  margin: 12px 12px;
+  cursor: pointer;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 30;
+}
+
+#result table {
+  border-collapse: collapse;
+  margin: 5px;
+  width: 80%;
+}
+
+#result th, #result td {
+  font-size: 20px;
+  border: 1px solid;
+  padding: 0px 10px;
+  white-space: pre;
+}
+
+#result tr:nth-child(odd) {
+  background-color: #FFFAFA;
+}
+
+#result tr:nth-child(even) {
+  background-color: #F5DEB3;
+}
+
+#result tr:nth-child(1) {
+  background-color: #FF8C00;
+}
+

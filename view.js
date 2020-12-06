@@ -20,12 +20,12 @@ function getFltText(flts, flts_ret, class_name, class_name_false = '') {
   return vec.join(', ');
 }
 
-function getNoteText(notes, class_name) {
+function getNoteText(notes, class_name = '') {
   var vec = [];
   for (var i=0; i<notes.length; i++) {
       vec.push(String.format('<span class="{0}">{1}</span>', class_name, notes[i]));
   }
-  return vec.join(', ');
+  return vec.join('<br>');
 }
 
 function getStockTableText(s) {
@@ -99,7 +99,7 @@ function getStockTableText(s) {
   if (s.flts.length && s.notes.length) {
     text += '<br>'
   }
-  text += getNoteText(s.notes, 'bg_yellow');
+  text += getNoteText(s.notes, 'note');
   text += '</td>';
 
 

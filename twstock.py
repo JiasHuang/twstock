@@ -82,7 +82,7 @@ class stock_report:
 
 def get_stat_from_fubon(code, cacheOnly):
     obj = {}
-    url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCW/ZCWG/ZCWG_%s_30.djhtm' %(code)
+    url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCW/ZCWG/ZCWG_%s.djhtm' %(code)
     txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000)
     m = re.search(r'GetBcdData\(\'([^ ]*) ([^\']*)\'', txt)
     if m:
@@ -112,7 +112,7 @@ def get_stat_from_goodinfo(code, cacheOnly):
                 vals.append(float(num.group(1)))
             if len(vals) == 6:
                 obj[k+'_pz'] = vals[4]
-    log('%.2f %s %s' %(time.time(), code, str(obj)))
+    print('%.2f %s %s' %(time.time(), code, str(obj)))
     return obj
 
 def get_ex_ch_by_code(code):
@@ -410,9 +410,8 @@ def get_stock_report(code):
     update_stock_report_eps_from_news(obj)
     return obj
 
-def init(logfile='/var/tmp/twstock.log'):
-    xurl.defvals.logfile = logfile
-    xurl.log(datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S'), mode='w+')
+def init(logfile='twstock.log'):
+    xurl.init(logfile=logfile)
     xurl.addDelayObj(r'fbs.com.tw', 0.1)
     xurl.addDelayObj(r'goodinfo.tw', 2)
     xurl.addDelayObj(r'twse.com.tw', 0.5)
@@ -428,7 +427,7 @@ def main():
     parser.add_option("-r", "--report", dest="report", action="store_true", default=False)
     (options, args) = parser.parse_args()
     stock_infos = []
-    init()
+    init(logfile=None)
     if options.report:
         if options.codes:
             for code in options.codes.split(','):

@@ -7,8 +7,7 @@ import re
 import hashlib
 import time
 import subprocess
-import StringIO
-import gzip
+import codecs
 
 try:
     # python 3
@@ -23,7 +22,6 @@ except ImportError:
 
 class defvals:
     workdir             = '/var/tmp/'
-    logfile             = workdir+'xurl.log'
     ua                  = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
     expiration          = 28800
 
@@ -40,9 +38,10 @@ class xurlObj(object):
         self.cookies = cookies
         self.ref = ref
 
-def log(s, mode='a'):
-    with open(defvals.logfile, mode) as fd:
-        fd.write(s + '\n')
+def init(logfile=None):
+    if logfile:
+        path = os.path.join(defvals.workdir, logfile)
+        sys.stdout = codecs.open(path, 'w+', encoding='utf-8')
 
 def readLocal(local, buffering=-1):
     if os.path.exists(local):
@@ -68,11 +67,12 @@ def saveM3U8(local, result):
     fd.close()
     return
 
-def checkExpire(local, expiration):
+def checkExpire(local, expiration=None):
     if not os.path.exists(local):
         return True
     if os.path.getsize(local) <= 0:
         return True
+    expiration = expiration or defvals.expiration
     t0 = int(os.path.getmtime(local))
     t1 = int(time.time())
     if (t1 - t0) > expiration:
@@ -111,19 +111,20 @@ def curl(url, local, opts, ref):
         subprocess.check_output(cmd, shell=True)
         return readLocal(local)
     except:
-        log('Exception:\n' + cmd)
+        print('Exception:\n' + cmd)
         return None
 
 def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl'):
     local = local or genLocal(url)
     expiration = expiration or defvals.expiration
     if cacheOnly or (cache and not checkExpire(local, expiration)):
-        log('%s -> %s (cache)' %(url, local))
+        print('%s -> %s (cache)' %(url, local))
         return readLocal(local)
+    checkDelay(url)
     t0 = time.time()
     ret = eval('%s(url, local, opts=opts, ref=ref)' %(cmd))
     t1 = time.time()
-    log('%s -> %s (%s)' %(url, local, t1 - t0))
+    print('%s -> %s (%s)' %(url, local, t1 - t0))
     return ret
 
 def addDelayObj(flt, delay):

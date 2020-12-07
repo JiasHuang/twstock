@@ -12,7 +12,7 @@ def index(req):
     req.content_type = 'text/html; charset=utf-8'
     form = req.form or util.FieldStorage(req)
     path = form.get('i', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/exr.json'))
-    twstock.init(logfile='/var/tmp/twstock-exr.log')
+    twstock.init(logfile='twstock-exr.log')
     data = twstock.get_json_from_file(path)
     exchange_rate_infos = twstock.get_exchange_rate_infos(data)
     exchange_rate_json_list = [json.dumps(x.__dict__) for x in exchange_rate_infos]

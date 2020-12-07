@@ -15,7 +15,7 @@ def index(req):
     code = form.get('c', None)
     stat = form.get('s', None)
     infos = []
-    twstock.init(logfile='/var/tmp/twstock-view.log')
+    twstock.init('twstock-view.log')
     if code:
         data = twstock.get_stock_json_by_codes(code)
         infos.extend(twstock.get_stock_infos(data))

@@ -80,9 +80,9 @@ class stock_report:
         for x in self.news:
             print(x)
 
-def get_stat_from_fubon(code, cacheOnly):
+def get_stat_pz_vol_pairs(code, cacheOnly):
     obj = {}
-    url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCW/ZCWG/ZCWG_%s.djhtm' %(code)
+    url = 'https://jdata.yuanta.com.tw/z/zc/zcw/zcwg_%s.djhtm' %(code)
     txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000)
     m = re.search(r'GetBcdData\(\'([^ ]*) ([^\']*)\'', txt)
     if m:
@@ -96,23 +96,6 @@ def get_stat_from_fubon(code, cacheOnly):
         obj['30d_pz'] = total / sum(vols)
         obj['30d_vol'] = sum(vols) / 30
         obj['30d_pz_vol_pairs']= pairs
-    return obj
-
-def get_stat_from_goodinfo(code, cacheOnly):
-    obj = {}
-    url = 'https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID=' + code
-    txt = xurl.load(url, cacheOnly=cacheOnly)
-    # 統計區間,累計漲跌價,累計漲跌幅,區間振幅,成交量週轉率,均線落點,均線乖離率
-    ranges = {'1m':'月', '3m':'季', '6m':'半年', '1y':'年', '3y':'三年'}
-    for k in ranges:
-        vals = []
-        m = re.search(r'<td>'+re.escape(ranges[k])+'</td>.*?</tr>', txt, re.DOTALL | re.MULTILINE)
-        if m:
-            for num in re.finditer(r'<nobr>(.*?)[→↘↗%]*</nobr></td>', m.group()):
-                vals.append(float(num.group(1)))
-            if len(vals) == 6:
-                obj[k+'_pz'] = vals[4]
-    print('%.2f %s %s' %(time.time(), code, str(obj)))
     return obj
 
 def get_ex_ch_by_code(code):
@@ -138,8 +121,7 @@ def get_stock_infos(data):
 
 def update_stock_stats(infos, cacheOnly):
     for info in infos:
-        info.avg.update(get_stat_from_fubon(info.code, cacheOnly))
-        #info.avg.update(get_stat_from_goodinfo(info.code, cacheOnly))
+        info.avg.update(get_stat_pz_vol_pairs(info.code, cacheOnly))
     return
 
 def parse_info(info):
@@ -314,7 +296,7 @@ def update_stock_report_wap_otc(obj):
 def update_stock_report_eps(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - 3
-    url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcd/zcd_%s.djhtm' %(obj.code)
+    url = 'https://jdata.yuanta.com.tw/z/zc/zcd/zcd_%s.djhtm' %(obj.code)
     txt = xurl.load(url)
     years = 0
     # 季別,加權平均股數,營業收入,稅前淨利,稅後淨利,每股營收(元),稅前每股盈餘(元),稅後每股盈餘(元)
@@ -328,7 +310,7 @@ def update_stock_report_eps(obj):
     return
 
 def update_stock_report_dividend(obj):
-    url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcc/zcc_%s.djhtm' %(obj.code)
+    url = 'https://jdata.yuanta.com.tw/z/zc/zcc/zcc_%s.djhtm' %(obj.code)
     txt = xurl.load(url)
     for m in re.finditer(r'<td class="t3n0">(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         m2 = re.findall(r'>([^<]+)</td>', m.group(0))
@@ -341,7 +323,7 @@ def update_stock_report_dividend(obj):
 def update_stock_report_revenue(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - 3
-    url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_%s.djhtm' %(obj.code)
+    url = 'https://jdata.yuanta.com.tw/z/zc/zch/zch_%s.djhtm' %(obj.code)
     txt = xurl.load(url)
     for m in re.finditer(r'<td class="t3n0">(\d+)/(\d+)</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         Y, M = m.group(1), m.group(2)
@@ -354,11 +336,11 @@ def update_stock_report_revenue(obj):
 
 def update_stock_report_news(obj):
     for i in range(1, 3):
-        url = 'https://fubon-ebrokerdj.fbs.com.tw/Z/ZC/ZCV/ZCV_%s_E_%d.djhtm' %(obj.code, i)
+        url = 'https://jdata.yuanta.com.tw/Z/ZC/ZCV/ZCV_%s_E_%d.djhtm' %(obj.code, i)
         txt = xurl.load(url)
         for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
             date = m.group(1)
-            link = 'https://fubon-ebrokerdj.fbs.com.tw' + m.group(2)
+            link = 'https://jdata.yuanta.com.tw' + m.group(2)
             title = m.group(3).decode('big5', 'replace').encode('utf8')
             if re.search(r'(每股稅後|每股盈餘)', title):
                 obj.news.append((date, title, link))
@@ -412,10 +394,10 @@ def get_stock_report(code):
 
 def init(logfile='twstock.log'):
     xurl.init(logfile=logfile)
-    xurl.addDelayObj(r'fbs.com.tw', 0.1)
-    xurl.addDelayObj(r'goodinfo.tw', 2)
+    xurl.addDelayObj(r'fbs.com.tw', 0.5)
     xurl.addDelayObj(r'twse.com.tw', 0.5)
     xurl.addDelayObj(r'cnyes.com', 0.5)
+    xurl.addDelayObj(r'yuanta.com.tw', 0.5)
     return
 
 def main():

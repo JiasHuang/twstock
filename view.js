@@ -2,6 +2,7 @@
 var is_StockInfo_loaded = false;
 var is_StockTags_loaded = false;
 var selected_tag = null;
+var selected_innerTag = null;
 
 String.format = function() {
   var s = arguments[0];
@@ -113,14 +114,25 @@ function getStockTableText(s) {
 function selectTag(tag) {
 
   selected_tag = tag;
+  selected_innerTag = null;
 
-  if (!tag) {
+  $('table').filter('.stockinfo').hide();
+  $('table').filter('.stockinfo.'+tag).show();
+
+}
+
+function selectInnerTag(tag) {
+
+  selected_tag = null;
+  selected_innerTag = tag
+
+  if (tag == 'all') {
     $('table').filter('.stockinfo').show();
   }
 
-  else {
+  else if (tag == 'hl') {
     $('table').filter('.stockinfo').hide();
-    $('table').filter('.stockinfo.'+tag).show();
+    $('span').filter('.bg_red, .bg_green, .bg_yellow, .bg_gold').closest('table').show();
   }
 
 }
@@ -138,7 +150,8 @@ function getTagsText(obj) {
   }
 
   if (tags.length) {
-    text += '<button onclick=selectTag(null)>all</button>';
+    text += '<button onclick=selectInnerTag("all")>all</button>';
+    text += '<button onclick=selectInnerTag("hl")>hl</button>';
     for (var i=0; i<tags.length; i++) {
       text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
     }
@@ -177,7 +190,11 @@ function parseStockJSON(obj) {
   }
 
   $('#result').html(text);
-  selectTag(selected_tag);
+
+  if (selected_tag)
+    selectTag(selected_tag);
+  if (selected_innerTag)
+    selectInnerTag(selected_innerTag);
 
   is_StockInfo_loaded = true;
 }

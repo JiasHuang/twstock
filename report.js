@@ -23,11 +23,11 @@ function getBiasText(pz, ma) {
 }
 
 function parseWAPByYear(wap, Y) {
-  var hi = null;
-  var lo = null;
-  var year_wap = null;
-  var a_hi = null;
-  var a_lo = null;
+  var hi = 0;
+  var lo = 0;
+  var year_wap = 0;
+  var a_hi = 0;
+  var a_lo = 0;
   var total_A = 0;
   var total_B = 0;
 
@@ -88,6 +88,9 @@ function getWAPHTMLText(wap, z) {
       //note += String.format('月均最高：{0}<br>', getBiasText(parsed[3], z));
       //note += String.format('月均最低：{0}<br>', getBiasText(parsed[4], z));
       text += '<tr><td colspan=5></td><td rowspan=13>' + note + '</td></tr>';
+      for (var m=1; m<wap[i][1]; m++) {
+        text += '<tr>' + '<td>-</td>'.repeat(5) + '</tr>';
+      }
     }
     let c1 = (wap[i][2] == parsed[0]) ? 'red' : '';
     let c2 = (wap[i][3] == parsed[1]) ? 'green' : '';
@@ -368,11 +371,20 @@ function getEPSHTMLText(obj) {
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
         let year_wap = parseWAPByYear(obj.wap, Y)[2].toFixed(2);
-        if (cumulative_eps.length == 4) {
+        if (Y != eps[eps.length-1][0]) {
+          let parsed = parseWAPByYear(obj.wap, Y);
+          let year_wap = '-';
+          let year_price_to_earning = '-';
+          let year_earning_yield = '-';
+          if (parsed[2]) {
+            year_wap = parsed[2].toFixed(2);
+            year_price_to_earning = (year_wap / year_eps).toFixed(2);
+            year_earning_yield = (year_eps / year_wap * 100).toFixed(2);
+          }
           note += String.format('年度EPS：{0}<br>', year_eps);
           note += String.format('年度均價：{0}<br>', year_wap);
-          note += String.format('本益比：{0}<br>', (year_wap / year_eps).toFixed(2));
-          note += String.format('收益率：{0}%<br>', (year_eps / year_wap * 100).toFixed(2));
+          note += String.format('本益比：{0}<br>', year_price_to_earning);
+          note += String.format('收益率：{0}%<br>', year_earning_yield);
         }
         else {
           let last4Q_eps = 0;
@@ -387,6 +399,9 @@ function getEPSHTMLText(obj) {
           note += String.format('近四季收益率：{0}%<br>', earning_yield);
         }
         text += '<tr><td colspan=4></td><td rowspan=5>' + note + '</td></tr>';
+        for (var q=1; q<eps[i][1]; q++) {
+          text += '<tr>' + '<td>-</td>'.repeat(4) + '</tr>';
+        }
     }
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>',
       eps[i][0], eps[i][1], eps[i][2], eps[i][3]);
@@ -538,14 +553,7 @@ function updateStockReport() {
 
 function updateReportByInput() {
   var code = document.getElementById('input_code').value;
-  showLoading(code);
-  $.ajax({
-    url: 'report.py?c=' + code,
-    dataType: 'json',
-    error: onTimeout,
-    success: parseJSON,
-    timeout: 20000
-  });
+  window.location.href = 'report.html?c=' + code;
 }
 
 function onDocumentReady() {

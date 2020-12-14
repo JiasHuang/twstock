@@ -132,15 +132,17 @@ def parse_info(info):
     if msg['z'] == '-':
         try:
             msg['z'] = msg['b'].split('_')[0]
+            if float(msg['z']) == 0:
+                msg['z'] = msg['b'].split('_')[1]
         except:
             pass
 
     try:
         info.y = y = float(msg['y'])
         info.v = v = float(msg['v'])
-        info.z = z = float(msg['z'])
         info.h = h = float(msg['h'])
         info.l = l = float(msg['l'])
+        info.z = z = float(msg['z'])
     except:
         pass
 

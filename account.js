@@ -170,7 +170,7 @@ function onTimeout () {
 
 function updateAccount() {
   $.ajax({
-    url: 'account.py' + window.location.search,
+    url: 'load.py?j=account.json',
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,

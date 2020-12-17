@@ -3,6 +3,7 @@ var is_StockInfo_loaded = false;
 var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
+var policy = null;
 
 String.format = function() {
   var s = arguments[0];
@@ -13,12 +14,31 @@ String.format = function() {
   return s;
 }
 
+function getPolicyText(code, pz, class_name) {
+  var text = '';
+  if (policy) {
+    for (var i=0; i<policy.stocks.length; i++) {
+      let s = policy.stocks[i];
+      if (s.code == code) {
+        for (var j=2; j>=0; j--) {
+          let ref = parseFloat(s.ref_pz) * (9 - j) / 10;
+          if (pz <= ref) {
+            text += String.format('<span class="{0}">分批{1}</span>', class_name, j + 1);
+            break;
+          }
+        }
+      }
+    }
+  }
+  return text;
+}
+
 function getFltText(flts, flts_ret, class_name, class_name_false = '') {
   var vec = [];
   for (var i=0; i<flts.length; i++) {
       vec.push(String.format('<span class="{0}">{1}</span>', flts_ret[i] ? class_name : class_name_false, flts[i]));
   }
-  return vec.join(', ');
+  return vec.join('，')
 }
 
 function getNoteText(notes, class_name = '') {
@@ -97,6 +117,7 @@ function getStockTableText(s) {
 
   text += '<td>';
   text += getFltText(s.flts, s.flts_ret, 'bg_yellow');
+  text += getPolicyText(s.code, s.z, 'bg_yellow margin_left');
   if (s.flts.length && s.notes.length) {
     text += '<br>'
   }
@@ -263,7 +284,22 @@ function updateInfoIfNeeded() {
   }
 }
 
+function parsePolicyJSON(obj) {
+  policy = obj;
+}
+
+function loadPolicyJSON() {
+  $.ajax({
+    url: 'load.py?j=policy.json',
+    dataType: 'json',
+    error: onTimeout,
+    success: parsePolicyJSON,
+    timeout: 2000
+  });
+}
+
 function onDocumentReady() {
+  loadPolicyJSON();
   initStockInfo();
   updateExchangeRateInfo();
   setInterval(updateInfoIfNeeded, 5000);

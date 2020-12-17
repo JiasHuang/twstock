@@ -23,7 +23,7 @@ def index(req):
         data = twstock.get_json_from_file(path)
         infos.extend(twstock.get_stock_infos(data))
     if len(infos) == 0:
-        defpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/stocks.json')
+        defpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
         data = twstock.get_json_from_file(defpath)
         infos = twstock.get_stock_infos(data)
     twstock.update_stock_stats(infos, not stat)

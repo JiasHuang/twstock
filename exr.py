@@ -11,7 +11,7 @@ from mod_python import util, Cookie
 def index(req):
     req.content_type = 'text/html; charset=utf-8'
     form = req.form or util.FieldStorage(req)
-    path = form.get('i', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/exr.json'))
+    path = form.get('i', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'exr.json'))
     twstock.init(logfile='twstock-exr.log')
     data = twstock.get_json_from_file(path)
     exchange_rate_infos = twstock.get_exchange_rate_infos(data)

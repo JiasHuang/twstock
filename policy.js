@@ -76,7 +76,7 @@ function parsePolicyJSON(obj) {
   console.log(obj);
 
   text += '<table id="stocks">';
-  text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th><th>預估張數</th><th colspan=2>分批1</th><th colspan=2>分批2</th><th colspan=2>分批3</th><th colspan=3>統計</th></tr>';
+  text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th><th>預估張數</th><th colspan=2>分批1</th><th colspan=2>分批2</th><th colspan=2>分批3</th><th colspan=2>統計</th></tr>';
 
   for (var i=0; i<obj.stocks.length; i++) {
     let s = obj.stocks[i];
@@ -97,11 +97,10 @@ function parsePolicyJSON(obj) {
     }
     if (st.total_cost) {
       let total_avg = st.total_cost / 1000 / st.total_qty;
-      text += String.format('<td>張數：{0}</td>', st.total_qty);
-      text += String.format('<td>剩餘：{0}</td>', s.ref_qty - st.total_qty);
+      text += String.format('<td>張數：{0}，剩餘：{1}</td>', st.total_qty, s.ref_qty - st.total_qty);
       text += String.format('<td>均價：{0}，成本：{1}</td>', total_avg.toFixed(2), st.total_cost.toLocaleString());
     } else {
-      text += '<td> - </td>'.repeat(3);
+      text += '<td> - </td>'.repeat(2);
     }
     text += '</tr>';
   }
@@ -109,7 +108,7 @@ function parsePolicyJSON(obj) {
   for (var i=0; i<3; i++) {
     text += '<tr>';
     text += '<td contenteditable=true></td>'.repeat(4);
-    text += '<td> - </td>'.repeat(9);
+    text += '<td> - </td>'.repeat(8);
     text += '</tr>';
   }
 

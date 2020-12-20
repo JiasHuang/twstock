@@ -7,6 +7,8 @@ Chart.defaults.global.title.display = true;
 Chart.defaults.global.title.fontSize = 16;
 Chart.defaults.global.events = ['click'];
 
+var colors = ['DarkGrey', 'Grey', 'SteelBlue', 'Blue'];
+
 String.format = function() {
   var s = arguments[0];
   for (var i = 0; i < arguments.length - 1; i++) {
@@ -174,8 +176,8 @@ function updateMAChart(wap) {
   datasets.push({
     label: 'MA',
     data: data,
-    borderColor: 'DarkBlue',
-    backgroundColor: 'DarkBlue',
+    borderColor: 'Blue',
+    backgroundColor: 'Blue',
     fill: false,
   });
 
@@ -207,7 +209,6 @@ function updateMAChartByYear(wap) {
   var ctx = document.getElementById('chart_MA_by_year').getContext('2d');
   var datasets = [];
   var labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  var colors = ['Grey', 'SteelBlue', 'Blue'];
   var colors_idx = 0;
   var Y = null;
 
@@ -266,7 +267,6 @@ function updateEPSChart(eps, cumulative) {
   var ctx = document.getElementById(cumulative ? 'chart_cumulative_EPS' : 'chart_EPS').getContext('2d');
   var datasets = [];
   var labels = ['Q1','Q2','Q3','Q4'];
-  var colors = ['Grey', 'SteelBlue', 'Blue'];
   var colors_idx = 0;
   var Y = null;
 
@@ -323,7 +323,6 @@ function updateRevenueChart(rev, cumulative) {
   var ctx = document.getElementById(cumulative ? 'chart_cumulative_revenue' : 'chart_revenue').getContext('2d');
   var datasets = [];
   var labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-  var colors = ['Grey', 'SteelBlue', 'Blue'];
   var colors_idx = 0;
   var Y = null;
 

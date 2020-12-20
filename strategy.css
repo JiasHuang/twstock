@@ -23,12 +23,20 @@ button {
   width: 80%;
 }
 
-#result th, #result td {
+#result th {
   font-size: 20px;
   border: 1px solid;
   padding: 0px 10px;
   white-space: pre;
-  //text-align: center;
+  text-lign: center;
+}
+
+#result td {
+  font-size: 20px;
+  border: 1px solid;
+  padding: 0px 10px;
+  white-space: pre;
+  text-align: right;
 }
 
 #result tr:nth-child(odd) {
@@ -39,7 +47,7 @@ button {
   background-color: #F5DEB3;
 }
 
-#result tr:nth-child(1) {
+#result tr:nth-child(1), #result tr:nth-child(2) {
   background-color: #FF8C00;
 }
 

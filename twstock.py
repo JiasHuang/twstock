@@ -12,6 +12,9 @@ import xurl
 
 from optparse import OptionParser
 
+class defs:
+    from_year_offset = 3
+
 class bcolors:
     BLACK_ON_RED = '\x1b[3;30;41m'
     BLACK_ON_GREEN = '\x1b[3;30;42m'
@@ -263,8 +266,7 @@ def get_stock_info_by_code(code):
 
 def update_stock_report_wap(obj):
     now = datetime.datetime.now()
-    years = [now.year - 2, now.year - 1, now.year]
-    for year in years:
+    for year in range(now.year - defs.from_year_offset, now.year + 1):
         url = 'https://www.twse.com.tw/exchangeReport/FMSRFK?response=json&stockNo=%s&date=%4d0101' %(obj.code, year)
         txt = xurl.load(url)
         data = json.loads(txt)
@@ -281,8 +283,8 @@ def update_stock_report_wap(obj):
 
 def update_stock_report_wap_otc(obj):
     now = datetime.datetime.now()
-    years = [now.year - 2, now.year - 1, now.year]
-    for year in years:
+    for year in range(now.year - defs.from_year_offset, now.year + 1):
+        year = now.year + diff
         url = 'https://www.tpex.org.tw/web/stock/statistics/monthly/download_st44.php?yy=%s' %(year)
         txt = xurl.load(url, opts=['--data-raw \'yy=%s&stk_no=%s\'' %(year, obj.code)])
         # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
@@ -297,14 +299,13 @@ def update_stock_report_wap_otc(obj):
 
 def update_stock_report_eps(obj):
     now = datetime.datetime.now()
-    from_year = int(now.year) - 1911 - 3
+    from_year = int(now.year) - 1911 - defs.from_year_offset
     url = 'https://jdata.yuanta.com.tw/z/zc/zcd/zcd_%s.djhtm' %(obj.code)
     txt = xurl.load(url)
-    years = 0
     # 季別,加權平均股數,營業收入,稅前淨利,稅後淨利,每股營收(元),稅前每股盈餘(元),稅後每股盈餘(元)
     for m in re.finditer(r'<tr><td class="t3n0">(\d+)\.(\d)Q</td>(.*?)</tr>', txt):
         Y, Q = m.group(1), m.group(2)
-        if int(Y) <= from_year:
+        if int(Y) < from_year:
             break
         m2 = re.findall(r'>([^<]+)<', m.group(3))
         if len(m2) == 7:
@@ -324,12 +325,12 @@ def update_stock_report_dividend(obj):
 
 def update_stock_report_revenue(obj):
     now = datetime.datetime.now()
-    from_year = int(now.year) - 1911 - 3
+    from_year = int(now.year) - 1911 - defs.from_year_offset
     url = 'https://jdata.yuanta.com.tw/z/zc/zch/zch_%s.djhtm' %(obj.code)
     txt = xurl.load(url)
     for m in re.finditer(r'<td class="t3n0">(\d+)/(\d+)</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         Y, M = m.group(1), m.group(2)
-        if int(Y) <= from_year:
+        if int(Y) < from_year:
             break
         m2 = re.findall(r'>([^<]+)</td>', m.group(3))
         if len(m2) > 0:
@@ -344,7 +345,7 @@ def update_stock_report_news(obj):
             date = m.group(1)
             link = 'https://jdata.yuanta.com.tw' + m.group(2)
             title = m.group(3).decode('big5', 'replace').encode('utf8')
-            if re.search(r'(每股稅後|每股盈餘)', title):
+            if re.search(r'(每股稅後|每股盈餘|EPS)', title):
                 obj.news.append((date, title, link))
     return
 

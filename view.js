@@ -3,7 +3,7 @@ var is_StockInfo_loaded = false;
 var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
-var policy = null;
+var strategy = null;
 
 String.format = function() {
   var s = arguments[0];
@@ -14,11 +14,11 @@ String.format = function() {
   return s;
 }
 
-function getPolicyText(code, pz, class_name) {
+function getStrategyText(code, pz, class_name) {
   var text = '';
-  if (policy) {
-    for (var i=0; i<policy.stocks.length; i++) {
-      let s = policy.stocks[i];
+  if (strategy) {
+    for (var i=0; i<strategy.stocks.length; i++) {
+      let s = strategy.stocks[i];
       if (s.code == code) {
         for (var j=2; j>=0; j--) {
           let ref = parseFloat(s.ref_pz) * (9 - j) / 10;
@@ -117,7 +117,7 @@ function getStockTableText(s) {
 
   text += '<td>';
   text += getFltText(s.flts, s.flts_ret, 'bg_yellow');
-  text += getPolicyText(s.code, s.z, 'bg_yellow margin_left');
+  text += getStrategyText(s.code, s.z, 'bg_yellow margin_left');
   if (s.flts.length && s.notes.length) {
     text += '<br>'
   }
@@ -284,22 +284,22 @@ function updateInfoIfNeeded() {
   }
 }
 
-function parsePolicyJSON(obj) {
-  policy = obj;
+function parseStrategyJSON(obj) {
+  strategy = obj;
 }
 
-function loadPolicyJSON() {
+function loadStrategyJSON() {
   $.ajax({
-    url: 'load.py?j=policy.json',
+    url: 'load.py?j=strategy.json',
     dataType: 'json',
     error: onTimeout,
-    success: parsePolicyJSON,
+    success: parseStrategyJSON,
     timeout: 2000
   });
 }
 
 function onDocumentReady() {
-  loadPolicyJSON();
+  loadStrategyJSON();
   initStockInfo();
   updateExchangeRateInfo();
   setInterval(updateInfoIfNeeded, 5000);

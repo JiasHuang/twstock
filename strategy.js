@@ -70,13 +70,16 @@ function getStat(s) {
   return st;
 }
 
-function parsePolicyJSON(obj) {
+function parsestrategyJSON(obj) {
   var text = '';
 
   console.log(obj);
 
   text += '<table id="stocks">';
-  text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th><th>預估張數</th><th colspan=2>分批1</th><th colspan=2>分批2</th><th colspan=2>分批3</th><th colspan=2>統計</th></tr>';
+  text += '<tr><th rowspan=2>代碼</th><th rowspan=2>名稱</th><th rowspan=2>參考價</th><th rowspan=2>預估張數</th>';
+  text += '<th rowspan=2 colspan=2>分批1</th><th rowspan=2 colspan=2>分批2</th><th rowspan=2 colspan=2>分批3</th><th colspan=4>統計</th></tr>';
+  text += '<th>張數</th><th>剩餘</th><th>均價</th><th>成本</th>';
+  text +='</tr>';
 
   for (var i=0; i<obj.stocks.length; i++) {
     let s = obj.stocks[i];
@@ -87,20 +90,22 @@ function parsePolicyJSON(obj) {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_pz);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_qty);
     for (var j=0; j<3; j++) {
-      text += String.format('<td><={0}</td>', st.ref[j]);
+      text += String.format('<td><={0}</td>', st.ref[j].toFixed(2));
       if (st.qty[j]) {
         let avg = st.cost[j] / 1000 / st.qty[j];
-        text += String.format('<td>均價：{0}，張數：{1}</td>', avg.toFixed(2), st.qty[j]);
+        text += String.format('<td>{0} x {1}</td>', avg.toFixed(2), st.qty[j]);
       } else {
-        text += String.format('<td> - </td>');
+        text += String.format('<td>-</td>');
       }
     }
     if (st.total_cost) {
       let total_avg = st.total_cost / 1000 / st.total_qty;
-      text += String.format('<td>張數：{0}，剩餘：{1}</td>', st.total_qty, s.ref_qty - st.total_qty);
-      text += String.format('<td>均價：{0}，成本：{1}</td>', total_avg.toFixed(2), st.total_cost.toLocaleString());
+      text += String.format('<td>{0}</td>', st.total_qty);
+      text += String.format('<td>{0}</td>', s.ref_qty - st.total_qty);
+      text += String.format('<td>{0}</td>', total_avg.toFixed(2));
+      text += String.format('<td>{0}</td>', st.total_cost.toLocaleString());
     } else {
-      text += '<td> - </td>'.repeat(2);
+      text += '<td>-</td>'.repeat(4);
     }
     text += '</tr>';
   }
@@ -108,7 +113,7 @@ function parsePolicyJSON(obj) {
   for (var i=0; i<3; i++) {
     text += '<tr>';
     text += '<td contenteditable=true></td>'.repeat(4);
-    text += '<td> - </td>'.repeat(8);
+    text += '<td>-</td>'.repeat(10);
     text += '</tr>';
   }
 
@@ -124,12 +129,12 @@ function onTimeout() {
   console.log('timeout');
 }
 
-function loadPolicyJSON() {
+function loadstrategyJSON() {
   $.ajax({
-    url: 'load.py?j=policy.json',
+    url: 'load.py?j=strategy.json',
     dataType: 'json',
     error: onTimeout,
-    success: parsePolicyJSON,
+    success: parsestrategyJSON,
     timeout: 2000
   });
 }
@@ -137,7 +142,7 @@ function loadPolicyJSON() {
 function parseAccountJSON(obj) {
   console.log(obj);
   account = obj;
-  loadPolicyJSON();
+  loadstrategyJSON();
 }
 
 function loadAccountJSON() {
@@ -151,13 +156,13 @@ function loadAccountJSON() {
 }
 
 function onSuccess() {
-  window.location.href = 'policy.html';
+  window.location.href = 'strategy.html';
 }
 
 function onSave() {
   var table = document.getElementById("stocks");
   var jsons = [];
-  for (var i = 1, row; row = table.rows[i]; i++) {
+  for (var i = 2, row; row = table.rows[i]; i++) {
     let code = row.cells[0].textContent;
     let name = row.cells[1].textContent;
     let ref_pz = row.cells[2].textContent;
@@ -175,7 +180,7 @@ function onSave() {
   console.log(data);
   $.ajax({
     type: 'POST',
-    url: 'upload.py?j=policy.json',
+    url: 'upload.py?j=strategy.json',
     data: {data: data},
     success: onSuccess,
   });

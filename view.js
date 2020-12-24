@@ -5,6 +5,7 @@ var selected_tag = null;
 var selected_innerTag = null;
 var strategy = null;
 var cur_stock_json = null;
+var sort_by = null;
 
 String.format = function() {
   var s = arguments[0];
@@ -160,7 +161,6 @@ function getTagsText(obj) {
   if (tags.length) {
     text += '<button onclick=selectInnerTag("all")>all</button>';
     text += '<button onclick=selectInnerTag("hl")>hl</button>';
-    text += '<button onclick=selectInnerTag("hv")>hv</button>';
     for (var i=0; i<tags.length; i++) {
       text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
     }
@@ -218,7 +218,7 @@ function updateResult() {
     is_StockTags_loaded = true;
   }
 
-  if (selected_innerTag == 'hv') {
+  if (sort_by == 'vol') {
     stocks = stocks.slice(0).sort(sort_by_vol_ratio);
   }
 
@@ -321,5 +321,10 @@ function onDocumentReady() {
   initStockInfo();
   updateExchangeRateInfo();
   setInterval(updateInfoIfNeeded, 5000);
+}
+
+function onSelectChange() {
+  sort_by = $(this).val();
+  updateResult();
 }
 

@@ -39,6 +39,13 @@
   cursor: pointer;
 }
 
+#sort select {
+    font-size: 24px;
+    padding: 4px 16px;
+    border: 2px solid black;
+    margin: 16px 0px 0px 8px;
+}
+
 #result table {
   display: inline;
   border-collapse: collapse;

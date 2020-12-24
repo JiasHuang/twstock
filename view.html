@@ -24,6 +24,15 @@
     <table id="topbar"><tr>
         <td><div id="exrs"></div></td>
         <td><div id="tags"></div></td>
+        <td>
+          <div id="sort">
+            Sort By
+            <select onchange="onSelectChange.call(this)">
+              <option value="none">None</option>
+              <option value="vol">Vol</option>
+            </select>
+          </div>
+        </td>
     </tr></table>
 
     <div id="result"></div>

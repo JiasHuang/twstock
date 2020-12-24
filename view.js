@@ -4,6 +4,7 @@ var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
 var strategy = null;
+var cur_stock_json = null;
 
 String.format = function() {
   var s = arguments[0];
@@ -133,29 +134,15 @@ function getStockTableText(s) {
 }
 
 function selectTag(tag) {
-
   selected_tag = tag;
   selected_innerTag = null;
-
-  $('table').filter('.stockinfo').hide();
-  $('table').filter('.stockinfo.'+tag).show();
-
+  updateResult();
 }
 
 function selectInnerTag(tag) {
-
   selected_tag = null;
-  selected_innerTag = tag
-
-  if (tag == 'all') {
-    $('table').filter('.stockinfo').show();
-  }
-
-  else if (tag == 'hl') {
-    $('table').filter('.stockinfo').hide();
-    $('span').filter('.bg_red, .bg_green, .bg_yellow, .bg_gold').closest('table').show();
-  }
-
+  selected_innerTag = tag;
+  updateResult();
 }
 
 function getTagsText(obj) {
@@ -173,6 +160,7 @@ function getTagsText(obj) {
   if (tags.length) {
     text += '<button onclick=selectInnerTag("all")>all</button>';
     text += '<button onclick=selectInnerTag("hl")>hl</button>';
+    text += '<button onclick=selectInnerTag("hv")>hv</button>';
     for (var i=0; i<tags.length; i++) {
       text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
     }
@@ -198,26 +186,56 @@ function getExchangeRateTableText(objs) {
   return text
 }
 
-function parseStockJSON(obj) {
+function sort_by_vol_ratio(a, b) {
+  let a_ratio = a.v / a.avg['30d_vol'] * 100;
+  let b_ratio = b.v / b.avg['30d_vol'] * 100;
+  if (a_ratio < b_ratio) {
+    return 1;
+  }
+  if (a_ratio > b_ratio) {
+    return -1;
+  }
+  return 0;
+}
+
+function filterTag() {
+  if (selected_tag) {
+    $('table').filter('.stockinfo').hide();
+    $('table').filter('.stockinfo.'+selected_tag).show();
+  }
+  else if (selected_innerTag == 'hl') {
+    $('table').filter('.stockinfo').hide();
+    $('span').filter('.bg_red, .bg_green, .bg_yellow, .bg_gold').closest('table').show();
+  }
+}
+
+function updateResult() {
   var text = '';
+  var stocks = cur_stock_json.stocks;
 
   if (!is_StockTags_loaded) {
-    $('#tags').html(getTagsText(obj));
+    $('#tags').html(getTagsText(cur_stock_json));
     is_StockTags_loaded = true;
   }
 
-  for (var i=0; i<obj.stocks.length; i++) {
-    text += getStockTableText(obj.stocks[i]);
+  if (selected_innerTag == 'hv') {
+    stocks = stocks.slice(0).sort(sort_by_vol_ratio);
+  }
+
+  for (var i=0; i<stocks.length; i++) {
+    text += getStockTableText(stocks[i]);
   }
 
   $('#result').html(text);
 
-  if (selected_tag)
-    selectTag(selected_tag);
-  if (selected_innerTag)
-    selectInnerTag(selected_innerTag);
+  filterTag();
 
   is_StockInfo_loaded = true;
+}
+
+function parseStockJSON(obj) {
+  cur_stock_json = obj;
+  updateResult();
 }
 
 function parseExchangeRateJSON(obj) {

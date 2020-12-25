@@ -25,7 +25,7 @@ function getStrategyText(code, pz, class_name) {
         for (var j=2; j>=0; j--) {
           let ref = parseFloat(s.ref_pz) * (9 - j) / 10;
           if (pz <= ref) {
-            text += String.format('<span class="{0}">分批{1}</span>', class_name, j + 1);
+            text += String.format('<span title="{0}" class="{1}">分批{2}</span>', ref.toFixed(2), class_name, j + 1);
             break;
           }
         }

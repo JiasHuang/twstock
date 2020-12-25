@@ -1,4 +1,8 @@
 
+var is_StockTags_loaded = false;
+var selected_tag = null;
+var cur_stock_json = null;
+
 String.format = function() {
   var s = arguments[0];
   for (var i = 0; i < arguments.length - 1; i++) {
@@ -8,16 +12,42 @@ String.format = function() {
   return s;
 }
 
+function selectTag(tag) {
+  selected_tag = tag;
+  updateResult();
+}
+
+function updateTags(stocks) {
+  var text = '';
+  var tags = [];
+
+  for (var i=0; i<stocks.length; i++) {
+    for (var j=0; j<stocks[i].tags.length; j++) {
+      if (!tags.includes(stocks[i].tags[j])) {
+        tags.push(stocks[i].tags[j]);
+      }
+    }
+  }
+
+  if (tags.length) {
+    for (var i=0; i<tags.length; i++) {
+      text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
+    }
+  }
+
+  $('#tags').html(text);
+}
+
 function getTagsText(s) {
   if ('tags' in s && s.tags.length) {
-    return s.tags.join('\n');
+    return s.tags.join(', ');
   }
   return '';
 }
 
 function getFltsText(s) {
   if ('flts' in s && s.flts.length) {
-    return s.flts.join('\n');
+    return s.flts.join(', ');
   }
   return '';
 }
@@ -29,17 +59,28 @@ function getNotesText(s) {
   return '';
 }
 
-function parseStockJSON(obj) {
-  var text = '';
+function filterTag() {
+  if (selected_tag) {
+    $('tr').filter('.stockinfo').hide();
+    $('tr').filter('.stockinfo.'+selected_tag).show();
+  }
+}
 
-  console.log(obj);
+function updateResult() {
+  var text = '';
+  var stocks = cur_stock_json.stocks;
+
+  if (!is_StockTags_loaded) {
+    updateTags(stocks);
+    is_StockTags_loaded = true;
+  }
 
   text += '<table id="stocks">';
   text += '<tr><th>code</th><th>name</th><th>tags</th><th>flts</th><th>notes</th></tr>';
 
-  for (var i=0; i<obj.stocks.length; i++) {
-    let s = obj.stocks[i];
-    text += '<tr>';
+  for (var i=0; i<stocks.length; i++) {
+    let s = stocks[i];
+    text += String.format('<tr class="stockinfo {0}">', s.tags.join(' '));
     text += String.format('<td contenteditable=true>{0}</td>', s.code);
     text += String.format('<td contenteditable=true>{0}</td>', s.name);
     text += String.format('<td contenteditable=true>{0}</td>', getTagsText(s));
@@ -48,7 +89,7 @@ function parseStockJSON(obj) {
     text += '</tr>';
   }
 
-  for (var i=0; i<10; i++) {
+  for (var i=0; i<3; i++) {
     text += '<tr>';
     text += '<td contenteditable=true></td>'.repeat(5);
     text += '</tr>';
@@ -57,6 +98,13 @@ function parseStockJSON(obj) {
   text += '</table>';
 
   $('#result').html(text);
+  filterTag();
+}
+
+function parseStockJSON(obj) {
+  console.log(obj);
+  cur_stock_json = obj;
+  updateResult();
 }
 
 function onTimeout() {
@@ -83,12 +131,13 @@ function onSave() {
     let flts = row.cells[3].textContent;
     let notes = row.cells[4].textContent;
     if (code.length) {
-      let obj = {};
-      obj.code = code;
-      obj.name = name;
-      obj.tags = tags.split('\n');
-      obj.flts = flts.split('\n');
-      obj.notes = notes.split('\n');
+      let obj = {
+        code: code,
+        name: name,
+        tags: tags.split(/[ ,]+/),
+        flts: flts.split(/[ ,]+/),
+        notes: notes.split('\n'),
+      };
       jsons.push(JSON.stringify(obj));
     }
   }

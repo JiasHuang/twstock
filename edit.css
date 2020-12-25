@@ -1,5 +1,5 @@
 
-button {
+#menu button {
   background-color: #4682B4;
   border: none;
   border-radius: 20px;
@@ -15,6 +15,20 @@ button {
   top: 16px;
   right: 16px;
   z-index: 30;
+}
+
+#tags button {
+  background-color: DarkOliveGreen;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  padding: 5px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 32px;
+  margin: 12px 12px;
+  cursor: pointer;
 }
 
 #result table {

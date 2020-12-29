@@ -195,6 +195,18 @@ function sort_by_vol_ratio(a, b) {
   return 0;
 }
 
+function sort_by_chg_ratio(a, b) {
+  let a_ratio = (a.z - a.y) / a.y * 100;
+  let b_ratio = (b.z - b.y) / b.y * 100;
+  if (a_ratio < b_ratio) {
+    return 1;
+  }
+  if (a_ratio > b_ratio) {
+    return -1;
+  }
+  return 0;
+}
+
 function filterTag() {
   if (selected_tag) {
     $('table').filter('.stockinfo').hide();
@@ -217,6 +229,8 @@ function updateResult() {
 
   if (sort_by == 'vol') {
     stocks = stocks.slice(0).sort(sort_by_vol_ratio);
+  } else if (sort_by == 'chg') {
+    stocks = stocks.slice(0).sort(sort_by_chg_ratio);
   }
 
   for (var i=0; i<stocks.length; i++) {

@@ -284,8 +284,7 @@ def update_stock_report_wap(obj):
 def update_stock_report_wap_otc(obj):
     now = datetime.datetime.now()
     for year in range(now.year - defs.from_year_offset, now.year + 1):
-        year = now.year + diff
-        url = 'https://www.tpex.org.tw/web/stock/statistics/monthly/download_st44.php?yy=%s' %(year)
+        url = 'https://www.tpex.org.tw/web/stock/statistics/monthly/download_st44.php?l=zh-tw'
         txt = xurl.load(url, opts=['--data-raw \'yy=%s&stk_no=%s\'' %(year, obj.code)])
         # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
         for m in re.finditer(r'"(\d+)","(\d+)","(.*?)","(.*?)","(.*?)",".*?","(.*?)","(.*?)",', txt):

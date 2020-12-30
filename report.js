@@ -420,8 +420,7 @@ function getDividendHTMLText(obj) {
   var div = obj.dividend;
 
   text += '<table>';
-  text += '<tr><th rowspan=2>股利所屬年度</th><th colspan=3>現金股利</th><th colspan=3>股票股利</th><th rowspan=2>現金殖利率(%)</th><th rowspan=2>盈餘分配率(%)</th></tr>';
-  text += '<tr><th class=tbl_title>盈餘</th><th class=tbl_title>公積</th><th class=tbl_title>合計</th><th class=tbl_title>盈餘</th><th class=tbl_title>公積</th><th class=tbl_title>合計</th></tr>';
+  text += '<tr><th>股利所屬年度</th></th><th colspan=3>現金股利<br>盈餘/公積/合計</th><th colspan=3>股票股利<br>盈餘/公積/合計</th><th>現金殖利率(%)</th><th>盈餘分配率(%)</th></tr>';
 
   for (var i=0; i<div.length; i++) {
     let d = div[i];
@@ -439,7 +438,7 @@ function getDividendHTMLText(obj) {
     if (parsed[2]) {
       dividend_yield = (cash_dividend / parsed[2] * 100).toFixed(2);
     }
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td></tr>',
+    text += String.format('<tr><td>{' + Array.from(Array(9).keys()).join('}</td><td>{') + '}</td></tr>',
       era_txt, d[1], d[2], cash_dividend, d[3], d[4], stock_dividend, dividend_yield, payout_ratio);
   }
 

@@ -75,8 +75,8 @@ function getStockTableText(s) {
 
   text += '<td>';
   ratio = s.v / s.avg['30d_vol'] * 100;
-  c = (ratio >= 120) ? 'bg_gold' : '';
-  text += String.format('<span class={0}>#{1} ({2}%)</span>', c, s.v, ratio.toFixed(2));
+  c = (s.v >= 1000 && ratio >= 120) ? 'bg_gold' : '';
+  text += String.format('<span class={0}>#{1} ({2}%)</span>', c, s.v.toLocaleString(), ratio.toFixed(2));
   text += '</td>';
 
   text += '</tr>';

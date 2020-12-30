@@ -79,7 +79,11 @@ def checkExpire(local, expiration=None):
         return True
     return False
 
-def genLocal(url, prefix=None, suffix=None):
+def genLocal(url, prefix=None, suffix=None, opts=None):
+    if opts and isinstance(opts, list):
+        for opt in opts:
+            if opt.startswith('--data-raw'):
+                url = url + opt
     local = defvals.workdir+(prefix or 'vod_load_')+hashlib.md5(url).hexdigest()+(suffix or '')
     return local
 
@@ -114,7 +118,7 @@ def curl(url, local, opts, ref):
     return readLocal(local)
 
 def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl'):
-    local = local or genLocal(url)
+    local = local or genLocal(url, opts=opts)
     expiration = expiration or defvals.expiration
     if cacheOnly or (cache and not checkExpire(local, expiration)):
         print('%s -> %s (cache)' %(url, local))

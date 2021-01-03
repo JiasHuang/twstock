@@ -158,9 +158,11 @@ function getTagsText(obj) {
   if (tags.length) {
     text += '<button onclick=selectInnerTag("all")>all</button>';
     text += '<button onclick=selectInnerTag("hl")>hl</button>';
+    text += '<button onclick=selectInnerTag("hv")>hv</button>';
     for (var i=0; i<tags.length; i++) {
       text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
     }
+    text += '<button onclick=selectInnerTag("na")>na</button>';
   }
 
   return text;
@@ -218,7 +220,15 @@ function filterTag() {
   }
   else if (selected_innerTag == 'hl') {
     $('table').filter('.stockinfo').hide();
-    $('span').filter('.bg_red, .bg_green, .bg_yellow, .bg_gold').closest('table').show();
+    $('span').filter('.bg_red, .bg_green, .bg_yellow').closest('table').show();
+  }
+  else if (selected_innerTag == 'hv') {
+    $('table').filter('.stockinfo').hide();
+    $('span').filter('.bg_gold').closest('table').show();
+  }
+  else if (selected_innerTag == 'na') {
+    $('table').filter('.stockinfo').hide();
+    $('table[class="stockinfo "]').show();
   }
 }
 

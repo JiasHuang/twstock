@@ -16,18 +16,15 @@ String.format = function() {
   return s;
 }
 
-function getStrategyText(code, pz, class_name) {
+function getStrategyText(code, pz, cls_name) {
   var text = '';
   if (strategy) {
     for (var i=0; i<strategy.stocks.length; i++) {
       let s = strategy.stocks[i];
       if (s.code == code) {
-        for (var j=2; j>=0; j--) {
-          let ref = parseFloat(s.ref_pz) * (9 - j) / 10;
-          if (pz <= ref) {
-            text += String.format('<span title="{0}" class="{1}">分批{2}</span>', ref.toFixed(2), class_name, j + 1);
-            break;
-          }
+        let off_ratio = Math.round((pz - s.ref_pz) / s.ref_pz * 100);
+        if (off_ratio <= -10) {
+          text += String.format('<span class="{0}" title="參考價 {1}">批{2}%</span>', cls_name, s.ref_pz, off_ratio);
         }
       }
     }
@@ -75,8 +72,9 @@ function getStockTableText(s) {
 
   text += '<td>';
   ratio = s.v / s.avg['30d_vol'] * 100;
-  c = (s.v >= 1000 && ratio >= 120) ? 'bg_gold' : '';
-  text += String.format('<span class={0}>#{1} ({2}%)</span>', c, s.v.toLocaleString(), ratio.toFixed(2));
+  text += String.format('#{0} ({1}%)', s.v.toLocaleString(), ratio.toFixed(2));
+  if (s.v >= 1000 && ratio >= 120)
+    text += '<span class=bg_hv>★ </span>';
   text += '</td>';
 
   text += '</tr>';
@@ -224,7 +222,7 @@ function filterTag() {
   }
   else if (selected_innerTag == 'hv') {
     $('table').filter('.stockinfo').hide();
-    $('span').filter('.bg_gold').closest('table').show();
+    $('span').filter('.bg_hv').closest('table').show();
   }
   else if (selected_innerTag == 'na') {
     $('table').filter('.stockinfo').hide();

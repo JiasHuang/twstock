@@ -1,6 +1,7 @@
 
 var is_StockTags_loaded = false;
 var selected_tag = null;
+var selected_innerTag = null;
 var cur_stock_json = null;
 
 String.format = function() {
@@ -14,6 +15,13 @@ String.format = function() {
 
 function selectTag(tag) {
   selected_tag = tag;
+  selected_innerTag = null;
+  updateResult();
+}
+
+function selectInnerTag(tag) {
+  selected_tag = null;
+  selected_innerTag = tag;
   updateResult();
 }
 
@@ -33,6 +41,7 @@ function updateTags(stocks) {
     for (var i=0; i<tags.length; i++) {
       text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
     }
+    text += '<button onclick=selectInnerTag("na")>na</button>';
   }
 
   $('#tags').html(text);
@@ -63,6 +72,10 @@ function filterTag() {
   if (selected_tag) {
     $('tr').filter('.stockinfo').hide();
     $('tr').filter('.stockinfo.'+selected_tag).show();
+  }
+  else if (selected_innerTag) {
+    $('tr').filter('.stockinfo').hide();
+    $('tr[class="stockinfo "]').show();
   }
 }
 

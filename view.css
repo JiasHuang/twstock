@@ -20,7 +20,7 @@
 }
 
 #exrs th, #exrs td {
-  font-size: 18px;
+  font-size: 14px;
   padding: 0px 10px;
   border: 1px solid;
 }
@@ -34,16 +34,15 @@
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 30px;
-  margin: 5px 10px;
+  font-size: 24px;
+  margin: 5px;
   cursor: pointer;
 }
 
 #sort select {
-    font-size: 24px;
-    padding: 4px 16px;
-    border: 2px solid black;
-    margin: 16px 0px 0px 8px;
+  font-size: 18px;
+  padding: 4px 16px;
+  border: 1px solid black;
 }
 
 #result table {
@@ -52,15 +51,15 @@
 }
 
 #result th {
-  font-size: 22px;
+  font-size: 18px;
   border: 1px solid;
-  width: 180px;
+  width: 160px;
 }
 
 #result td {
-  font-size: 20px;
+  font-size: 18px;
   border: 1px solid;
-  width: 250px;
+  width: 260px;
 }
 
 .green {
@@ -91,13 +90,12 @@
   background-color: yellow;
 }
 
-.margin_left {
-  margin-left: 4px;
+.bg_hv {
+  color: purple;
 }
 
-.link {
-  font-size: 20px;
-  margin-right: 10px;
+.margin_left {
+  margin-left: 4px;
 }
 
 .loading {

@@ -96,6 +96,7 @@ function updateResult() {
     let z = info.stocks[i].z;
     let cls = Array(3).fill('grey');
     let z_cls = 'grey';
+    let z_ratio = Math.round((z - s.ref_pz) / s.ref_pz * 100);
 
     for (var j=2; j>=0; j--) {
       if (z <= st.ref[j]) {
@@ -109,12 +110,12 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_pz);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_qty);
-    text += String.format('<td><span class="{0}">{1}</span></td>', z_cls, z.toFixed(2));
+    text += String.format('<td><span class="{0}">{1} ({2}%)</span></td>', z_cls, z.toFixed(2), z_ratio);
     for (var j=0; j<3; j++) {
       text += String.format('<td><span class="{0}"><={1}</span></td>', cls[j], st.ref[j].toFixed(2));
       if (st.qty[j]) {
         let avg = st.cost[j] / 1000 / st.qty[j];
-        text += String.format('<td>{0} x {1}</td>', avg.toFixed(2), st.qty[j]);
+        text += String.format('<td>#{0} ({1})</td>', st.qty[j], avg.toFixed(2));
       } else {
         text += td_na;
       }

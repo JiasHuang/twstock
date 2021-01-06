@@ -31,7 +31,7 @@ function updateDividendForecast(obj, stocks) {
       let div = getDividendByCode(obj, s.code);
       let dividend_cash = parseFloat(div.dividend[0][1]) + parseFloat(div.dividend[0][2]);
       let dividend_stock = parseFloat(div.dividend[0][3]) + parseFloat(div.dividend[0][4]);
-      let total_dividend_cash = s.total_qty * 1000 * dividend_cash;
+      let total_dividend_cash = Math.round(s.total_qty * 1000 * dividend_cash);
       let total_dividend_cash_ratio = dividend_cash / s.avg_pz * 100;
       let ref_sell_pz = s.avg_pz + Math.max(dividend_cash * 2, s.avg_pz * 0.1);
       all_total_dividend_cash += total_dividend_cash;

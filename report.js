@@ -145,6 +145,8 @@ function updateInfo(obj) {
     text += String.format('<span class="link"><a href="{0}" target="_blank">{1}</a></span>', dict[i].val, dict[i].key);
   }
 
+  text += '<span class="link"><a href="#result">#result</a></span>';
+
   $('title').html(String.format('{0} {1} (${2})', obj.code, obj.n, obj.z));
   $('#info').html(text);
 }
@@ -307,7 +309,7 @@ function getRevenueByYear(rev, Y, cumulative) {
     if (rev[i][0] != Y) {
       continue;
     }
-    val = parseFloat(rev[i][2] / 100000); //單位：1億
+    val = parseFloat(rev[i][2]) / 100000; //單位：1億
     if (cumulative) {
       accu += val;
       ret.push({x: rev[i][1], y: accu});
@@ -317,6 +319,24 @@ function getRevenueByYear(rev, Y, cumulative) {
     }
   }
   return ret;
+}
+
+function getRevenueByYearQ(rev, Y, Q) {
+  var vol = 0;
+  var months = 0;
+
+  for (var i=0; i<rev.length; i++) {
+    if (rev[i][0] != Y) {
+      continue;
+    }
+    if (Math.ceil(parseInt(rev[i][1]) / 3) != Q) {
+      continue;
+    }
+    vol += parseFloat(rev[i][2]) / 100000; //單位：1億
+    months += 1;
+  }
+
+  return {vol:vol, months:months};
 }
 
 function updateRevenueChart(rev, cumulative) {
@@ -365,7 +385,7 @@ function getEPSHTMLText(obj) {
     if (Y != eps[i][0]) {
         Y = eps[i][0];
         text += '</table><table>';
-        text += '<tr><th>年</th><th>季</th><th>稅前EPS</th><th>稅後EPS</th><th></th></tr>';
+        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>稅前EPS</th><th>稅後EPS</th><th></th></tr>';
         let note = '';
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
@@ -397,17 +417,20 @@ function getEPSHTMLText(obj) {
           note += String.format('近四季本益比：{0}<br>', price_to_earning);
           note += String.format('近四季收益率：{0}%<br>', earning_yield);
         }
-        text += '<tr><td colspan=4></td><td rowspan=5>' + note + '</td></tr>';
+        text += '<tr><td colspan=5></td><td rowspan=5>' + note + '</td></tr>';
         for (var q=1; q<eps[i][1]; q++) {
           text += '<tr>' + '<td>-</td>'.repeat(4) + '</tr>';
         }
     }
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>',
-      eps[i][0], eps[i][1], eps[i][2], eps[i][3]);
+    let rev = getRevenueByYearQ(obj.revenue, eps[i][0], eps[i][1]);
+    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td></tr>',
+      eps[i][0], eps[i][1], rev.vol.toFixed(2), eps[i][2], eps[i][3]);
   }
 
-  for (var i=0; i<(4-eps[eps.length-1][1]); i++) {
-    text += '<tr>' + '<td>-</td>'.repeat(4) + '</tr>';
+  for (var Q=parseInt(eps[eps.length-1][1])+1; Q<=4; Q++) {
+    let rev = getRevenueByYearQ(obj.revenue, Y, Q);
+    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>-</td><td>-</td></tr>',
+      Y, Q, rev.vol.toFixed(2));
   }
 
   text += '</table><br>';

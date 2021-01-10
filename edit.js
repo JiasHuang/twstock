@@ -147,9 +147,9 @@ function onSave() {
       let obj = {
         code: code,
         name: name,
-        tags: tags.split(/[ ,]+/),
-        flts: flts.split(/[ ,]+/),
-        notes: notes.split('\n'),
+        tags: (tags.length)? tags.split(/[ ,]+/) : [],
+        flts: (flts.length)? flts.split(/[ ,]+/) : [],
+        notes: (notes.length)? notes.split('\n') : [],
       };
       jsons.push(JSON.stringify(obj));
     }

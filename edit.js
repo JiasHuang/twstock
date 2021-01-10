@@ -122,6 +122,8 @@ function parseStockJSON(obj) {
 
 function onTimeout() {
   console.log('timeout');
+  cur_stock_json = {stocks:[]};
+  updateResult();
 }
 
 function loadStockJSON() {

@@ -80,7 +80,7 @@ function updateResult() {
     return;
   }
 
-  if (strategy.stocks.length != info.stocks.length) {
+  if (strategy.stocks.length && strategy.stocks.length != info.stocks.length) {
     console.log('strategy/info mismatch');
     return;
   }

@@ -8,12 +8,12 @@ button {
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 32px;
-  margin: 12px 12px;
+  font-size: 28px;
+  margin: 0px 10px;
   cursor: pointer;
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 10px;
+  right: 10px;
   z-index: 30;
 }
 
@@ -34,7 +34,7 @@ button {
 #result td {
   font-size: 20px;
   border: 1px solid;
-  padding: 0px 10px;
+  padding: 0px 5px;
   white-space: pre;
   text-align: right;
 }
@@ -55,9 +55,13 @@ button {
   text-align: center;
 }
 
+#result .note {
+  text-align: left;
+}
+
 #result .total {
   text-align: right;
-  font-size: 32px;
+  font-size: 24px;
   font-weight: bold;
 }
 
@@ -69,3 +73,39 @@ button {
   color: grey;
 }
 
+.curpz {
+  color: black;
+}
+
+.curpz_ratio {
+  color: grey;
+}
+
+.batch_qty {
+  color: blue;
+  margin: 5px;
+}
+
+.batch_avg {
+  color: grey;
+}
+
+.batch_avg_warn {
+  color: red;
+}
+
+.batch_avg_na {
+  color: grey;
+}
+
+.avg {
+  color: black;
+}
+
+.gain_ratio {
+  color: grey;
+}
+
+.gain_ratio_warn {
+  color: red;
+}

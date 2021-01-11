@@ -4,6 +4,7 @@ var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
 var strategy = null;
+var in_stock = [];
 var cur_stock_json = null;
 var sort_by = null;
 
@@ -22,10 +23,9 @@ function getStrategyText(code, pz, cls_name) {
     for (var i=0; i<strategy.stocks.length; i++) {
       let s = strategy.stocks[i];
       if (s.code == code) {
-        let off_ratio = Math.round((pz - s.ref_pz) / s.ref_pz * 100);
-        if (off_ratio <= -10) {
-          text += String.format('<span class="{0}" title="參考價 {1}">批{2}%</span>', cls_name, s.ref_pz, off_ratio);
-        }
+        let ratio = Math.round((pz - s.ref_pz) / s.ref_pz * 100);
+        if (ratio <= -10)
+          text += String.format('<span class="{0}" title="參考價 {1}">批{2}%</span>', cls_name, s.ref_pz, ratio);
       }
     }
   }
@@ -331,6 +331,33 @@ function parseStrategyJSON(obj) {
   strategy = obj;
 }
 
+function parseAccountJSON(obj) {
+  var account = obj;
+  for (var i=0; i<account.stocks.length; i++) {
+    let a = account.stocks[i];
+    let total = 0;
+    for (var j=0; j<a.events.length; j++) {
+      let e = a.events[j];
+      if (e.type == 'buy')
+        total += parseInt(e.qty);
+      else if (e.type == 'sell')
+        total -= parseInt(e.qty);
+    }
+    if (total)
+      in_stock.push(a.code);
+  }
+}
+
+function loadAccountJSON() {
+  $.ajax({
+    url: 'load.py?j=account.json',
+    dataType: 'json',
+    error: onTimeout,
+    success: parseAccountJSON,
+    timeout: 2000
+  });
+}
+
 function loadStrategyJSON() {
   $.ajax({
     url: 'load.py?j=strategy.json',
@@ -342,6 +369,7 @@ function loadStrategyJSON() {
 }
 
 function onDocumentReady() {
+  loadAccountJSON();
   loadStrategyJSON();
   initStockInfo();
   updateExchangeRateInfo();

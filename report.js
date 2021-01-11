@@ -123,6 +123,9 @@ function getLinkDict(code, nf) {
   dict.push({key:'基本', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm', code)});
   dict.push({key:'營收', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm', code)});
   dict.push({key:'新聞', val:String.format('https://tw.stock.yahoo.com/q/h?s={0}', code)});
+  dict.push({key:'籌碼', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcj/zcj_{0}.djhtm', code)});
+  dict.push({key:'法人買賣', val:String.format('https://goodinfo.tw/StockInfo/ShowBuySaleChart.asp?STOCK_ID={0}&CHT_CAT=DATE', code)});
+  dict.push({key:'持股分級', val:String.format('https://goodinfo.tw/StockInfo/EquityDistributionClassHis.asp?STOCK_ID={0}', code)});
   dict.push({key:'Ｋ線', val:String.format('https://goodinfo.tw/StockInfo/ShowK_Chart.asp?STOCK_ID={0}&CHT_CAT2=DATE', code)});
   dict.push({key:'分價', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcwg/zcwg_{0}.djhtm', code)});
   dict.push({key:'損益', val:String.format('https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}', code)});
@@ -131,6 +134,7 @@ function getLinkDict(code, nf) {
   dict.push({key:'GoodInfo', val:String.format('https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}', code)});
   dict.push({key:'MoneyDJ', val:String.format('https://www.moneydj.com/KMDJ/search/searchHome.aspx?_Query_={0}&_QueryType_=Main', nf)});
   dict.push({key:'Anue', val:String.format('https://invest.cnyes.com/twstock/TWS/{0}/overview', code)});
+  dict.push({key:'公開資訊', val:String.format('https://mops.twse.com.tw/mops/web/t146sb05?step=1&firstin=true&co_id={0}', code)});
   dict.push({key:'整合資訊', val:String.format('https://www.twse.com.tw/pdf/ch/{0}_ch.pdf', code)});
   return dict;
 }

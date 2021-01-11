@@ -2,6 +2,7 @@
 var strategy = null;
 var account = null;
 var info = null;
+var in_stock = [];
 var all_total_cost = 0;
 
 String.format = function() {
@@ -18,8 +19,10 @@ class stat {
     this.ref = [0, 0, 0];
     this.qty = [0, 0, 0];
     this.cost = [0, 0, 0];
-    this.total_qty = 0;
-    this.total_cost = 0;
+    this.total_buy_qty = 0;
+    this.total_buy_cost = 0;
+    this.total_sell_qty = 0;
+    this.total_sell_cost = 0;
   }
 }
 
@@ -32,40 +35,30 @@ function getStat(s) {
     st.ref[i] = ref_pz * (9 - i) / 10;
   }
 
-  for (var i=0; i<account.stocks.length; i++) {
-    let a = account.stocks[i];
+  for (var i=0; i<in_stock.length; i++) {
+    let a = in_stock[i];
     if (a.code == s.code) {
-      let v = [];
       for (var j=0; j<a.events.length; j++) {
         let e = a.events[j];
+        let qty = parseInt(e.qty);
+        let pz = parseFloat(e.pz);
         if (e.type == 'buy') {
-          for (var k=0; k<parseInt(e.qty); k++) {
-            v.push(e.pz);
+          for (var x=2; x>=0; x--) {
+            if (!x || e.pz <= st.ref[x]) {
+              let cost = pz * qty * 1000;
+              st.qty[x] += qty;
+              st.cost[x] += cost;
+              st.total_buy_qty += qty;
+              st.total_buy_cost += cost;
+              break;
+            }
           }
-        }
-        else if (e.type == 'sell') {
-          for (var k=0; k<parseInt(e.qty); k++) {
-            v.shift();
-          }
-        }
-      }
-      for (var k=0; k<v.length; k++) {
-        for (var x=2; x>=0; x--) {
-          if (!x || v[k] <= st.ref[x]) {
-            st.qty[x] = st.qty[x] + 1;
-            st.cost[x] = st.cost[x] + (parseFloat(v[k]) * 1000);
-            break;
-          }
+        } else if (e.type == 'sell') {
+          let cost = pz * qty * 1000;
+          st.total_sell_qty += qty;
+          st.total_sell_cost += cost;
         }
       }
-    }
-  }
-
-  for (var i=0; i<3; i++) {
-    if (st.qty[i]) {
-      st.total_qty += st.qty[i];
-      st.total_cost += st.cost[i];
-      all_total_cost += st.cost[i];
     }
   }
 
@@ -86,22 +79,24 @@ function updateResult() {
   }
 
   text += '<table id="stocks">';
-  text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th><th>預估張數</th>';
-  text += '<th>市價</th><th colspan=2>批1</th><th colspan=2>批2</th><th colspan=2>批3</th><th>張數</th><th>剩餘</th><th>均價</th><th>成本</th>';
+  text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th><th>預估張數</th><th>備註</th>';
+  text += '<th>市價</th><th>批1</th><th>批2</th><th>批3</th><th>買入</th><th>賣出</th><th>均價</th><th>成本</th>';
   text += '</tr>';
 
   for (var i=0; i<strategy.stocks.length; i++) {
     let s = strategy.stocks[i];
     let st = getStat(s);
     let z = info.stocks[i].z;
-    let cls = Array(3).fill('grey');
-    let z_cls = 'grey';
-    let z_ratio = Math.round((z - s.ref_pz) / s.ref_pz * 100);
+    let z_diff = z - s.ref_pz;
+    let z_ratio = Math.round(z_diff / s.ref_pz * 100);
+    let r_cls = Array(3).fill('grey');
 
-    for (var j=2; j>=0; j--) {
-      if (z <= st.ref[j]) {
-        cls[j] = z_cls = 'bg_yellow';
-        break;
+    if (z < s.ref_pz) {
+      for (var j=2; j>=0; j--) {
+        if (z <= st.ref[j]) {
+          r_cls[j] = 'bg_yellow';
+          break;
+        }
       }
     }
 
@@ -110,22 +105,33 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_pz);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_qty);
-    text += String.format('<td><span class="{0}">{1} ({2}%)</span></td>', z_cls, z.toFixed(2), z_ratio);
+    text += String.format('<td class="note" contenteditable=true>{0}</td>', s.note);
+    text += String.format('<td><span class="curpz">{0}</span>', z.toFixed(2));
+    text += String.format('\n<span class="curpz_ratio">{0} ({1}%)</span></td>', z_diff.toFixed(2), z_ratio);
     for (var j=0; j<3; j++) {
-      text += String.format('<td><span class="{0}"><={1}</span></td>', cls[j], st.ref[j].toFixed(2));
+      text += String.format('<td><span class="{0}"><={1}</span>\n', r_cls[j], st.ref[j].toFixed(2));
       if (st.qty[j]) {
         let avg = st.cost[j] / 1000 / st.qty[j];
-        text += String.format('<td>#{0} ({1})</td>', st.qty[j], avg.toFixed(2));
+        let avg_cls = (!j && avg > st.ref[0]) ? "batch_avg_warn" : "batch_avg";
+        text += String.format('<span class="batch_qty">#{0}</span>', st.qty[j]);
+        text += String.format('<span class="{0}">${1}</span>', avg_cls, avg.toFixed(2));
       } else {
-        text += td_na;
+        text += '<span class="batch_avg_na">-</span>';
       }
+      text += '</td>';
     }
-    if (st.total_cost) {
-      let total_avg = st.total_cost / 1000 / st.total_qty;
-      text += String.format('<td>{0}</td>', st.total_qty);
-      text += String.format('<td>{0}</td>', s.ref_qty - st.total_qty);
-      text += String.format('<td>{0}</td>', total_avg.toFixed(2));
-      text += String.format('<td>{0}</td>', st.total_cost.toLocaleString());
+    if (st.total_buy_cost) {
+      let avg = st.total_buy_cost / 1000 / st.total_buy_qty;
+      let cost = Math.round(avg * (st.total_buy_qty - st.total_sell_qty) * 1000);
+      let gain = z - avg;
+      let gain_ratio = Math.round(gain / avg * 100);
+      let gain_cls = (gain_ratio < 0) ? "gain_ratio_warn" : "gain_ratio";
+      text += String.format('<td>{0}</td>', st.total_buy_qty);
+      text += String.format('<td>{0}</td>', st.total_sell_qty);
+      text += String.format('<td><span class="avg">{0}</span>', avg.toFixed(2));
+      text += String.format('\n<span class="{0}">{1} ({2}%)</span></td>', gain_cls, gain.toFixed(2), gain_ratio);
+      text += String.format('<td>{0}</td>', cost.toLocaleString());
+      all_total_cost += cost;
     } else {
       text += td_na.repeat(4);
     }
@@ -134,8 +140,8 @@ function updateResult() {
 
   for (var i=0; i<3; i++) {
     text += '<tr>';
-    text += '<td contenteditable=true></td>'.repeat(4);
-    text += td_na.repeat(11);
+    text += '<td contenteditable=true></td>'.repeat(5);
+    text += td_na.repeat(8);
     text += '</tr>';
   }
 
@@ -190,8 +196,21 @@ function loadStrategyJSON() {
 }
 
 function parseAccountJSON(obj) {
-  console.log(obj);
+  for (var i=0; i<obj.stocks.length; i++) {
+    let a = obj.stocks[i];
+    let total = 0;
+    for (var j=0; j<a.events.length; j++) {
+      let e = a.events[j];
+      if (e.type == 'buy')
+        total += parseInt(e.qty);
+      else if (e.type == 'sell')
+        total -= parseInt(e.qty);
+    }
+    if (total)
+      in_stock.push(a);
+  }
   account = obj;
+  console.log(in_stock);
   updateResult();
 }
 
@@ -217,12 +236,14 @@ function onSave() {
     let name = row.cells[1].textContent;
     let ref_pz = row.cells[2].textContent;
     let ref_qty = row.cells[3].textContent;
+    let note = row.cells[4].textContent;
     if (code.length) {
       let obj = {};
       obj.code = code;
       obj.name = name;
       obj.ref_pz = ref_pz;
       obj.ref_qty = ref_qty;
+      obj.note = note;
       jsons.push(JSON.stringify(obj));
     }
   }

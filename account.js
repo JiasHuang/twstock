@@ -76,42 +76,48 @@ function updateResult(obj) {
     let total_tax = 0;
 
     text += '<table>';
-    text += String.format('<tr><th colspan=6>{0} {1}</th></tr>', s.code, s.name);
-    text += '<tr><td>日期</td><td>事件</td><td>價格</td><td>張數</td><td>配股</td><td>配息</td></tr>';
+    text += String.format('<tr><th colspan=7>{0} {1}</th></tr>', s.code, s.name);
+    text += '<tr><td>日期</td><td>事件</td><td>價格</td><td>張數</td><td>配股</td><td>配息</td><td>損益</td></tr>';
     for (var j=0; j<s.events.length; j++) {
       let e = s.events[j];
       let pz = parseFloat(e.pz);
       let qty = parseInt(e.qty);
       let cash_dividend = parseFloat(e.cash);
       let stock_dividend = parseFloat(e.stock);
+      let vec = [];
       if (e.type == 'buy') {
         total_expense += pz * qty * 1000;
         total_stock_cost += pz * qty * 1000;
         total_fee += Math.round(pz * qty * 0.855); //電子下單，手續費6折
         total_qty += qty;
-        text += String.format('<tr><td>{0}</td><td><span class=red>買入</span></td><td>{1}</td><td>{2}</td><td>-</td><td>-</td>',
-          e.date, pz.toFixed(2), e.qty);
+        vec.push(e.date, '<span class=red>買入</span>', pz.toFixed(2), e.qty, '-', '-', '-');
       }
       else if (e.type == 'sell') {
         let avg = total_stock_cost / (total_qty * 1000);
-        total_stock_gain += (pz - avg) * qty * 1000;
+        let gain = (pz - avg) * qty * 1000;
+        total_stock_gain += gain;
         total_stock_cost = total_stock_cost * (total_qty - qty) / total_qty;
         total_qty -= qty;
         total_fee += Math.round(pz * qty * 0.855); //電子下單，手續費6折
         total_tax += Math.round(pz * qty * 3);
-        text += String.format('<tr><td>{0}</td><td><span class=green>賣出</span></td><td>{1}</td><td>{2}</td><td>-</td><td>-</td>',
-          e.date, pz.toFixed(2), e.qty);
+        vec.push(e.date, '<span class=green>賣出</span>', pz.toFixed(2), e.qty, '-', '-', Math.round(gain).toLocaleString());
       }
       else if (e.type == 'dividend') {
-        text += String.format('<tr><td>{0}</td><td><span class=bg_gold>股利</span></td><td>-</td><td>-</td><td>{1}</td><td>{2}</td>',
-          e.date, e.stock, e.cash);
+        let gain = 0;
         if (stock_dividend > 0) {
           total_qty = total_qty * (10 + stock_dividend) / 10;
         }
         if (cash_dividend > 0) {
-          total_cash_dividend += total_qty * 1000 * cash_dividend;
+          gain = total_qty * 1000 * cash_dividend;
+          total_cash_dividend += gain;
         }
+        vec.push(e.date, '<span class=bg_gold>股利</span>', '-', '-', e.stock, e.cash, Math.round(gain).toLocaleString());
       }
+      text += '<tr>';
+      for (var v=0; v<vec.length; v++) {
+        text += '<td>' + vec[v] + '</td>';
+      }
+      text += '</tr>'
     }
     s.total_qty = total_qty;
     text += '<tr><td colspan=6 class=note><hr>';

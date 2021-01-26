@@ -20,9 +20,9 @@ class stat {
     this.qty = [0, 0, 0];
     this.cost = [0, 0, 0];
     this.total_buy_qty = 0;
-    this.total_buy_cost = 0;
     this.total_sell_qty = 0;
-    this.total_sell_cost = 0;
+    this.total_qty = 0;
+    this.total_cost = 0;
   }
 }
 
@@ -49,14 +49,16 @@ function getStat(s) {
               st.qty[x] += qty;
               st.cost[x] += cost;
               st.total_buy_qty += qty;
-              st.total_buy_cost += cost;
+              st.total_qty += qty;
+              st.total_cost += cost;
               break;
             }
           }
         } else if (e.type == 'sell') {
-          let cost = pz * qty * 1000;
+          let avg = st.total_cost / st.total_qty;
           st.total_sell_qty += qty;
-          st.total_sell_cost += cost;
+          st.total_qty -= qty;
+          st.total_cost = avg * st.total_qty;
         }
       }
     }
@@ -120,9 +122,9 @@ function updateResult() {
       }
       text += '</td>';
     }
-    if (st.total_buy_cost) {
-      let avg = st.total_buy_cost / 1000 / st.total_buy_qty;
-      let cost = Math.round(avg * (st.total_buy_qty - st.total_sell_qty) * 1000);
+    if (st.total_cost) {
+      let avg = st.total_cost / 1000 / st.total_qty;
+      let cost = Math.round(st.total_cost);
       let gain = z - avg;
       let gain_ratio = Math.round(gain / avg * 100);
       let gain_cls = (gain_ratio < 0) ? "gain_ratio_warn" : "gain_ratio";

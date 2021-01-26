@@ -123,10 +123,8 @@ function getLinkDict(code, nf) {
   dict.push({key:'基本', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm', code)});
   dict.push({key:'營收', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm', code)});
   dict.push({key:'新聞', val:String.format('https://tw.stock.yahoo.com/q/h?s={0}', code)});
-  dict.push({key:'籌碼', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcj/zcj_{0}.djhtm', code)});
-  dict.push({key:'法人買賣', val:String.format('https://goodinfo.tw/StockInfo/ShowBuySaleChart.asp?STOCK_ID={0}&CHT_CAT=DATE', code)});
+  dict.push({key:'法人持股', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcl/zcl_{0}.djhtm', code)});
   dict.push({key:'持股分級', val:String.format('https://goodinfo.tw/StockInfo/EquityDistributionClassHis.asp?STOCK_ID={0}', code)});
-  dict.push({key:'籌碼集中', val:String.format('https://histock.tw/stock/large.aspx?no={0}', code)});
   dict.push({key:'券商買賣', val:String.format('https://histock.tw/stock/branch.aspx?no={0}', code)});
   dict.push({key:'Ｋ線', val:String.format('https://goodinfo.tw/StockInfo/ShowK_Chart.asp?STOCK_ID={0}&CHT_CAT2=DATE', code)});
   dict.push({key:'損益', val:String.format('https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}', code)});

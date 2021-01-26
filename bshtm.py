@@ -10,9 +10,11 @@ import datetime
 
 from optparse import OptionParser
 
-class trader:
-    def __init__(self, code):
+class broker:
+    foreign = ['1360','1380','1440','1470','1480','1520','1560','1570','1590','1650','8440','8890','8900','8960']
+    def __init__(self, code, name):
         self.code = code
+        self.name = name
         self.buy_cost = 0
         self.buy_qty = 0
         self.buy_avg = 0
@@ -25,7 +27,13 @@ class trader:
         if self.sell_qty:
             self.sell_avg = self.sell_cost / self.sell_qty
     def show(self):
-        print('%s: 買%s $%.2f 賣%s $%.2f (%s)' %(self.code[4:], '{:,}'.format(self.buy_qty), self.buy_avg, '{:,}'.format(self.sell_qty), self.sell_avg, '{:,}'.format(self.buy_qty - self.sell_qty)))
+        text = ['-', '-', '-']
+        if self.buy_qty:
+            text[0] = '%8s $%6.2f' %('{:+,}'.format(self.buy_qty), self.buy_avg)
+        if self.sell_qty:
+            text[1] = '%8s $%6.2f' %('{:+,}'.format(self.sell_qty), self.sell_avg)
+        text[2] = '{:+,}'.format(self.buy_qty - self.sell_qty)
+        print('%s%s: %16s | %16s | %8s' %('  ' * (4 - len(self.name.decode('utf8'))), self.name, text[0], text[1], text[2]))
 
 def parse_csv(local):
     vec = []
@@ -35,12 +43,13 @@ def parse_csv(local):
     for l in lines[4:]:
         m = re.search(r'^\d+,([^,]+),([0-9.]+),([0-9.]+),([0-9.]+)', l)
         if m:
-            code = m.group(1)
+            code = m.group(1)[:4]
+            name = m.group(1)[4:].replace(' ', '').replace('　', '')
             pz = float(m.group(2))
             buy_qty = int(m.group(3)) / 1000
             sell_qty = int(m.group(4)) / 1000
             if not curr or curr.code != code:
-                curr = trader(code)
+                curr = broker(code, name)
                 vec.append(curr)
             if buy_qty:
                 curr.buy_qty += buy_qty
@@ -53,30 +62,63 @@ def parse_csv(local):
     for x in vec:
         x.update_avg()
 
+    divider = '-' * 22;
+
     # top10 buy
-    print('\n' + '-' * 20 + ' 買張 TOP10 ' + '-' * 20)
+    print('\n{d} 買張 TOP10 {d}'.format(d=divider));
     for x in sorted(vec, key=lambda x: x.buy_qty, reverse=True)[:10]:
         x.show()
 
     # top10 sell
-    print('\n' + '-' * 20 + ' 賣張 TOP10 ' + '-' * 20)
+    print('\n{d} 賣張 TOP10 {d}'.format(d=divider));
     for x in sorted(vec, key=lambda x: x.sell_qty, reverse=True)[:10]:
         x.show()
 
-    # top10 sell + buy
-    print('\n' + '-' * 20 + ' 張數 TOP10 ' + '-' * 20)
-    for x in sorted(vec, key=lambda x: x.sell_qty + x.buy_qty, reverse=True)[:10]:
-        x.show()
+    # top10 buy only
+    print('\n{d} 淨買 TOP10 {d}'.format(d=divider));
+    for x in sorted(vec, key=lambda x: x.buy_qty * (not x.sell_qty), reverse=True)[:10]:
+        if not x.sell_qty:
+            x.show()
+
+    # top10 sell only
+    print('\n{d} 淨賣 TOP10 {d}'.format(d=divider));
+    for x in sorted(vec, key=lambda x: x.sell_qty * (not x.buy_qty), reverse=True)[:10]:
+        if not x.buy_qty:
+            x.show()
 
     # top10 buy - sell
-    print('\n' + '-' * 20 + ' 買超 TOP10 ' + '-' * 20)
+    print('\n{d} 買超 TOP10 {d}'.format(d=divider));
     for x in sorted(vec, key=lambda x: x.buy_qty - x.sell_qty, reverse=True)[:10]:
         x.show()
 
     # top10 sell - buy
-    print('\n' + '-' * 20 + ' 賣超 TOP10 ' + '-' * 20)
+    print('\n{d} 賣超 TOP10 {d}'.format(d=divider));
     for x in sorted(vec, key=lambda x: x.sell_qty - x.buy_qty, reverse=True)[:10]:
         x.show()
+
+    # foreign
+    print('\n{d} 外資券商買超 {d}'.format(d=divider));
+    for x in sorted(vec, key=lambda x: x.buy_qty - x.sell_qty, reverse=True):
+        if x.code in broker.foreign and x.buy_qty > x.sell_qty:
+            x.show()
+
+    print('\n{d} 外資券商賣超 {d}'.format(d=divider));
+    for x in sorted(vec, key=lambda x: x.sell_qty - x.buy_qty, reverse=True):
+        if x.code in broker.foreign and x.sell_qty > x.buy_qty:
+            x.show()
+
+    total_buy_qty = 0
+    total_sell_qty = 0
+    foreign_qty = 0
+    for x in vec:
+        total_buy_qty += x.buy_qty
+        total_sell_qty += x.sell_qty
+        if x.code in broker.foreign:
+            foreign_qty += x.buy_qty - x.sell_qty
+
+    print('\n{d} 統計 {d}'.format(d=divider))
+    print('成交張數 {:10,}'.format(max(total_buy_qty, total_sell_qty)))
+    print('外資券商 {:+10,}'.format(foreign_qty))
 
     return
 
@@ -86,8 +128,8 @@ def main():
     (options, args) = parser.parse_args()
     orig = options.input or args[0]
     local = orig + '.utf8'
-    os.system('iconv -f big5 -t utf8 -c %s > %s' %(orig, local))
-    os.system('sed -i \'s/,,/\\n/g\' %s' %(local))
+    os.system('iconv -f big5 -t utf8 -c \'%s\' > \'%s\'' %(orig, local))
+    os.system('sed -i \'s/,,/\\n/g\' \'%s\'' %(local))
     parse_csv(local)
     return
 

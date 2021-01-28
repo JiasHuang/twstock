@@ -3,21 +3,41 @@
 
 import os
 import re
-import sys
-import json
-import time
-import datetime
+import glob
 
 from optparse import OptionParser
 
 import xurl
 
 class broker:
-    codemap = {'1360':'港商麥格理','1380':'台灣匯立','1440':'美林','1470':'台灣摩根','1480':'美商高盛','1520':'瑞士信貸','1560':'港商野村','1570':'港商法國興業','1590':'花旗環球','1650':'新加坡商瑞銀','8440':'摩根大通','8890':'大和國泰','8900':'法銀巴黎','8960':'香港上海匯豐'}
+    codemap = {
+        '1360':'　麥格理',
+        '1380':'台灣匯立',
+        '1440':'　　美林',
+        '1470':'台灣摩根',
+        '1480':'美商高盛',
+        '1520':'瑞士信貸',
+        '1560':'港商野村',
+        '1570':'法國興業',
+        '1590':'花旗環球',
+        '1650':'　　瑞銀',
+        '8440':'摩根大通',
+        '8890':'大和國泰',
+        '8900':'法銀巴黎',
+        '8960':'上海匯豐'}
+    defs = ['1470','1480','1520','1650','8440','8960']
+    db_location = '/var/tmp/vod_load_*'
+    def __init__(self, bno, no, qty, avg, date):
+        self.bno = bno
+        self.bname = get_broker_name(bno)
+        self.no = no
+        self.qty = qty
+        self.avg = avg
+        self.date = date
 
 class track:
     def __init__(self, date, b_qty, b_pz, s_qty, s_pz):
-        self.date = date.replace('/','')
+        self.date = date
         self.b_qty = int(b_qty.replace(',',''))
         self.b_pz = float(b_pz)
         self.s_qty = int(s_qty.replace(',',''))
@@ -25,19 +45,42 @@ class track:
     def show(self):
         print('{0.date} {0.b_qty:+8} {0.b_pz:8.2f} | {1:+8} {0.s_pz:8.2f}'.format(self, -x.s_qty))
 
-def trace_broker(broker, stock, pr_lines):
+class db:
+    def __init__(self, bno, no):
+        self.bno = bno
+        self.no = no
+
+def get_broker_name(b):
+    if b in broker.codemap:
+        return '{b} {n}'.format(b=b, n=broker.codemap[b])
+    return b
+
+def trace_broker(bno, no, opts):
+    url = 'https://histock.tw/stock/brokertrace.aspx?bno={b}&no={s}'.format(b=bno, s=no)
+    url_opts = []
+    if opts.cookies:
+        url_opts.append('-H \'cookie: ' + opts.cookies + '\'')
+    txt = xurl.load(url, opts=url_opts, cache=opts.cache, cacheOnly=opts.cacheOnly, verbose=opts.verbose)
+
     vec = []
-    url = 'https://histock.tw/stock/brokertrace.aspx?bno={b}&no={s}'.format(b=broker, s=stock)
-    txt = xurl.load(url, verbose=False)
     for m in re.finditer(r'<td>(.*?)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td>', txt):
         vec.append(track(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)))
+
+    if len(vec) == 0:
+        print('NOT FOUND: bno={} no={}'.format(bno, no))
+        return None
+
     qty = 0
     cost = 0
     avg = 0
     idx_range = None
-    if pr_lines:
-        idx_range = len(vec) - int(pr_lines)
-    for idx, x in enumerate(sorted(vec, key=lambda x: x.date)):
+    if opts.lines:
+        idx_range = len(vec) - opts.lines
+
+    if opts.track:
+        print('{}\n{}'.format('-' * 100, get_broker_name(bno)))
+
+    for idx, x in enumerate(reversed(vec)):
         qty += x.b_qty - x.s_qty;
         if qty > 0:
             cost = (cost + x.b_qty * x.b_pz) / (qty + x.s_qty) * qty
@@ -49,25 +92,70 @@ def trace_broker(broker, stock, pr_lines):
             text[0] = '{0:+8} {1:8.2f}'.format(x.b_qty, x.b_pz)
         if x.s_qty:
             text[1] = '{0:+8} {1:8.2f}'.format(-x.s_qty, x.s_pz)
-        if not pr_lines or idx >= idx_range:
+        if opts.track and (not idx_range or idx >= idx_range):
             print('{} | {:>17s} | {:>17s} | {:+8,} | qty {:10,} | avg {:8.2f}'.format(x.date, text[0], text[1], x.b_qty - x.s_qty, qty, avg))
+
+    return broker(bno, no, qty, avg, vec[0].date)
+
+def list_bn():
+    for k in broker.codemap:
+        print('{k} {n}'.format(k=k, n=broker.codemap[k]))
+    return
+
+def show_results(results):
+    curno = None
+    for x in sorted(results, key=lambda x: int(x.no) * 1000000 + x.qty, reverse=True):
+        if curno != x.no:
+            curno = x.no
+            print('\n{d}\n股票代碼：{n}\n'.format(d='-'*100, n=x.no))
+        print('{:15} | qty {:10,} | avg {:8.2f} | {}'.format(x.bname, x.qty, x.avg, x.date))
+    return
+
+def list_db(opts):
+    vec = []
+    results = []
+    opts.cacheOnly = True
+    opts.track = False
+    for f in glob.glob(broker.db_location):
+        with open(f) as fd:
+            m = re.search(r'bno=(\w{4})&amp;no=(\w{4})"', fd.read())
+            if m:
+                vec.append(db(m.group(1), m.group(2)))
+    for x in vec:
+        ret = trace_broker(x.bno, x.no, opts)
+        if ret:
+            results.append(ret)
+    show_results(results)
     return
 
 def main():
     parser = OptionParser()
     parser.add_option("-b", "--broker", dest="broker", action="append")
-    parser.add_option("-s", "--stock", dest="stock")
-    parser.add_option("-l", "--lines", dest="lines")
+    parser.add_option("-n", "--stockno", dest="stockno")
+    parser.add_option("-l", "--lines", dest="lines", type="int")
+    parser.add_option("-c", "--cookies", dest="cookies")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False)
+    parser.add_option("--notrack", dest="track", action="store_false", default=True)
+    parser.add_option("--nocache", dest="cache", action="store_false", default=True)
+    parser.add_option("--cacheOnly", dest="cacheOnly", action="store_true", default=False)
+    parser.add_option("--listbn", dest="listbn", action="store_true", default=False)
+    parser.add_option("--listdb", dest="listdb", action="store_true", default=False)
     (options, args) = parser.parse_args()
-    brokers = options.broker or broker.codemap.keys()
-    divider = '-' * 36
+    if options.listbn:
+        list_bn()
+        return
+    if options.listdb:
+        list_db(options)
+        return
+    brokers = options.broker or broker.defs
+    results = []
     for b in brokers:
-        n = b
-        if b in broker.codemap:
-            n += ' ' + broker.codemap[b]
-        print('{d} {n:^20} {d}'.format(d=divider, n=n))
-        trace_broker(b, options.stock, options.lines)
+        ret = trace_broker(b, options.stockno, options)
+        if ret:
+            results.append(ret)
+    show_results(results)
     return
 
 if __name__ == '__main__':
+    xurl.addDelayObj(r'histock.tw', 2)
     main()

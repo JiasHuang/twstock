@@ -165,7 +165,7 @@ function parseStocksJSON(obj) {
   updateResult();
 }
 
-function loadStocksJSON(obj) {
+function loadStocksJSON() {
   var codes = [];
 
   for (var i=0; i<strategy.stocks.length; i++) {
@@ -184,7 +184,7 @@ function loadStocksJSON(obj) {
 function parseStrategyJSON(obj) {
   console.log(obj);
   strategy = obj;
-  loadStocksJSON(obj);
+  loadStocksJSON();
 }
  
 function loadStrategyJSON() {

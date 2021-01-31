@@ -45,10 +45,14 @@ class track:
     def show(self):
         print('{0.date} {0.b_qty:+8} {0.b_pz:8.2f} | {1:+8} {0.s_pz:8.2f}'.format(self, -x.s_qty))
 
-class db:
-    def __init__(self, bno, no):
-        self.bno = bno
-        self.no = no
+class trace_broker_opts:
+    def __init__(self):
+        self.lines = None
+        self.cookies = None
+        self.verbose = False
+        self.track = False
+        self.cache = True
+        self.cacheOnly = True
 
 def get_broker_name(b):
     if b in broker.codemap:
@@ -104,27 +108,32 @@ def list_bn():
 
 def show_results(results):
     curno = None
-    for x in sorted(results, key=lambda x: int(x.no) * 1000000 + x.qty, reverse=True):
+    for x in sorted(results, key=lambda x: (x.no, x.qty), reverse=True):
         if curno != x.no:
             curno = x.no
             print('\n{d}\n股票代碼：{n}\n'.format(d='-'*100, n=x.no))
         print('{:15} | qty {:10,} | avg {:8.2f} | {}'.format(x.bname, x.qty, x.avg, x.date))
     return
 
-def list_db(opts):
-    vec = []
+def get_db(opts=None):
+    tuples = []
     results = []
-    opts.cacheOnly = True
-    opts.track = False
+    opts = opts or trace_broker_opts()
     for f in glob.glob(broker.db_location):
         with open(f) as fd:
             m = re.search(r'bno=(\w{4})&amp;no=(\w{4})"', fd.read())
             if m:
-                vec.append(db(m.group(1), m.group(2)))
-    for x in vec:
-        ret = trace_broker(x.bno, x.no, opts)
+                tuples.append((m.group(1), m.group(2)))
+    for (bno, no) in tuples:
+        ret = trace_broker(bno, no, opts)
         if ret:
             results.append(ret)
+    return results
+
+def list_db(opts):
+    opts.cacheOnly = True
+    opts.track = False
+    results = get_db(opts)
     show_results(results)
     return
 
@@ -132,7 +141,7 @@ def main():
     parser = OptionParser()
     parser.add_option("-b", "--broker", dest="broker", action="append")
     parser.add_option("-n", "--stockno", dest="stockno")
-    parser.add_option("-l", "--lines", dest="lines", type="int")
+    parser.add_option("-l", "--lines", dest="lines", type="int", default=20)
     parser.add_option("-c", "--cookies", dest="cookies")
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False)
     parser.add_option("--notrack", dest="track", action="store_false", default=True)
@@ -140,17 +149,17 @@ def main():
     parser.add_option("--cacheOnly", dest="cacheOnly", action="store_true", default=False)
     parser.add_option("--listbn", dest="listbn", action="store_true", default=False)
     parser.add_option("--listdb", dest="listdb", action="store_true", default=False)
-    (options, args) = parser.parse_args()
-    if options.listbn:
+    (opts, args) = parser.parse_args()
+    if opts.listbn:
         list_bn()
         return
-    if options.listdb:
-        list_db(options)
+    if opts.listdb:
+        list_db(opts)
         return
-    brokers = options.broker or broker.defs
+    brokers = opts.broker or broker.defs
     results = []
     for b in brokers:
-        ret = trace_broker(b, options.stockno, options)
+        ret = trace_broker(b, opts.stockno, opts)
         if ret:
             results.append(ret)
     show_results(results)

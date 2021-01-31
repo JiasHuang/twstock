@@ -12,7 +12,7 @@ def index(req):
     req.content_type = 'text/html; charset=utf-8'
     form = req.form or util.FieldStorage(req)
     j = form.get('j', 'stocks.json') # json
-    defpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', os.path.basename(j))
-    req.write(xurl.readLocal(defpath))
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', os.path.basename(j))
+    req.write(xurl.readLocal(local))
     return
 

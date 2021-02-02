@@ -4,12 +4,12 @@
 import os
 import re
 import glob
+import time
 
-from datetime import date
 from optparse import OptionParser
 
 class defs:
-    db_location = '/home/rd/Downloads/*/*{}.csv'.format(date.today().strftime("%Y%m%d"))
+    db_location = '/home/rd/Downloads/*/*.csv'
 
 class broker:
     foreign = ['1360','1380','1440','1470','1480','1520','1560','1570','1590','1650','8440','8890','8900','8960']
@@ -36,6 +36,17 @@ class broker:
             text[1] = '{:+8,} ${:6.2f}'.format(-self.sell_qty, self.sell_avg)
         text[2] = '{:+,}'.format(self.buy_qty - self.sell_qty)
         print('%s%s: %16s | %16s | %8s' %('  ' * (4 - len(self.bname.decode('utf8'))), self.bname, text[0], text[1], text[2]))
+
+def get_db_files():
+    files = glob.glob(defs.db_location)
+    if not files:
+        return []
+    sorted_files = sorted(files, key=lambda x: x[-8:-4], reverse=True)
+    latest_date = sorted_files[0][-8:-4]
+    for idx, f in enumerate(sorted_files):
+        if f[-8:-4] != latest_date:
+            return sorted_files[:idx]
+    return sorted_files
 
 def parse_csv(local):
     results = []
@@ -102,15 +113,17 @@ def show_results(results):
         if x.bno in broker.foreign:
             foreign_qty += x.buy_qty - x.sell_qty
 
+    total_qty = max(total_buy_qty, total_sell_qty)
     print('\n{d} {n} 統計 {d}'.format(d=divider, n=stockno))
-    print('成交張數 {:10,}'.format(max(total_buy_qty, total_sell_qty)))
-    print('外資券商 {:+10,}'.format(foreign_qty))
+    print('成交張數 {:10,}'.format(total_qty))
+    print('外資券商 {:+10,} ({:.2f}%)'.format(foreign_qty, foreign_qty * 100 / total_qty))
 
     return
 
 def get_db():
     all_results = []
-    for orig in glob.glob(defs.db_location):
+    os.system('%s/csv-naming.py' %(os.path.dirname(os.path.abspath(__file__))))
+    for orig in get_db_files():
         local = '/tmp/bshtm_%s.utf8' %(orig.replace('/','_'))
         os.system('iconv -f big5 -t utf8 -c \'%s\' > \'%s\'' %(orig, local))
         os.system('sed -i \'s/,,/\\n/g\' \'%s\'' %(local))

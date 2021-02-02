@@ -451,8 +451,12 @@ function getDividendHTMLText(obj) {
 
   for (var i=0; i<div.length; i++) {
     let d = div[i];
-    let cash_dividend = (parseFloat(d[1]) + parseFloat(d[2])).toFixed(2);
-    let stock_dividend = (parseFloat(d[3]) + parseFloat(d[4])).toFixed(2);
+    let cash_dividend_a = parseFloat(d[1]);
+    let cash_dividend_b = parseFloat(d[2]);
+    let cash_dividend = cash_dividend_a + cash_dividend_b;
+    let stock_dividend_a = parseFloat(d[3]);
+    let stock_dividend_b = parseFloat(d[4]);
+    let stock_dividend = stock_dividend_a + stock_dividend_b;
     let dividend_yield = '-';
     let era = parseInt(d[0]) - 1911;
     let era_txt = d[0].replace(parseInt(d[0]), era);
@@ -466,7 +470,9 @@ function getDividendHTMLText(obj) {
       dividend_yield = (cash_dividend / parsed[2] * 100).toFixed(2);
     }
     text += String.format('<tr><td>{' + Array.from(Array(9).keys()).join('}</td><td>{') + '}</td></tr>',
-      era_txt, d[1], d[2], cash_dividend, d[3], d[4], stock_dividend, dividend_yield, payout_ratio);
+      era_txt, cash_dividend_a.toFixed(2), cash_dividend_b.toFixed(2), cash_dividend.toFixed(2),
+      stock_dividend_a.toFixed(2), stock_dividend_b.toFixed(2), stock_dividend.toFixed(2),
+      dividend_yield, payout_ratio);
   }
 
   text += '</table><br>';

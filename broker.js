@@ -28,7 +28,10 @@ function updateResult() {
       currno = x.no;
       idx++;
     }
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>', x.bname, x.qty.toLocaleString(), x.avg.toFixed(2), x.date);
+    text += '<tr>';
+    text += String.format('<td><a href="track.html?a=track&bno={0}&no={1}" target="_blank">{2}</a></td>', x.bno, x.no, x.bname);
+    text += String.format('<td>{0}</td><td>{1}</td><td>{2}</td>', x.qty.toLocaleString(), x.avg.toFixed(2), x.date);
+    text += '</tr>';
   }
 
   if (db.length) {

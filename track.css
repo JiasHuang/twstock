@@ -32,23 +32,3 @@
   background-color: #FF8C00;
 }
 
-#result hr {
-  border: 1px solid green;
-}
-
-.stat {
-  font-size: 24px;
-}
-
-#map {
-  position: fixed;
-  top: 0px;
-  right: 0px;
-  background-color: silver;
-  z-index: 10;
-}
-
-.link {
-  font-size: 24px;
-  padding: 0px 10px;
-}

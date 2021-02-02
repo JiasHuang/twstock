@@ -59,8 +59,8 @@ def get_broker_name(b):
         return '{b} {n}'.format(b=b, n=broker.codemap[b])
     return b
 
-def trace_broker(bno, no, opts):
-    url = 'https://histock.tw/stock/brokertrace.aspx?bno={b}&no={s}'.format(b=bno, s=no)
+def get_tracks(bno, no, opts):
+    url = 'https://histock.tw/stock/brokertrace.aspx?bno={b}&no={n}'.format(b=bno, n=no)
     url_opts = []
     if opts.cookies:
         url_opts.append('-H \'cookie: ' + opts.cookies + '\'')
@@ -68,8 +68,16 @@ def trace_broker(bno, no, opts):
 
     vec = []
     for m in re.finditer(r'<td>(.*?)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td>', txt):
-        vec.append(track(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)))
+        vec.insert(0, track(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)))
 
+    return vec
+
+def get_cached_tracks(bno, no):
+    opts = trace_broker_opts()
+    return get_tracks(bno, no, opts)
+
+def trace_broker(bno, no, opts):
+    vec = get_tracks(bno, no, opts)
     if len(vec) == 0:
         print('NOT FOUND: bno={} no={}'.format(bno, no))
         return None
@@ -84,7 +92,7 @@ def trace_broker(bno, no, opts):
     if opts.track:
         print('{}\n{}'.format('-' * 100, get_broker_name(bno)))
 
-    for idx, x in enumerate(reversed(vec)):
+    for idx, x in enumerate(vec):
         qty += x.b_qty - x.s_qty;
         if qty > 0:
             cost = (cost + x.b_qty * x.b_pz) / (qty + x.s_qty) * qty

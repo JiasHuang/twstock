@@ -61,7 +61,7 @@ function getStockTableText(idx_start, idx_end) {
     }
   }
 
-  text += String.format('<hr><span id="stockno_{0}" class="stat">[{0}] 成交張數：{1}，外資券商：{2} ({3}%)</span><br>',
+  text += String.format('<hr><span id="stockno_{0}" class="stat">{0}</span><span class="stat"> 成交張數：{1}，外資券商：{2} ({3}%)</span><br>',
     db[idx_start].stockno,
     Math.max(total_buy_qty, total_sell_qty).toLocaleString(),
     foreign_qty.toLocaleString(),
@@ -120,6 +120,34 @@ function updateMap(maps) {
   $('#map').html(text);
 }
 
+function parseStocksJSON(obj) {
+  for (var i=0; i<obj.stocks.length; i++) {
+    let msg = obj.stocks[i].msg;
+    let y = parseFloat(msg.y).toFixed(2);
+    let z = parseFloat(msg.z).toFixed(2);
+    let text = String.format('{0} {1} ${2} ({3}%) ',
+      msg.c, msg.n, z, ((z - y) / y * 100).toFixed(2));
+    $('#stockno_' + msg.c).html(text);
+  }
+}
+
+function loadStocksJSON(maps) {
+  var codes = [];
+
+  for (var i=0; i<maps.length; i++) {
+    codes.push(maps[i].stockno);
+  }
+
+  $.ajax({
+    url: String.format('view.py?c={0}', codes.join(',')),
+    dataType: 'json',
+    error: onTimeout,
+    success: parseStocksJSON,
+    timeout: 10000
+  });
+}
+
+
 function updateResult() {
   var text = '';
   var currno = null;
@@ -154,6 +182,7 @@ function updateResult() {
 
   $('#result').html(text);
   updateMap(maps);
+  loadStocksJSON(maps);
 }
 
 function onTimeout() {

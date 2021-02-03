@@ -1,4 +1,18 @@
 
+button {
+  background-color: #4682B4;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  padding: 5px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 20px;
+  margin: 5px;
+  cursor: pointer;
+}
+
 input {
   width: 25px;
   height: 25px;

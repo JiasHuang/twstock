@@ -25,7 +25,15 @@ function to_signed(n) {
   return  (n<=0? '':'+') + n.toLocaleString();
 }
 
-function toggle_tracks() {
+function toggle_tracks_by_btn() {
+  let bno = $(this).attr('bno');
+  $('input[type="checkbox"]').prop('checked', false);
+  $('input[type="checkbox"][bno="'+bno+'"]').prop('checked', true);
+  $('table').filter('.tracks').hide();
+  $('#tbl_bno_' + bno).show();
+}
+
+function toggle_tracks_by_chk() {
   let bno = $(this).attr('bno');
   if ($(this)[0].checked)
     $('#tbl_bno_' + bno).show();
@@ -73,9 +81,10 @@ function updateResult() {
   stat_text += '<tr><th>券商</th><th>張數</th><th>均價</th><th>日期</th><th></th></tr>';
   for (var i=0; i<bstats.length; i++) {
     let x = bstats[i];
-    let chk = '<input type="checkbox" onclick=toggle_tracks.call(this) bno="' + x.bno + '" />';
+    let btn = '<button onclick=toggle_tracks_by_btn.call(this) bno="' + x.bno + '">check</button>';
+    let chk = '<input type="checkbox" onclick=toggle_tracks_by_chk.call(this) bno="' + x.bno + '" />';
     stat_text += String.format('<tr><td>{' + Array.from(Array(5).keys()).join('}</td><td>{') + '}</td></tr>',
-      x.bname, x.qty.toLocaleString(), x.avg.toFixed(2), x.date, chk);
+      x.bname, x.qty.toLocaleString(), x.avg.toFixed(2), x.date, btn + chk);
   }
   stat_text += '</table>';
 

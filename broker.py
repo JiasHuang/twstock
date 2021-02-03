@@ -189,8 +189,8 @@ def main():
         return
     brokers = opts.broker or broker.defs
     results = []
-    for b in brokers:
-        ret = trace_broker(b, opts.stockno, opts)
+    for bno in brokers:
+        ret = trace_broker(opts.stockno, bno, opts)
         if ret:
             results.append(ret)
     show_results(results)

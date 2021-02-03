@@ -1,4 +1,9 @@
 
+input {
+  width: 25px;
+  height: 25px;
+}
+
 #result table {
   display: inline-block;
   border-collapse: collapse;

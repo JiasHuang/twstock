@@ -23,15 +23,13 @@ function updateResult() {
         text += '</table>';
       }
       text += '<table>';
-      text += String.format('<tr><th colspan=4>{0} {1} (${2})</th></tr>', x.no, stocks[idx].msg.n, stocks[idx].z);
+      text += String.format('<tr><th colspan=4><a href="track.html?a=track&no={0}" target="_blank">{0} {1}</a> (${2})</th></tr>', x.no, stocks[idx].msg.n, stocks[idx].z);
       text += '<tr><th>券商</th><th>張數</th><th>均價</th><th>日期</th></tr>';
       currno = x.no;
       idx++;
     }
-    text += '<tr>';
-    text += String.format('<td><a href="track.html?a=track&bno={0}&no={1}" target="_blank">{2}</a></td>', x.bno, x.no, x.bname);
-    text += String.format('<td>{0}</td><td>{1}</td><td>{2}</td>', x.qty.toLocaleString(), x.avg.toFixed(2), x.date);
-    text += '</tr>';
+    text += String.format('<tr><td>{' + Array.from(Array(4).keys()).join('}</td><td>{') + '}</td></tr>',
+      x.bname, x.qty.toLocaleString(), x.avg.toFixed(2), x.date);
   }
 
   if (db.length) {

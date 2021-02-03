@@ -27,10 +27,10 @@ class broker:
         '8960':'上海匯豐'}
     defs = ['1470','1480','1520','1650','8440','8960']
     db_location = '/var/tmp/vod_load_*'
-    def __init__(self, bno, no, qty, avg, date):
+    def __init__(self, no, bno, qty, avg, date):
+        self.no = no
         self.bno = bno
         self.bname = get_broker_name(bno)
-        self.no = no
         self.qty = qty
         self.avg = avg
         self.date = date
@@ -44,6 +44,13 @@ class track:
         self.s_pz = float(s_pz)
     def show(self):
         print('{0.date} {0.b_qty:+8} {0.b_pz:8.2f} | {1:+8} {0.s_pz:8.2f}'.format(self, -x.s_qty))
+
+class track_hdr:
+    def __init__(self, no, bno, cnt):
+        self.no = no
+        self.bno = bno
+        self.bname = get_broker_name(bno)
+        self.cnt = cnt
 
 class trace_broker_opts:
     def __init__(self):
@@ -59,7 +66,16 @@ def get_broker_name(b):
         return '{b} {n}'.format(b=b, n=broker.codemap[b])
     return b
 
-def get_tracks(bno, no, opts):
+def get_db_pairs():
+    tuples = []
+    for f in glob.glob(broker.db_location):
+        with open(f) as fd:
+            m = re.search(r'bno=(\w{4})&amp;no=(\w{4})"', fd.read())
+            if m:
+                tuples.append((m.group(2), m.group(1)))
+    return tuples
+
+def get_tracks(no, bno, opts):
     url = 'https://histock.tw/stock/brokertrace.aspx?bno={b}&no={n}'.format(b=bno, n=no)
     url_opts = []
     if opts.cookies:
@@ -72,14 +88,26 @@ def get_tracks(bno, no, opts):
 
     return vec
 
-def get_cached_tracks(bno, no):
+def get_cached_tracks(no, bno=None):
     opts = trace_broker_opts()
-    return get_tracks(bno, no, opts)
+    if bno:
+        tracks = get_tracks(no, bno, opts)
+        hdrs = [track_hdr(no, bno, len(tracks))]
+        return (hdrs, tracks)
+    tracks = []
+    hdrs = []
+    for (db_no, db_bno) in get_db_pairs():
+        if db_no == no:
+            ret = get_tracks(db_no, db_bno, opts)
+            if len(ret):
+                tracks.extend(ret)
+                hdrs.append(track_hdr(db_no, db_bno, len(ret)))
+    return (hdrs, tracks)
 
-def trace_broker(bno, no, opts):
-    vec = get_tracks(bno, no, opts)
+def trace_broker(no, bno, opts):
+    vec = get_tracks(no, bno, opts)
     if len(vec) == 0:
-        print('NOT FOUND: bno={} no={}'.format(bno, no))
+        print('NOT FOUND: no={} bno={}'.format(no, bno))
         return None
 
     qty = 0
@@ -107,7 +135,7 @@ def trace_broker(bno, no, opts):
         if opts.track and (not idx_range or idx >= idx_range):
             print('{} | {:>17s} | {:>17s} | {:+8,} | qty {:10,} | avg {:8.2f}'.format(x.date, text[0], text[1], x.b_qty - x.s_qty, qty, avg))
 
-    return broker(bno, no, qty, avg, vec[-1].date)
+    return broker(no, bno, qty, avg, vec[-1].date)
 
 def list_bn():
     for k in broker.codemap:
@@ -124,16 +152,11 @@ def show_results(results):
     return
 
 def get_db(opts=None):
-    tuples = []
+    tuples = get_db_pairs()
     results = []
     opts = opts or trace_broker_opts()
-    for f in glob.glob(broker.db_location):
-        with open(f) as fd:
-            m = re.search(r'bno=(\w{4})&amp;no=(\w{4})"', fd.read())
-            if m:
-                tuples.append((m.group(1), m.group(2)))
-    for (bno, no) in tuples:
-        ret = trace_broker(bno, no, opts)
+    for (no, bno) in tuples:
+        ret = trace_broker(no, bno, opts)
         if ret:
             results.append(ret)
     return results

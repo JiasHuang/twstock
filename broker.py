@@ -107,7 +107,7 @@ def trace_broker(bno, no, opts):
         if opts.track and (not idx_range or idx >= idx_range):
             print('{} | {:>17s} | {:>17s} | {:+8,} | qty {:10,} | avg {:8.2f}'.format(x.date, text[0], text[1], x.b_qty - x.s_qty, qty, avg))
 
-    return broker(bno, no, qty, avg, vec[0].date)
+    return broker(bno, no, qty, avg, vec[-1].date)
 
 def list_bn():
     for k in broker.codemap:

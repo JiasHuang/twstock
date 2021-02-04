@@ -78,6 +78,7 @@ function updateResult() {
   text += '</table>';
 
   stat_text += '<table>';
+  stat_text += '<tr><th colspan=5>'+hdrs[0].no+'</th></tr>';
   stat_text += '<tr><th>券商</th><th>張數</th><th>均價</th><th>日期</th><th></th></tr>';
   for (var i=0; i<bstats.length; i++) {
     let x = bstats[i];
@@ -105,12 +106,17 @@ function parseJSON(obj) {
 
 function loadJSON() {
   $.ajax({
-    url: 'populate.py' + window.location.search,
+    url: 'populate.py' + window.location.search + '&a=track',
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,
     timeout: 2000
   });
+}
+
+function updateResultByInput() {
+  var code = document.getElementById('input_code').value;
+  window.location.href = 'track.html?no=' + code;
 }
 
 function onDocumentReady() {

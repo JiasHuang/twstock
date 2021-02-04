@@ -86,6 +86,9 @@ def get_tracks(no, bno, opts):
     for m in re.finditer(r'<td>(.*?)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td>', txt):
         vec.insert(0, track(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)))
 
+    if len(vec) == 0 and re.search('alert', txt):
+        os.remove(xurl.genLocal(url))
+
     return vec
 
 def get_cached_tracks(no, bno=None):

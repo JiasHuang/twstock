@@ -23,17 +23,28 @@ class dbmap {
 function updateResult() {
   var text = '';
 
+  text += '<table class="toptbl">';
+  text += '<tr><th>代碼</th><th>名稱</th><th>市價</th><th>券商</th><th>Note</th></tr>';
   for (var i=0; i<dbmaps.length; i++) {
-    text += '<table>';
-    text += String.format('<tr><th colspan=4 id="stockno_{0}"><a href="track.html?no={0}" target="_blank">{0}</a></th></tr>', dbmaps[i].no);
-    text += '<tr><th>券商</th><th>張數</th><th>均價</th><th>日期</th></tr>';
-    for (var j=dbmaps[i].idx_start; j<dbmaps[i].idx_end; j++) {
-      let x = db[j];
-      text += String.format('<tr><td>{' + Array.from(Array(4).keys()).join('}</td><td>{') + '}</td></tr>',
-        x.bname, x.qty.toLocaleString(), x.avg.toFixed(2), x.date);
+    let x = dbmaps[i];
+    let n = String.format('<span id="top_stockno_{0}_n"></span>', x.no);
+    let z = String.format('<span id="top_stockno_{0}_z"></span>', x.no);
+    let brokers = '';
+    let note = String.format('<a href="track.html?no={0}" target="_blank">tracks</a>', x.no);
+
+    brokers += '<table class="subtbl">';
+    for (var j=x.idx_start; j<x.idx_end; j++) {
+      let b = db[j];
+      brokers += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>',
+        b.bname, b.qty.toLocaleString(), b.avg.toFixed(2), b.date);
     }
-    text += '</table>';
+    brokers += '</table>';
+
+    text += String.format('<tr><td>{' + Array.from(Array(5).keys()).join('}</td><td>{') + '}</td></tr>',
+      x.no, n, z, brokers, note);
+
   }
+  text += '</table>';
 
   $('#result').html(text);
 }
@@ -46,8 +57,8 @@ function parseStocksJSON(obj) {
   console.log(obj);
   for (var i=0; i<obj.stocks.length; i++) {
     let msg = obj.stocks[i].msg;
-    let text = String.format('<a href="track.html?no={0}" target="_blank">{0}{1}</a>(${2})', msg.c, msg.n, msg.z);
-    $('#stockno_'+msg.c).html(text);
+    $('#top_stockno_'+msg.c+'_n').html(msg.n);
+    $('#top_stockno_'+msg.c+'_z').html(msg.z);
   }
 }
 

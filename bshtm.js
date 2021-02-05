@@ -36,7 +36,9 @@ function getSortedStockTableText(sorted, title, cnt=-1, flt=null) {
       continue;
     }
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>',
-      x.bname, x.buy_qty.toLocaleString(), x.buy_avg.toFixed(2), (-x.sell_qty).toLocaleString(), x.sell_avg.toFixed(2),
+      x.bname,
+      x.buy_qty? x.buy_qty.toLocaleString() : '-', x.buy_qty? x.buy_avg.toFixed(2) : '-',
+      x.sell_qty? (-x.sell_qty).toLocaleString() : '-', x.sell_qty? x.sell_avg.toFixed(2) : '-',
       (x.buy_qty - x.sell_qty).toLocaleString());
   }
 
@@ -68,16 +70,6 @@ function getStockTableText(idx_start, idx_end) {
     (foreign_qty * 100 / Math.max(total_buy_qty, total_sell_qty)).toFixed(2));
 
   sorted = db.slice(idx_start, idx_end).sort(function (a, b) {
-    let v0 = a.buy_qty - a.sell_qty;
-    let v1 = b.buy_qty - b.sell_qty;
-    if (v0 > v1) return -1;
-    if (v0 < v1) return 1;
-    return 0;
-  });
-
-  text += getSortedStockTableText(sorted, '買超 TOP10', 10);
-
-  sorted = db.slice(idx_start, idx_end).sort(function (a, b) {
     let v0 = a.sell_qty - a.buy_qty;
     let v1 = b.sell_qty - b.buy_qty;
     if (v0 > v1) return -1;
@@ -95,7 +87,7 @@ function getStockTableText(idx_start, idx_end) {
     return 0;
   });
 
-  text += getSortedStockTableText(sorted, '外資券商買超', -1, flt='foreign.includes(x.bno) && (x.buy_qty > x.sell_qty)');
+  text += getSortedStockTableText(sorted, '買超 TOP10', 10);
 
   sorted = db.slice(idx_start, idx_end).sort(function (a, b) {
     let v0 = a.sell_qty - a.buy_qty;
@@ -106,6 +98,16 @@ function getStockTableText(idx_start, idx_end) {
   });
 
   text += getSortedStockTableText(sorted, '外資券商賣超', -1, flt='foreign.includes(x.bno) && (x.sell_qty > x.buy_qty)');
+
+  sorted = db.slice(idx_start, idx_end).sort(function (a, b) {
+    let v0 = a.buy_qty - a.sell_qty;
+    let v1 = b.buy_qty - b.sell_qty;
+    if (v0 > v1) return -1;
+    if (v0 < v1) return 1;
+    return 0;
+  });
+
+  text += getSortedStockTableText(sorted, '外資券商買超', -1, flt='foreign.includes(x.bno) && (x.buy_qty > x.sell_qty)');
 
   return text;
 }

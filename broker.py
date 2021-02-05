@@ -46,11 +46,12 @@ class track:
         print('{0.date} {0.b_qty:+8} {0.b_pz:8.2f} | {1:+8} {0.s_pz:8.2f}'.format(self, -x.s_qty))
 
 class track_hdr:
-    def __init__(self, no, bno, cnt):
+    def __init__(self, no, bno, idx_start, idx_end):
         self.no = no
         self.bno = bno
         self.bname = get_broker_name(bno)
-        self.cnt = cnt
+        self.idx_start = idx_start
+        self.idx_end = idx_end
 
 class trace_broker_opts:
     def __init__(self):
@@ -104,7 +105,7 @@ def get_cached_tracks(no, bno=None):
             ret = get_tracks(db_no, db_bno, opts)
             if len(ret):
                 tracks.extend(ret)
-                hdrs.append(track_hdr(db_no, db_bno, len(ret)))
+                hdrs.append(track_hdr(db_no, db_bno, len(tracks) - len(ret), len(tracks)))
     return (hdrs, tracks)
 
 def trace_broker(no, bno, opts):

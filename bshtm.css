@@ -2,19 +2,18 @@
 #result table {
   display: inline-block;
   border-collapse: collapse;
-  margin: 5px;
   vertical-align: top;
 }
 
 #result th {
-  font-size: 20px;
+  font-size: 18px;
   border: 1px solid;
   padding: 0px 10px;
   text-align: center;
 }
 
 #result td {
-  font-size: 20px;
+  font-size: 18px;
   border: 1px solid;
   padding: 0px 10px;
   text-align: right;
@@ -49,6 +48,6 @@
 }
 
 .link {
-  font-size: 24px;
-  padding: 0px 10px;
+  font-size: 20px;
+  padding: 0px 5px;
 }

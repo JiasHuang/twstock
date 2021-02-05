@@ -51,17 +51,27 @@ def get_db_files():
 def parse_csv(local):
     results = []
     curr = None
+    otc = False
     fd = open(local)
     lines = fd.readlines()
-    stockno = re.search(r',="(\w{4})"', lines[1]).group(1)
+    m = re.search(r',="(\d{4})"', lines[1])
+    if not m:
+        m = re.search(r',(\d{4})', lines[1])
+        otc = True
+    if not m:
+        return None
+    stockno = m.group(1)
     for l in lines[4:]:
-        m = re.search(r'^\d+,([^,]+),([0-9.]+),([0-9.]+),([0-9.]+)', l)
+        if otc:
+            m = re.search(r'^"\d+","([^"]+)","([0-9.]+)","([0-9.,]+)","([0-9.,]+)"', l)
+        else:
+            m = re.search(r'^\d+,([^,]+),([0-9.]+),([0-9.]+),([0-9.]+)', l)
         if m:
             bno = m.group(1)[:4]
             bname = m.group(1)[4:].replace(' ', '').replace('　', '')
             pz = float(m.group(2))
-            buy_qty = int(m.group(3)) / 1000
-            sell_qty = int(m.group(4)) / 1000
+            buy_qty = int(m.group(3).replace(',', '')) / 1000
+            sell_qty = int(m.group(4).replace(',', '')) / 1000
             if not curr or curr.bno != bno:
                 curr = broker(stockno, bno, bname)
                 results.append(curr)
@@ -128,7 +138,8 @@ def get_db():
         os.system('iconv -f big5 -t utf8 -c \'%s\' > \'%s\'' %(orig, local))
         os.system('sed -i \'s/,,/\\n/g\' \'%s\'' %(local))
         results = parse_csv(local)
-        all_results.extend(results)
+        if results:
+            all_results.extend(results)
     return all_results
 
 def main():
@@ -141,7 +152,8 @@ def main():
         os.system('iconv -f big5 -t utf8 -c \'%s\' > \'%s\'' %(orig, local))
         os.system('sed -i \'s/,,/\\n/g\' \'%s\'' %(local))
         results = parse_csv(local)
-        show_results(results)
+        if results:
+            show_results(results)
     return
 
 if __name__ == '__main__':

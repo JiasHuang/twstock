@@ -16,7 +16,11 @@ def get_code(f):
     with open(f) as fd:
         l0 = fd.readline()
         l1 = fd.readline()
-        m = re.search(r',="(\w{4})"', l1)
+        m = None
+        if f.endswith('.csv'):
+            m = re.search(r',="(\d{4})"', l1)
+        if f.endswith('.CSV'):
+            m = re.search(r',(\d{4})', l1)
         if m:
             return m.group(1)
     return None
@@ -36,7 +40,10 @@ def main():
     (options, args) = parser.parse_args()
     if options.dir:
         os.chdir(options.dir)
-    for f in glob.glob('*.csv'):
+    files = []
+    files.extend(glob.glob('*.csv'))
+    files.extend(glob.glob('*.CSV'))
+    for f in files:
         code = get_code(f)
         if not code:
             continue

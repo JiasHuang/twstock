@@ -9,6 +9,8 @@ import glob
 
 from optparse import OptionParser
 
+import xurl
+
 class defs:
     workdir = os.path.join(os.path.expanduser('~'), 'Downloads')
 
@@ -25,13 +27,11 @@ def get_code(f):
             return m.group(1)
     return None
 
-def get_date_from_mtime(f):
-    t = time.strftime('%Y%m%d%H%M', time.localtime(os.path.getmtime(f)))
-    d = int(t[:8])
-    h = int(t[8:10])
-    if h < 14:
-        d -= 1
-    return d
+def get_date_from_bshtm():
+    url = 'https://bsr.twse.com.tw/bshtm/bsWelcome.aspx'
+    txt = xurl.load(url)
+    m = re.search(r'<span id="Label_Date">(\d+)/(\d+)/(\d+)</span>', txt)
+    return int(m.group(1) + m.group(2) + m.group(3))
 
 def main():
     parser = OptionParser()
@@ -47,7 +47,7 @@ def main():
         code = get_code(f)
         if not code:
             continue
-        d = options.date or get_date_from_mtime(f)
+        d = options.date or get_date_from_bshtm()
         fdir = '{}'.format(code)
         fname = '{}-{}.csv'.format(code, d)
         print('%s/%s' %(fdir, fname))

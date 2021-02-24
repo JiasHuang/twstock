@@ -109,7 +109,7 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_qty);
     text += String.format('<td class="note" contenteditable=true>{0}</td>', s.note);
     text += String.format('<td><span class="curpz">{0}</span>', z.toFixed(2));
-    text += String.format('\n<span class="curpz_ratio">{0} ({1}%)</span></td>', z_diff.toFixed(2), z_ratio);
+    text += String.format('\n<span class="{0}">{1} ({2}%)</span></td>', z_diff<0?'green':'grey', z_diff.toFixed(2), z_ratio);
     for (var j=0; j<3; j++) {
       text += String.format('<td><span class="{0}"><={1}</span>\n', r_cls[j], st.ref[j].toFixed(2));
       if (st.qty[j]) {

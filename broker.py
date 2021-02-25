@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/python3
 
 import os
 import re
@@ -70,7 +69,7 @@ def get_broker_name(b):
 def get_db_pairs():
     tuples = []
     for f in glob.glob(broker.db_location):
-        with open(f) as fd:
+        with open(f, 'r', errors='replace') as fd:
             m = re.search(r'bno=(\w{4})&amp;no=(\w{4})"', fd.read())
             if m:
                 tuples.append((m.group(2), m.group(1)))
@@ -122,7 +121,7 @@ def trace_broker(no, bno, opts):
         idx_range = len(vec) - opts.lines
 
     if opts.track:
-        print('{}\n{}'.format('-' * 100, get_broker_name(bno)))
+        print('\n{}\n{}\n'.format('-' * 100, get_broker_name(bno)))
 
     for idx, x in enumerate(vec):
         qty += x.b_qty - x.s_qty;

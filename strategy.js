@@ -173,7 +173,7 @@ function loadStocksJSON() {
   }
 
   $.ajax({
-    url: String.format('view.py?c={0}', codes.join(',')),
+    url: String.format('view?c={0}', codes.join(',')),
     dataType: 'json',
     error: onTimeout,
     success: parseStocksJSON,
@@ -189,7 +189,7 @@ function parseStrategyJSON(obj) {
  
 function loadStrategyJSON() {
   $.ajax({
-    url: 'load.py?j=strategy.json',
+    url: 'load?j=strategy.json',
     dataType: 'json',
     error: onTimeout,
     success: parseStrategyJSON,
@@ -218,7 +218,7 @@ function parseAccountJSON(obj) {
 
 function loadAccountJSON() {
   $.ajax({
-    url: 'load.py?j=account.json',
+    url: 'load?j=account.json',
     dataType: 'json',
     error: onTimeout,
     success: parseAccountJSON,
@@ -253,7 +253,7 @@ function onSave() {
   console.log(data);
   $.ajax({
     type: 'POST',
-    url: 'upload.py?j=strategy.json',
+    url: 'upload?j=strategy.json',
     data: {data: data},
     success: onSuccess,
   });

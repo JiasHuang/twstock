@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/python3
 
 import os
 import re
@@ -31,11 +30,11 @@ class broker:
     def show(self):
         text = ['-', '-', '-']
         if self.buy_qty:
-            text[0] = '{:+8,} ${:6.2f}'.format(self.buy_qty, self.buy_avg)
+            text[0] = '{:+8,} ${:6.2f}'.format(round(self.buy_qty), self.buy_avg)
         if self.sell_qty:
-            text[1] = '{:+8,} ${:6.2f}'.format(-self.sell_qty, self.sell_avg)
-        text[2] = '{:+,}'.format(self.buy_qty - self.sell_qty)
-        print('%s%s: %16s | %16s | %8s' %('  ' * (4 - len(self.bname.decode('utf8'))), self.bname, text[0], text[1], text[2]))
+            text[1] = '{:+8,} ${:6.2f}'.format(round(-self.sell_qty), self.sell_avg)
+        text[2] = '{:+,}'.format(round(self.buy_qty - self.sell_qty))
+        print('%s%s: %16s | %16s | %8s' %('  ' * (4 - len(self.bname)), self.bname, text[0], text[1], text[2]))
 
 def get_db_files():
     files = glob.glob(defs.db_location)
@@ -125,8 +124,8 @@ def show_results(results):
 
     total_qty = max(total_buy_qty, total_sell_qty)
     print('\n{d} {n} 統計 {d}'.format(d=divider, n=stockno))
-    print('成交張數 {:10,}'.format(total_qty))
-    print('外資券商 {:+10,} ({:.2f}%)'.format(foreign_qty, foreign_qty * 100 / total_qty))
+    print('成交張數 {:10,}'.format(round(total_qty)))
+    print('外資券商 {:+10,} ({:.2f}%)'.format(round(foreign_qty), foreign_qty * 100 / total_qty))
 
     return
 

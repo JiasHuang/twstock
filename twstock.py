@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/python3
 
 import os
 import re
@@ -85,23 +84,27 @@ class stock_report:
 def get_stat_pz_vol_pairs(code, cacheOnly):
     obj = {}
     url = 'https://jdata.yuanta.com.tw/z/zc/zcw/zcwg_%s.djhtm' %(code)
-    txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000)
+    txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000, encoding='big5')
     m = re.search(r'GetBcdData\(\'([^ ]*) ([^\']*)\'', txt)
     if m:
-        pzs = map(float, m.group(1).split(','))
-        vols = map(int, m.group(2).split(','))
+        pzs = m.group(1).split(',')
+        vols = m.group(2).split(',')
         total = 0
+        total_v = 0
         pairs = []
         for i in range(len(pzs)):
-            total = total + (pzs[i] * vols[i])
-            pairs.append((pzs[i], vols[i]))
-        obj['30d_pz'] = total / sum(vols)
-        obj['30d_vol'] = sum(vols) / 30
+            z = float(pzs[i])
+            v = int(vols[i])
+            total = total + z * v
+            total_v = total + v
+            pairs.append((z, v))
+        obj['30d_pz'] = total / total_v
+        obj['30d_vol'] = total_v / 30
         obj['30d_pz_vol_pairs']= pairs
     return obj
 
 def get_ex_ch_by_code(code):
-    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'otc_code_list.txt')
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'otc-code-list.txt')
     with open(local) as fd:
         for line in fd.readlines():
             if line.rstrip() == code:
@@ -230,7 +233,7 @@ def get_exchange_rate_infos(data):
     infos = []
 
     for exr in data['ExchangeRates']:
-        c = exr['currency'].encode('utf-8')
+        c = exr['currency']
         m = re.search(re.escape(c) + r',本行買入,([^,]*),([^,]*),.*?本行賣出,([^,]*),([^,]*),', txt)
         if m:
             info = exchange_rate_info(c, m.group(1), m.group(2), m.group(3), m.group(4))
@@ -299,7 +302,7 @@ def update_stock_report_eps(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - defs.from_year_offset
     url = 'https://jdata.yuanta.com.tw/z/zc/zcd/zcd_%s.djhtm' %(obj.code)
-    txt = xurl.load(url)
+    txt = xurl.load(url, encoding='big5')
     # 季別,加權平均股數,營業收入,稅前淨利,稅後淨利,每股營收(元),稅前每股盈餘(元),稅後每股盈餘(元)
     for m in re.finditer(r'<tr><td class="t3n0">(\d+)\.(\d)Q</td>(.*?)</tr>', txt):
         Y, Q = m.group(1), m.group(2)
@@ -312,7 +315,7 @@ def update_stock_report_eps(obj):
 
 def update_stock_report_dividend(obj):
     url = 'https://jdata.yuanta.com.tw/z/zc/zcc/zcc_%s.djhtm' %(obj.code)
-    txt = xurl.load(url)
+    txt = xurl.load(url, encoding='big5')
     for m in re.finditer(r'<td class="t3n0">(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         m2 = re.findall(r'>([^<]+)</td>', m.group(0))
         if len(m2) == 9:
@@ -325,7 +328,7 @@ def update_stock_report_revenue(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - defs.from_year_offset
     url = 'https://jdata.yuanta.com.tw/z/zc/zch/zch_%s.djhtm' %(obj.code)
-    txt = xurl.load(url)
+    txt = xurl.load(url, encoding='big5')
     for m in re.finditer(r'<td class="t3n0">(\d+)/(\d+)</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         Y, M = m.group(1), m.group(2)
         if int(Y) < from_year:
@@ -338,11 +341,11 @@ def update_stock_report_revenue(obj):
 def update_stock_report_news(obj):
     for i in range(1, 3):
         url = 'https://jdata.yuanta.com.tw/Z/ZC/ZCV/ZCV_%s_E_%d.djhtm' %(obj.code, i)
-        txt = xurl.load(url)
+        txt = xurl.load(url, encoding='big5')
         for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
             date = m.group(1)
             link = 'https://jdata.yuanta.com.tw' + m.group(2)
-            title = m.group(3).decode('big5', 'replace').encode('utf8')
+            title = m.group(3)
             if re.search(r'(每股稅後|每股盈餘|EPS)', title):
                 obj.news.append((date, title, link))
     return
@@ -393,8 +396,7 @@ def get_stock_report(code):
     update_stock_report_eps_from_news(obj)
     return obj
 
-def init(logfile='twstock.log'):
-    xurl.init(logfile=logfile)
+def init_xcurl():
     xurl.addDelayObj(r'fbs.com.tw', 0.5)
     xurl.addDelayObj(r'twse.com.tw', 0.5)
     xurl.addDelayObj(r'cnyes.com', 0.5)
@@ -410,7 +412,7 @@ def main():
     parser.add_option("-r", "--report", dest="report", action="store_true", default=False)
     (options, args) = parser.parse_args()
     stock_infos = []
-    init(logfile=None)
+    init_xcurl()
     if options.report:
         if options.codes:
             for code in options.codes.split(','):

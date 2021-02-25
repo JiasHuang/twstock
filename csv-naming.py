@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/python3
 
 import os
 import re
@@ -14,8 +13,8 @@ import xurl
 class defs:
     workdir = os.path.join(os.path.expanduser('~'), 'Downloads')
 
-def get_code(f):
-    with open(f) as fd:
+def get_code(f, encoding=None):
+    with open(f, encoding=encoding) as fd:
         l0 = fd.readline()
         l1 = fd.readline()
         m = None
@@ -44,7 +43,7 @@ def main():
     files.extend(glob.glob('*.csv'))
     files.extend(glob.glob('*.CSV'))
     for f in files:
-        code = get_code(f)
+        code = get_code(f, encoding='big5')
         if not code:
             continue
         d = options.date or get_date_from_bshtm()

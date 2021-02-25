@@ -154,13 +154,15 @@ function updateResult(obj) {
 
   $('#result').html(text);
 
-   $.ajax({
-    url: 'dividend.py?c=' + stocks_with_qty.join(','),
-    dataType: 'json',
-    error: onTimeout,
-    success: function(data){ updateDividendForecast(data, obj.stocks); },
-    timeout: 20000
-  });
+  if (stocks_with_qty.length) {
+    $.ajax({
+      url: 'dividend?c=' + stocks_with_qty.join(','),
+      dataType: 'json',
+      error: onTimeout,
+      success: function(data){ updateDividendForecast(data, obj.stocks); },
+      timeout: 20000
+    });
+  }
 
   return;
 }
@@ -176,7 +178,7 @@ function onTimeout () {
 
 function updateAccount() {
   $.ajax({
-    url: 'load.py?j=account.json',
+    url: 'load?j=account.json',
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,

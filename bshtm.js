@@ -141,7 +141,7 @@ function loadStocksJSON(maps) {
   }
 
   $.ajax({
-    url: String.format('view.py?c={0}', codes.join(',')),
+    url: String.format('view?c={0}', codes.join(',')),
     dataType: 'json',
     error: onTimeout,
     success: parseStocksJSON,
@@ -199,7 +199,7 @@ function parseJSON(obj) {
 
 function loadJSON() {
   $.ajax({
-    url: 'populate.py?a=bshtm',
+    url: 'populate?a=bshtm',
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,

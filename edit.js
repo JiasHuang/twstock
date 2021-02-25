@@ -126,7 +126,7 @@ function onTimeout() {
 
 function loadStockJSON() {
   $.ajax({
-    url: 'load.py',
+    url: 'load',
     dataType: 'json',
     error: onTimeout,
     success: parseStockJSON,
@@ -158,7 +158,7 @@ function onSave() {
   console.log(data);
   $.ajax({
     type: 'POST',
-    url: 'upload.py',
+    url: 'upload',
     data: {data: data},
   });
 }

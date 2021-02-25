@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/python3
 
 import os
 
-def init_file(d, n, text, buffering=-1):
+def init_file(d, n, text):
     local = os.path.join(d, n)
     if not os.path.exists(local):
-        fd = open(local, 'w', buffering)
+        fd = open(local, 'w')
         fd.write(text)
         fd.close()
         print(local)

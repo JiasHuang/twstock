@@ -107,7 +107,7 @@ def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expi
     ret = eval('%s(url, local, opts=opts, ref=ref, encoding=encoding)' %(cmd))
     t1 = time.time()
     if verbose:
-        print('[xurl] %s -> %s (%s)' %(url, local, t1 - t0))
+        print('[xurl] %s -> %s (%.2f)' %(url, local, t1 - t0))
     return ret
 
 def addDelayObj(flt, delay):

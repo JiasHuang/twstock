@@ -6,12 +6,12 @@ import re
 import hashlib
 import time
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote, unquote, unquote_plus, urljoin
 
 class defvals:
     workdir             = '/var/tmp/'
     ua                  = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
-    expiration          = 28800
+    expiration          = 14400
 
 class delayObj:
     def __init__(self, flt, delay):
@@ -69,12 +69,6 @@ def genLocal(url, prefix='vod_load_', suffix='', opts=None):
                 url = url + opt
     local = os.path.join(defvals.workdir, prefix + hashlib.md5(url.encode('utf8')).hexdigest() + suffix)
     return local
-
-def parse(url):
-    p = urlparse(url)
-    prefix = p.scheme + '://' + p.netloc + os.path.dirname(p.path) + '/'
-    basename = os.path.basename(p.path)
-    return prefix, basename
 
 def getContentType(url):
     local = genLocal(url, suffix='.hdr')

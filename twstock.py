@@ -372,8 +372,8 @@ def update_stock_report_eps_from_news(obj):
                 or (Q == '4' and re.search(r'\d+年', m.group(1))):
                 x = float(m.group(2))
                 for i in range(1, int(Q)):
-                    x = x - float(obj.eps[len(obj.eps) - i][3])
-                obj.eps.append((Y, Q, '-', str(x)))
+                    x = x - float(obj.eps[len(obj.eps) - i][8])
+                obj.eps.append((Y, Q, '-', '-', '-', '-', '-', '-', str(x)))
             break
     return
 

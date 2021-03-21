@@ -18,7 +18,7 @@
 }
 
 #result td {
-  font-size: 20px;
+  font-size: 18px;
   border: 1px solid;
   padding: 0px 10px;
   text-align: right;
@@ -62,3 +62,11 @@
 .red {
   color: red;
 }
+
+.chart {
+  display: inline-block;
+  width: 800px;
+  height: 400px;
+  margin: 10px;
+}
+

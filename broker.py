@@ -3,6 +3,7 @@
 import os
 import re
 import glob
+import configparser
 
 from optparse import OptionParser
 
@@ -24,7 +25,6 @@ class broker:
         '8890':'大和國泰',
         '8900':'法銀巴黎',
         '8960':'上海匯豐'}
-    defs = ['1470','1480','1520','1650','8440','8960']
     db_location = '/var/tmp/vod_load_*'
     def __init__(self, no, bno, qty, avg, date):
         self.no = no
@@ -171,32 +171,43 @@ def list_db(opts):
     show_results(results)
     return
 
+def load_config(option, opt, value, parser):
+    cfg = configparser.ConfigParser()
+    cfg.read(value)
+    for k in cfg['TWStock']:
+        setattr(parser.values, k, cfg['TWStock'][k])
+
 def main():
     parser = OptionParser()
-    parser.add_option("-b", "--broker", dest="broker", action="append")
+    parser.add_option("-b", "--broker", dest="broker")
     parser.add_option("-n", "--stockno", dest="stockno")
     parser.add_option("-l", "--lines", dest="lines", type="int", default=20)
-    parser.add_option("-c", "--cookies", dest="cookies")
+    parser.add_option("-c", "--config", dest="config", action="callback", callback=load_config, type="string")
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False)
     parser.add_option("--notrack", dest="track", action="store_false", default=True)
     parser.add_option("--nocache", dest="cache", action="store_false", default=True)
     parser.add_option("--cacheOnly", dest="cacheOnly", action="store_true", default=False)
     parser.add_option("--listbn", dest="listbn", action="store_true", default=False)
     parser.add_option("--listdb", dest="listdb", action="store_true", default=False)
+    parser.add_option("--cookies", dest="cookies")
     (opts, args) = parser.parse_args()
+
     if opts.listbn:
         list_bn()
         return
+
     if opts.listdb:
         list_db(opts)
         return
-    brokers = opts.broker or broker.defs
-    results = []
-    for bno in brokers:
-        ret = trace_broker(opts.stockno, bno, opts)
-        if ret:
-            results.append(ret)
-    show_results(results)
+
+    if opts.broker:
+        results = []
+        for bno in (opts.broker or '').split(','):
+            ret = trace_broker(opts.stockno, bno, opts)
+            if ret:
+                results.append(ret)
+        show_results(results)
+
     return
 
 if __name__ == '__main__':

@@ -269,6 +269,23 @@ function getEPSsByYear(eps, Y, cumulative) {
   return ret;
 }
 
+function getProfitMarginByYear(eps, Y) {
+  var ret = [];
+
+  for (var i=0; i<eps.length; i++) {
+    if (eps[i][0] != Y) {
+      continue;
+    }
+    let x = 'Q' + eps[i][1];
+    let rev = parseFloat(eps[i][3].replace(',', ''));
+    let net_profit = parseFloat(eps[i][5].replace(',', ''));
+    let profit_margin = net_profit / rev * 100;
+    ret.push({x: x, y: profit_margin.toFixed(2)});
+  }
+
+  return ret;
+}
+
 function updateEPSChart(eps, cumulative) {
   var ctx = document.getElementById(cumulative ? 'chart_cumulative_EPS' : 'chart_EPS').getContext('2d');
   var datasets = [];
@@ -295,6 +312,77 @@ function updateEPSChart(eps, cumulative) {
     options: {
       title: {
         text: cumulative ? '年度累季EPS' : '年度單季EPS',
+      }
+    },
+    data: {
+      labels:labels,
+      datasets: datasets,
+    }
+  });
+}
+
+function updateProfitMarginChart(eps) {
+  var ctx = document.getElementById('chart_profit_margin').getContext('2d');
+  var datasets = [];
+  var data = [];
+  var labels = [];
+
+  for (var i=0; i<eps.length; i++) {
+    let rev = parseFloat(eps[i][3].replace(',', ''));
+    let net_profit = parseFloat(eps[i][5].replace(',', ''));
+    let profit_margin = net_profit / rev * 100;
+    data.push(profit_margin.toFixed(2));
+    labels.push(eps[i][0] + 'Q' + eps[i][1]);
+  }
+
+  datasets.push({
+    label: 'ProfitMargin',
+    data: data,
+    borderColor: 'blue',
+    backgroundColor: 'blue',
+    fill: false,
+  });
+
+  var lineChart = new Chart(ctx, {
+    type: 'line',
+    options: {
+      title: {
+        text: '淨利率',
+      }
+    },
+    data: {
+      labels:labels,
+      datasets: datasets,
+    }
+  });
+}
+
+function updateProfitMarginChartByYear(eps) {
+  var ctx = document.getElementById('chart_profit_margin_by_year').getContext('2d');
+  var datasets = [];
+  var labels = ['Q1','Q2','Q3','Q4'];
+  var colors_idx = 0;
+  var Y = null;
+
+  for (var i=0; i<eps.length; i++) {
+    if (Y != eps[i][0]) {
+      Y = eps[i][0];
+      datasets.push({
+        label: Y,
+        data: getProfitMarginByYear(eps, Y),
+        borderColor: colors[colors_idx],
+        backgroundColor: colors[colors_idx],
+        fill: false,
+      });
+      colors_idx++;
+    }
+  }
+
+  var lineChart = new Chart(ctx, {
+    type: 'line',
+    options: {
+      title: {
+        text: '年度單季淨利率',
       }
     },
     data: {
@@ -540,10 +628,14 @@ function parseJSON(obj) {
   if (obj.eps.length) {
     updateEPSChart(obj.eps, true);
     updateEPSChart(obj.eps, false);
+    updateProfitMarginChart(obj.eps);
+    updateProfitMarginChartByYear(obj.eps);
   }
   else {
     $('#cumulative_eps').hide();
     $('#eps').hide();
+    $('#profit_margin').hide();
+    $('#profit_margin_by_year').hide();
   }
   if (obj.revenue.length) {
     updateRevenueChart(obj.revenue, true);

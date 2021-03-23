@@ -310,6 +310,7 @@ def update_stock_report_eps(obj):
             break
         m2 = re.findall(r'>([^<]+)<', m.group(3))
         if len(m2) == 7:
+            # 0年 1季, 2加權平均股數, 3營業收入, 4稅前淨利, 5稅後淨利, 6每股營收(元), 7稅前每股盈餘(元), 8稅後每股盈餘(元)
             obj.eps.insert(0, (Y, Q, m2[0], m2[1], m2[2], m2[3], m2[4], m2[5], m2[6]))
     return
 

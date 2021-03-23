@@ -336,7 +336,7 @@ function getRevenueByYearQ(rev, Y, Q) {
     if (Math.ceil(parseInt(rev[i][1]) / 3) != Q) {
       continue;
     }
-    vol += parseFloat(rev[i][2]) / 100000; //單位：1億
+    vol += parseFloat(rev[i][2]) / 100000; //單位：仟->億
     months += 1;
   }
 
@@ -385,11 +385,13 @@ function getEPSHTMLText(obj) {
 
   text += '<table>';
 
+  // 0年 1季, 2加權平均股數, 3營業收入, 4稅前淨利, 5稅後淨利, 6每股營收(元), 7稅前每股盈餘(元), 8稅後每股盈餘(元)
+  // 單位：千股 / 百萬元
   for (var i=0; i<eps.length; i++) {
     if (Y != eps[i][0]) {
         Y = eps[i][0];
         text += '</table><table>';
-        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>股數(千股)</th><th>稅後淨利(百萬)</th><th>稅後EPS</th><th></th></tr>';
+        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>股數(千股)</th><th>稅後淨利(百萬)</th><th>淨利率(%)</th><th>稅後EPS</th><th></th></tr>';
         let note = '';
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
@@ -421,20 +423,22 @@ function getEPSHTMLText(obj) {
           note += String.format('近四季本益比：{0}<br>', price_to_earning);
           note += String.format('近四季收益率：{0}%<br>', earning_yield);
         }
-        text += '<tr><td colspan=6></td><td rowspan=5>' + note + '</td></tr>';
+        text += '<tr><td colspan=7></td><td rowspan=5>' + note + '</td></tr>';
         for (var q=1; q<eps[i][1]; q++) {
-          text += '<tr>' + '<td>-</td>'.repeat(6) + '</tr>';
+          text += '<tr>' + '<td>-</td>'.repeat(7) + '</tr>';
         }
     }
-    let rev = getRevenueByYearQ(obj.revenue, eps[i][0], eps[i][1]);
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>',
-      eps[i][0], eps[i][1], rev.vol.toFixed(2), eps[i][2], eps[i][5], eps[i][8]);
+    let rev = parseFloat(eps[i][3].replace(',', ''));
+    let net_profit = parseFloat(eps[i][5].replace(',', ''));
+    let profit_margin = net_profit / rev * 100;
+    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td></tr>',
+      eps[i][0], eps[i][1], (rev / 100).toFixed(2), eps[i][2], eps[i][5], profit_margin.toFixed(2), eps[i][8]);
   }
 
   for (var Q=parseInt(eps[eps.length-1][1])+1; Q<=4; Q++) {
     let rev = getRevenueByYearQ(obj.revenue, Y, Q);
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>-</td><td>-</td><td>-</td></tr>',
-      Y, Q, rev.vol.toFixed(2));
+    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td>{3]</tr>',
+      Y, Q, rev.vol.toFixed(2), '<td>-</td>'.repeat(4));
   }
 
   text += '</table><br>';

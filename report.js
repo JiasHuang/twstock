@@ -277,8 +277,8 @@ function getProfitMarginByYear(eps, Y) {
       continue;
     }
     let x = 'Q' + eps[i][1];
-    let rev = parseFloat(eps[i][3].replace(',', ''));
-    let net_profit = parseFloat(eps[i][5].replace(',', ''));
+    let rev = parseFloat(eps[i][3].replaceAll(',', ''));
+    let net_profit = parseFloat(eps[i][5].replaceAll(',', ''));
     let profit_margin = net_profit / rev * 100;
     ret.push({x: x, y: profit_margin.toFixed(2)});
   }
@@ -328,8 +328,8 @@ function updateProfitMarginChart(eps) {
   var labels = [];
 
   for (var i=0; i<eps.length; i++) {
-    let rev = parseFloat(eps[i][3].replace(',', ''));
-    let net_profit = parseFloat(eps[i][5].replace(',', ''));
+    let rev = parseFloat(eps[i][3].replaceAll(',', ''));
+    let net_profit = parseFloat(eps[i][5].replaceAll(',', ''));
     let profit_margin = net_profit / rev * 100;
     data.push(profit_margin.toFixed(2));
     labels.push(eps[i][0] + 'Q' + eps[i][1]);
@@ -479,7 +479,7 @@ function getEPSHTMLText(obj) {
     if (Y != eps[i][0]) {
         Y = eps[i][0];
         text += '</table><table>';
-        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>股數(千股)</th><th>稅後淨利(億)</th><th>淨利率(%)</th><th>稅後EPS</th><th></th></tr>';
+        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>股數(億股)</th><th>稅後淨利(億)</th><th>淨利率(%)</th><th>稅後EPS</th><th></th></tr>';
         let note = '';
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
@@ -516,11 +516,12 @@ function getEPSHTMLText(obj) {
           text += '<tr>' + '<td>-</td>'.repeat(7) + '</tr>';
         }
     }
-    let rev = parseFloat(eps[i][3].replace(',', ''));
-    let net_profit = parseFloat(eps[i][5].replace(',', ''));
+    let rev = parseFloat(eps[i][3].replaceAll(',', ''));
+    let net_profit = parseFloat(eps[i][5].replaceAll(',', '')); // 單位： 百萬
     let profit_margin = net_profit / rev * 100;
+    let stocks_in_100M = parseFloat(eps[i][2].replaceAll(',', '')) / 100000; // 單位： 千->億
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td></tr>',
-      eps[i][0], eps[i][1], (rev / 100).toFixed(2), eps[i][2], (net_profit / 100).toFixed(2), profit_margin.toFixed(2), eps[i][8]);
+      eps[i][0], eps[i][1], (rev / 100).toFixed(2), stocks_in_100M.toFixed(2), (net_profit / 100).toFixed(2), profit_margin.toFixed(2), eps[i][8]);
   }
 
   for (var Q=parseInt(eps[eps.length-1][1])+1; Q<=4; Q++) {

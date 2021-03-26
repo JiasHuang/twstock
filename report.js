@@ -484,7 +484,7 @@ function getEPSHTMLText(obj) {
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
         let year_wap = parseWAPByYear(obj.wap, Y)[2].toFixed(2);
-        if (Y != eps[eps.length-1][0]) {
+        if (i <= eps.length - 4) {
           let parsed = parseWAPByYear(obj.wap, Y);
           let year_wap = '-';
           let year_price_to_earning = '-';
@@ -526,7 +526,7 @@ function getEPSHTMLText(obj) {
 
   for (var Q=parseInt(eps[eps.length-1][1])+1; Q<=4; Q++) {
     let rev = getRevenueByYearQ(obj.revenue, Y, Q);
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td>{3]</tr>',
+    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td>{3}</tr>',
       Y, Q, rev.vol.toFixed(2), '<td>-</td>'.repeat(4));
   }
 

@@ -112,17 +112,21 @@ def get_ex_ch_by_code(code):
     return 'tse_%s.tw' %(code)
 
 def get_stock_infos(data):
-    info = []
-    for s in data['stocks']:
-        info.append(stock_info(s['code'], s.get('flts'), s.get('tags'), s.get('notes')))
-    ex_ch = '|'.join([get_ex_ch_by_code(i.code) for i in info])
+    infos = []
+    ex_ch = '|'.join([get_ex_ch_by_code(s['code']) for s in data['stocks']])
     url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
     txt = xurl.load(url, cache=False)
-    data = json.loads(txt)
-    for i in range(len(info)):
-        info[i].msg = data['msgArray'][i]
-        parse_info(info[i])
-    return info
+    twse_data = json.loads(txt)
+    if 'msgArray' not in twse_data:
+        return []
+    for msg in twse_data['msgArray']:
+        for s in data['stocks']:
+            if s['code'] == msg['c']:
+                info = stock_info(s['code'], s.get('flts'), s.get('tags'), s.get('notes'))
+                info.msg = msg
+                parse_info(info)
+                infos.append(info)
+    return infos
 
 def update_stock_stats(infos, cacheOnly):
     for info in infos:
@@ -264,7 +268,7 @@ def get_stock_info_by_code(code):
     data = get_stock_json_by_codes(code)
     infos = get_stock_infos(data)
     update_stock_stats(infos, False)
-    return infos[0]
+    return infos[0] if len(infos) > 0 else None
 
 def update_stock_report_wap(obj):
     now = datetime.datetime.now()
@@ -347,7 +351,7 @@ def update_stock_report_news(obj):
             date = m.group(1)
             link = 'https://jdata.yuanta.com.tw' + m.group(2)
             title = m.group(3)
-            if re.search(r'(每股稅後|每股盈餘|EPS)', title):
+            if re.search(r'(每股稅後|每股盈餘|EPS|法說)', title):
                 obj.news.append((date, title, link))
     return
 
@@ -381,6 +385,9 @@ def update_stock_report_eps_from_news(obj):
 def get_stock_report(code):
     obj = stock_report(code)
     info = get_stock_info_by_code(code)
+    if not info:
+        obj.n = 'NotFound'
+        return obj
     obj.z = info.z
     obj.n = info.msg['n']
     obj.nf = info.msg['nf']

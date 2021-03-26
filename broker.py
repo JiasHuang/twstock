@@ -110,7 +110,7 @@ def get_cached_tracks(no, bno=None):
 def trace_broker(no, bno, opts):
     vec = get_tracks(no, bno, opts)
     if len(vec) == 0:
-        print('NOT FOUND: no={} bno={}'.format(no, bno))
+        print('[broker] stock_no={} broker_no={} : Not Found'.format(no, bno))
         return None
 
     qty = 0

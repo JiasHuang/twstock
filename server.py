@@ -157,11 +157,11 @@ def main():
 
     parser = OptionParser()
     parser.add_option("-n", "--hostname", dest="hostname", default=defvals.hostname)
-    parser.add_option("-p", "--hostport", type="int", dest="port", default=defvals.hostport)
+    parser.add_option("-p", "--hostport", type="int", dest="hostport", default=defvals.hostport)
     parser.add_option("-c", "--config", dest="config")
     parser.add_option("--workdir", dest="workdir")
     parser.add_option("--ua", dest="ua")
-    parser.add_option("--expiration", dest="expiration")
+    parser.add_option("--expiration", dest="expiration", type="int")
     (opts, args) = parser.parse_args()
 
     if opts.config:
@@ -171,12 +171,17 @@ def main():
             setattr(opts, k, parser['TWStock'][k])
 
     # update xurl settings
-    for k in ['workdir', 'ua', 'expiration']:
+    for k in ['workdir', 'ua']:
         if getattr(opts, k):
             setattr(xurl.defvals, k, getattr(opts, k))
 
-    webServer = HTTPServer((opts.hostname, opts.port), TWStockServer)
-    print('TWStock Server started http://%s:%s' % (opts.hostname, opts.port))
+    # update xurl settings (int)
+    for k in ['expiration']:
+        if getattr(opts, k):
+            setattr(xurl.defvals, k, int(getattr(opts, k)))
+
+    webServer = HTTPServer((opts.hostname, opts.hostport), TWStockServer)
+    print('TWStock Server started http://%s:%s' % (opts.hostname, opts.hostport))
 
     try:
         webServer.serve_forever()

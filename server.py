@@ -168,17 +168,15 @@ def main():
         parser = configparser.ConfigParser()
         parser.read(opts.config)
         for k in parser['TWStock']:
-            setattr(opts, k, parser['TWStock'][k])
+            if k in ['hostport', 'expiration']:
+                setattr(opts, k, int(parser['TWStock'][k]))
+            else:
+                setattr(opts, k, parser['TWStock'][k])
 
     # update xurl settings
-    for k in ['workdir', 'ua']:
+    for k in ['workdir', 'ua', 'expiration']:
         if getattr(opts, k):
             setattr(xurl.defvals, k, getattr(opts, k))
-
-    # update xurl settings (int)
-    for k in ['expiration']:
-        if getattr(opts, k):
-            setattr(xurl.defvals, k, int(getattr(opts, k)))
 
     webServer = HTTPServer((opts.hostname, opts.hostport), TWStockServer)
     print('TWStock Server started http://%s:%s' % (opts.hostname, opts.hostport))

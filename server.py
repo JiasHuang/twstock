@@ -150,6 +150,15 @@ class TWStockServer(BaseHTTPRequestHandler):
         self.send_error(404, 'File Not Found: %s' %(self.path))
         return
 
+def load_config(option, opt, value, parser):
+    cfg = configparser.ConfigParser()
+    cfg.read(value)
+    for k in cfg['TWStock']:
+        if k in ['hostport', 'expiration']:
+            setattr(parser.values, k, int(cfg['TWStock'][k]))
+        else:
+            setattr(parser.values, k, cfg['TWStock'][k])
+
 def main():
     global opts
 
@@ -158,20 +167,11 @@ def main():
     parser = OptionParser()
     parser.add_option("-n", "--hostname", dest="hostname", default=defvals.hostname)
     parser.add_option("-p", "--hostport", type="int", dest="hostport", default=defvals.hostport)
-    parser.add_option("-c", "--config", dest="config")
+    parser.add_option("-c", "--config", dest="config", action="callback", callback=load_config, type="string")
     parser.add_option("--workdir", dest="workdir")
     parser.add_option("--ua", dest="ua")
     parser.add_option("--expiration", dest="expiration", type="int")
     (opts, args) = parser.parse_args()
-
-    if opts.config:
-        parser = configparser.ConfigParser()
-        parser.read(opts.config)
-        for k in parser['TWStock']:
-            if k in ['hostport', 'expiration']:
-                setattr(opts, k, int(parser['TWStock'][k]))
-            else:
-                setattr(opts, k, parser['TWStock'][k])
 
     # update xurl settings
     for k in ['workdir', 'ua', 'expiration']:

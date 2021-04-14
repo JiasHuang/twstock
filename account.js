@@ -187,6 +187,7 @@ function updateAccount() {
 }
 
 function onDocumentReady() {
+  loadTopMenu();
   updateAccount();
 }
 

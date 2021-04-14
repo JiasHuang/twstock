@@ -244,6 +244,7 @@ function updateResultByInput() {
 }
 
 function onDocumentReady() {
+  loadTopMenu();
   if (window.location.search != '') {
     loadJSON();
   }

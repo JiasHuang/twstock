@@ -369,6 +369,7 @@ function loadStrategyJSON() {
 }
 
 function onDocumentReady() {
+  loadTopMenu();
   loadAccountJSON();
   loadStrategyJSON();
   initStockInfo();

@@ -260,6 +260,7 @@ function onSave() {
 }
 
 function onDocumentReady() {
+  loadTopMenu();
   loadAccountJSON();
   loadStrategyJSON();
 }

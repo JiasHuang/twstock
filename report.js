@@ -685,6 +685,7 @@ function updateReportByInput() {
 }
 
 function onDocumentReady() {
+  loadTopMenu();
   if (window.location.search != '') {
     updateStockReport();
   }

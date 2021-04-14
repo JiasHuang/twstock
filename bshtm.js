@@ -208,6 +208,7 @@ function loadJSON() {
 }
 
 function onDocumentReady() {
+  loadTopMenu();
   loadJSON();
 }
 

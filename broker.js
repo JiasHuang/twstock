@@ -116,7 +116,7 @@ function loadJSON() {
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,
-    timeout: 2000
+    timeout: 10000
   });
 }
 

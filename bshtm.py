@@ -8,7 +8,7 @@ import time
 from optparse import OptionParser
 
 class defs:
-    db_location = '/home/rd/Downloads/*/*.csv'
+    db_location = os.path.expanduser('~/Downloads/*/*.csv')
 
 class broker:
     foreign = ['1360','1380','1440','1470','1480','1520','1560','1570','1590','1650','8440','8890','8900','8960']

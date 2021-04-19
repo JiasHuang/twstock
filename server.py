@@ -4,22 +4,21 @@ import re
 import os
 import json
 import configparser
+import argparse
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http.cookies import SimpleCookie
 from urllib.parse import urlparse, parse_qs, quote, unquote, unquote_plus
-from optparse import OptionParser
 
 import xurl
 import twstock
 import broker
 import bshtm
 
-opts = None
-
 class defvals:
     hostname = ''
     hostport = 8081
+    expiration = 28800
 
 def exr(q):
     d = parse_qs(q)
@@ -150,36 +149,46 @@ class TWStockServer(BaseHTTPRequestHandler):
         self.send_error(404, 'File Not Found: %s' %(self.path))
         return
 
-def load_config(option, opt, value, parser):
-    cfg = configparser.ConfigParser()
-    cfg.read(value)
-    for k in cfg['TWStock']:
-        if k in ['hostport', 'expiration']:
-            setattr(parser.values, k, int(cfg['TWStock'][k]))
-        else:
-            setattr(parser.values, k, cfg['TWStock'][k])
+class LoadConfig(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        cfg = configparser.ConfigParser()
+        cfg.read(values)
+        for k in cfg['TWStock']:
+            if k in ['hostport', 'expiration']:
+                setattr(namespace, k, int(cfg['TWStock'][k]))
+            else:
+                setattr(namespace, k, cfg['TWStock'][k])
+
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
-    global opts
 
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    parser = OptionParser()
-    parser.add_option("-n", "--hostname", dest="hostname", default=defvals.hostname)
-    parser.add_option("-p", "--hostport", type="int", dest="hostport", default=defvals.hostport)
-    parser.add_option("-c", "--config", dest="config", action="callback", callback=load_config, type="string")
-    parser.add_option("--workdir", dest="workdir")
-    parser.add_option("--ua", dest="ua")
-    parser.add_option("--expiration", dest="expiration", type="int")
-    (opts, args) = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--hostname', default=defvals.hostname)
+    parser.add_argument('-p', '--hostport', default=defvals.hostport)
+    parser.add_argument('-c', '--config', action=LoadConfig)
+    parser.add_argument('--workdir')
+    parser.add_argument('--ua')
+    parser.add_argument('--expiration', default=defvals.expiration)
+    args = parser.parse_args()
 
     # update xurl settings
     for k in ['workdir', 'ua', 'expiration']:
-        if getattr(opts, k):
-            setattr(xurl.defvals, k, getattr(opts, k))
+        if getattr(args, k):
+            setattr(xurl.defvals, k, getattr(args, k))
 
-    webServer = HTTPServer((opts.hostname, opts.hostport), TWStockServer)
-    print('TWStock Server started http://%s:%s' % (opts.hostname, opts.hostport))
+    webServer = HTTPServer((args.hostname, args.hostport), TWStockServer)
+    print('TWStock Server started http://%s:%s' % (args.hostname, args.hostport))
 
     try:
         webServer.serve_forever()

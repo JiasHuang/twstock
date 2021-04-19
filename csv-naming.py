@@ -5,8 +5,7 @@ import re
 import sys
 import time
 import glob
-
-from optparse import OptionParser
+import argparse
 
 import xurl
 
@@ -33,12 +32,12 @@ def get_date_from_bshtm():
     return int(m.group(1) + m.group(2) + m.group(3))
 
 def main():
-    parser = OptionParser()
-    parser.add_option("-d", "--dir", dest="dir", default=defs.workdir)
-    parser.add_option("-D", "--date", dest="date")
-    (options, args) = parser.parse_args()
-    if options.dir:
-        os.chdir(options.dir)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dir', default=defs.workdir)
+    parser.add_argument('-D', '--date')
+    args = parser.parse_args()
+    if args.dir:
+        os.chdir(args.dir)
     files = []
     files.extend(glob.glob('*.csv'))
     files.extend(glob.glob('*.CSV'))
@@ -46,7 +45,7 @@ def main():
         code = get_code(f, encoding='big5')
         if not code:
             continue
-        d = options.date or get_date_from_bshtm()
+        d = args.date or get_date_from_bshtm()
         fdir = '{}'.format(code)
         fname = '{}-{}.csv'.format(code, d)
         print('%s/%s' %(fdir, fname))

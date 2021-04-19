@@ -4,8 +4,7 @@ import os
 import re
 import glob
 import time
-
-from optparse import OptionParser
+import argparse
 
 class defs:
     db_location = os.path.expanduser('~/Downloads/*/*.csv')
@@ -142,10 +141,10 @@ def get_db():
     return all_results
 
 def main():
-    parser = OptionParser()
-    parser.add_option("-i", "--input", dest="input", action="append")
-    (options, args) = parser.parse_args()
-    for orig in options.input or args:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', action='append')
+    args = parser.parse_args()
+    for orig in args.input or args:
         print('\n{}'.format(orig))
         local = '/tmp/bshtm_%s.utf8' %(orig.replace('/','_'))
         os.system('iconv -f big5 -t utf8 -c \'%s\' > \'%s\'' %(orig, local))

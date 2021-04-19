@@ -37,9 +37,9 @@ function getSortedStockTableText(sorted, title, cnt=-1, flt=null) {
     }
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>',
       x.bname,
-      x.buy_qty? x.buy_qty.toLocaleString() : '-', x.buy_qty? x.buy_avg.toFixed(2) : '-',
-      x.sell_qty? (-x.sell_qty).toLocaleString() : '-', x.sell_qty? x.sell_avg.toFixed(2) : '-',
-      (x.buy_qty - x.sell_qty).toLocaleString());
+      x.buy_qty? Math.round(x.buy_qty).toLocaleString() : '-', x.buy_qty? x.buy_avg.toFixed(2) : '-',
+      x.sell_qty? Math.round(-x.sell_qty).toLocaleString() : '-', x.sell_qty? x.sell_avg.toFixed(2) : '-',
+      Math.round(x.buy_qty - x.sell_qty).toLocaleString());
   }
 
   text += '</table>';
@@ -65,8 +65,8 @@ function getStockTableText(idx_start, idx_end) {
 
   text += String.format('<hr><span id="stockno_{0}" class="stat">{0}</span><span class="stat"> 成交張數：{1}，外資券商：{2} ({3}%)</span><br>',
     db[idx_start].stockno,
-    Math.max(total_buy_qty, total_sell_qty).toLocaleString(),
-    foreign_qty.toLocaleString(),
+    Math.round(Math.max(total_buy_qty, total_sell_qty)).toLocaleString(),
+    Math.round(foreign_qty).toLocaleString(),
     (foreign_qty * 100 / Math.max(total_buy_qty, total_sell_qty)).toFixed(2));
 
   sorted = db.slice(idx_start, idx_end).sort(function (a, b) {

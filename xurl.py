@@ -62,7 +62,7 @@ def checkExpire(local, expiration=None):
         return True
     return False
 
-def genLocal(url, prefix='vod_load_', suffix='', opts=None):
+def genLocal(url, prefix='twstock_load_', suffix='', opts=None):
     if opts and isinstance(opts, list):
         for opt in opts:
             if opt.startswith('--data-raw'):

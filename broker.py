@@ -4,8 +4,7 @@ import os
 import re
 import glob
 import configparser
-
-from optparse import OptionParser
+import argparse
 
 import xurl
 
@@ -25,7 +24,7 @@ class broker:
         '8890':'大和國泰',
         '8900':'法銀巴黎',
         '8960':'上海匯豐'}
-    db_location = '/var/tmp/vod_load_*'
+    db_location = '/var/tmp/twstock_load_broker_*'
     def __init__(self, no, bno, qty, avg, date):
         self.no = no
         self.bno = bno
@@ -52,7 +51,7 @@ class track_hdr:
         self.idx_start = idx_start
         self.idx_end = idx_end
 
-class trace_broker_opts:
+class trace_broker_args:
     def __init__(self):
         self.lines = None
         self.cookies = None
@@ -75,40 +74,42 @@ def get_db_pairs():
                 tuples.append((m.group(2), m.group(1)))
     return tuples
 
-def get_tracks(no, bno, opts):
+def get_tracks(no, bno, args):
     url = 'https://histock.tw/stock/brokertrace.aspx?bno={b}&no={n}'.format(b=bno, n=no)
     url_opts = []
-    if opts.cookies:
-        url_opts.append('-H \'cookie: ' + opts.cookies + '\'')
-    txt = xurl.load(url, opts=url_opts, cache=opts.cache, cacheOnly=opts.cacheOnly, verbose=opts.verbose)
+    if args.cookies:
+        url_opts.append('-H \'cookie: ' + args.cookies + '\'')
+
+    local = xurl.genLocal(url, prefix='twstock_load_broker_')
+    txt = xurl.load(url, local=local, opts=url_opts, cache=args.cache, cacheOnly=args.cacheOnly, verbose=args.verbose)
 
     vec = []
     for m in re.finditer(r'<td>(.*?)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td>', txt):
         vec.insert(0, track(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)))
 
     if len(vec) == 0 and re.search('alert', txt):
-        os.remove(xurl.genLocal(url))
+        os.remove(local)
 
     return vec
 
 def get_cached_tracks(no, bno=None):
-    opts = trace_broker_opts()
+    args = trace_broker_args()
     if bno:
-        tracks = get_tracks(no, bno, opts)
+        tracks = get_tracks(no, bno, args)
         hdrs = [track_hdr(no, bno, len(tracks))]
         return (hdrs, tracks)
     tracks = []
     hdrs = []
     for (db_no, db_bno) in get_db_pairs():
         if db_no == no:
-            ret = get_tracks(db_no, db_bno, opts)
+            ret = get_tracks(db_no, db_bno, args)
             if len(ret):
                 tracks.extend(ret)
                 hdrs.append(track_hdr(db_no, db_bno, len(tracks) - len(ret), len(tracks)))
     return (hdrs, tracks)
 
-def trace_broker(no, bno, opts):
-    vec = get_tracks(no, bno, opts)
+def trace_broker(no, bno, args):
+    vec = get_tracks(no, bno, args)
     if len(vec) == 0:
         print('[broker] stock_no={} broker_no={} : Not Found'.format(no, bno))
         return None
@@ -117,10 +118,10 @@ def trace_broker(no, bno, opts):
     cost = 0
     avg = 0
     idx_range = None
-    if opts.lines:
-        idx_range = len(vec) - opts.lines
+    if args.lines:
+        idx_range = len(vec) - args.lines
 
-    if opts.track:
+    if args.track:
         print('\n{}\n{}\n'.format('-' * 100, get_broker_name(bno)))
 
     for idx, x in enumerate(vec):
@@ -135,7 +136,7 @@ def trace_broker(no, bno, opts):
             text[0] = '{0:+8} {1:8.2f}'.format(x.b_qty, x.b_pz)
         if x.s_qty:
             text[1] = '{0:+8} {1:8.2f}'.format(-x.s_qty, x.s_pz)
-        if opts.track and (not idx_range or idx >= idx_range):
+        if args.track and (not idx_range or idx >= idx_range):
             print('{} | {:>17s} | {:>17s} | {:+8,} | qty {:10,} | avg {:8.2f}'.format(x.date, text[0], text[1], x.b_qty - x.s_qty, qty, avg))
 
     return broker(no, bno, qty, avg, vec[-1].date)
@@ -154,56 +155,67 @@ def show_results(results):
         print('{:15} | qty {:10,} | avg {:8.2f} | {}'.format(x.bname, x.qty, x.avg, x.date))
     return
 
-def get_db(opts=None):
+def get_db(args=None):
     tuples = get_db_pairs()
     results = []
-    opts = opts or trace_broker_opts()
+    args = args or trace_broker_args()
     for (no, bno) in tuples:
-        ret = trace_broker(no, bno, opts)
+        ret = trace_broker(no, bno, args)
         if ret:
             results.append(ret)
     return results
 
-def list_db(opts):
-    opts.cacheOnly = True
-    opts.track = False
-    results = get_db(opts)
+def list_db(args):
+    args.cacheOnly = True
+    args.track = False
+    results = get_db(args)
     show_results(results)
     return
 
-def load_config(option, opt, value, parser):
-    cfg = configparser.ConfigParser()
-    cfg.read(value)
-    for k in cfg['TWStock']:
-        setattr(parser.values, k, cfg['TWStock'][k])
+class LoadConfig(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        cfg = configparser.ConfigParser()
+        cfg.read(values)
+        for k in cfg['TWStock']:
+            setattr(namespace, k, cfg['TWStock'][k])
+
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
-    parser = OptionParser()
-    parser.add_option("-b", "--broker", dest="broker")
-    parser.add_option("-n", "--stockno", dest="stockno")
-    parser.add_option("-l", "--lines", dest="lines", type="int", default=20)
-    parser.add_option("-c", "--config", dest="config", action="callback", callback=load_config, type="string")
-    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False)
-    parser.add_option("--notrack", dest="track", action="store_false", default=True)
-    parser.add_option("--nocache", dest="cache", action="store_false", default=True)
-    parser.add_option("--cacheOnly", dest="cacheOnly", action="store_true", default=False)
-    parser.add_option("--listbn", dest="listbn", action="store_true", default=False)
-    parser.add_option("--listdb", dest="listdb", action="store_true", default=False)
-    parser.add_option("--cookies", dest="cookies")
-    (opts, args) = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--broker')
+    parser.add_argument('-n', '--stockno')
+    parser.add_argument('-l', '--lines', default=20)
+    parser.add_argument('-c', '--config', action=LoadConfig)
+    parser.add_argument('-v', '--verbose', type=str2bool, nargs='?', const=True, default=False)
+    parser.add_argument('--track', type=str2bool, nargs='?', const=True, default=True)
+    parser.add_argument('--cache', type=str2bool, nargs='?', const=True, default=True)
+    parser.add_argument('--cacheOnly', type=str2bool, nargs='?', const=True, default=False)
+    parser.add_argument('--listbn', type=str2bool, nargs='?', const=True, default=False)
+    parser.add_argument('--listdb', type=str2bool, nargs='?', const=True, default=False)
+    parser.add_argument('--cookies')
+    args = parser.parse_args()
 
-    if opts.listbn:
+    if args.listbn:
         list_bn()
         return
 
-    if opts.listdb:
-        list_db(opts)
+    if args.listdb:
+        list_db(args)
         return
 
-    if opts.broker:
+    if args.broker:
         results = []
-        for bno in (opts.broker or '').split(','):
-            ret = trace_broker(opts.stockno, bno, opts)
+        for bno in (args.broker or '').split(','):
+            ret = trace_broker(args.stockno, bno, args)
             if ret:
                 results.append(ret)
         show_results(results)

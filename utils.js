@@ -21,7 +21,6 @@ function loadTopMenu() {
   text += `
     <td>
     <select onchange="onGotoSelectChange.call(this)">
-      <option value="" disabled selected>Goto</option>
       <option value="view.html">View</option>
       <option value="account.html">Account</option>
       <option value="report.html">Report</option>
@@ -36,6 +35,10 @@ function loadTopMenu() {
   text += '</tr>';
   text += '</table>';
   text += '<hr>';
+
+  var path = window.location.pathname.split('/');
+  var file = path[path.length - 1];
+  text = text.replace('"' + file + '"', '"' + file + '" selected');
 
   $('#topmenu').html(text);
 }

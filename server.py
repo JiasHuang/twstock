@@ -112,7 +112,10 @@ class TWStockServer(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', "text/html")
             self.end_headers()
-            self.wfile.write(bytes('OK', "utf8"))
+            try:
+                self.wfile.write(bytes('OK', "utf8"))
+            except:
+                pass
         return
     def do_GET(self):
         if self.path == '/':
@@ -126,7 +129,10 @@ class TWStockServer(BaseHTTPRequestHandler):
             self.send_header('Content-type', "text/html")
             self.end_headers()
             results = eval('%s(p.query)' %(p.path[1:]))
-            self.wfile.write(bytes(results, 'utf8'))
+            try:
+                self.wfile.write(bytes(results, 'utf8'))
+            except:
+                pass
             return
         if p.path.endswith(('.css', '.js', '.html', '.png', '.gif')):
             local = os.path.abspath(os.curdir) + p.path

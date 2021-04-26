@@ -96,7 +96,7 @@ def get_stat_pz_vol_pairs(code, cacheOnly):
             z = float(pzs[i])
             v = int(vols[i])
             total = total + z * v
-            total_v = total + v
+            total_v = total_v + v
             pairs.append((z, v))
         obj['30d_pz'] = total / total_v
         obj['30d_vol'] = total_v / 30

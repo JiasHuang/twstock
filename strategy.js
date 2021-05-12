@@ -108,8 +108,9 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_pz);
-    text += String.format('<td><span class="curpz">{0}</span>', z.toFixed(2));
-    text += String.format('\n<span class="{0}">{1} ({2}%)</span></td>', z_diff<0?'green':'grey', z_diff.toFixed(2), z_ratio);
+    text += String.format('<td><a href="report.html?c={0}" target="_blank" style="text-decoration: none">', s.code);
+    text += String.format('<span class="curpz">{0}</span>', z.toFixed(2));
+    text += String.format('\n<span class="{0}">{1} ({2}%)</span></a></td>', z_diff<0?'green':'grey', z_diff.toFixed(2), z_ratio);
     for (var j=0; j<3; j++) {
       text += String.format('<td><span class="{0}"><={1}</span>\n', r_cls[j], st.ref[j].toFixed(2));
       if (st.qty[j]) {
@@ -143,7 +144,7 @@ function updateResult() {
 
   for (var i=0; i<3; i++) {
     text += '<tr>';
-    text += '<td contenteditable=true></td>'.repeat(5);
+    text += '<td contenteditable=true></td>'.repeat(4);
     text += td_na.repeat(8);
     text += '</tr>';
   }

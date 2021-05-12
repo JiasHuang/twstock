@@ -81,8 +81,10 @@ function updateResult() {
   }
 
   text += '<table id="stocks">';
-  text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th><th>預估張數</th><th>備註</th>';
-  text += '<th>市價</th><th>批1</th><th>批2</th><th>批3</th><th>買入</th><th>賣出</th><th>均價</th><th>成本</th>';
+  text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th>'; // 0:代碼, 1:名稱, 2:參考價
+  text += '<th>市價</th><th>批1</th><th>批2</th><th>批3</th>'; // 3:市價, 4:批1, 5:批2, 6:批3
+  text += '<th>備註</th>'; // 7:備註
+  text += '<th>買入</th><th>賣出</th><th>均價</th><th>成本</th>';
   text += '</tr>';
 
   for (var i=0; i<strategy.stocks.length; i++) {
@@ -106,8 +108,6 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_pz);
-    text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_qty);
-    text += String.format('<td class="note" contenteditable=true>{0}</td>', s.note);
     text += String.format('<td><span class="curpz">{0}</span>', z.toFixed(2));
     text += String.format('\n<span class="{0}">{1} ({2}%)</span></td>', z_diff<0?'green':'grey', z_diff.toFixed(2), z_ratio);
     for (var j=0; j<3; j++) {
@@ -122,6 +122,7 @@ function updateResult() {
       }
       text += '</td>';
     }
+    text += String.format('<td class="note" contenteditable=true>{0}</td>', s.note);
     if (st.total_cost) {
       let avg = st.total_cost / 1000 / st.total_qty;
       let cost = Math.round(st.total_cost);
@@ -237,14 +238,12 @@ function onSave() {
     let code = row.cells[0].textContent;
     let name = row.cells[1].textContent;
     let ref_pz = row.cells[2].textContent;
-    let ref_qty = row.cells[3].textContent;
-    let note = row.cells[4].textContent;
+    let note = row.cells[7].textContent;
     if (code.length) {
       let obj = {};
       obj.code = code;
       obj.name = name;
       obj.ref_pz = ref_pz;
-      obj.ref_qty = ref_qty;
       obj.note = note;
       jsons.push(JSON.stringify(obj));
     }

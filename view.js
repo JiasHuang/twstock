@@ -277,7 +277,7 @@ function showLoading() {
 
 function updateStockInfo() {
   $.ajax({
-    url: 'view' + window.location.search,
+    url: 'view.py' + window.location.search,
     dataType: 'json',
     error: onTimeout,
     success: parseStockJSON,
@@ -286,7 +286,7 @@ function updateStockInfo() {
 }
 
 function initStockInfo() {
-  var api_url = 'view' + window.location.search;
+  var api_url = 'view.py' + window.location.search;
 
   api_url += (window.location.search != '') ? '&s=1' : '?s=1';
 
@@ -301,7 +301,7 @@ function initStockInfo() {
 }
 
 function updateExchangeRateInfo() {
-  var api_url = 'exr' + window.location.search;
+  var api_url = 'exr.py?j=exr.json' + window.location.search;
 
   $.ajax({
     url: api_url,
@@ -350,7 +350,7 @@ function parseAccountJSON(obj) {
 
 function loadAccountJSON() {
   $.ajax({
-    url: 'load?j=account.json',
+    url: 'load.py?j=account.json',
     dataType: 'json',
     error: onTimeout,
     success: parseAccountJSON,
@@ -360,7 +360,7 @@ function loadAccountJSON() {
 
 function loadStrategyJSON() {
   $.ajax({
-    url: 'load?j=strategy.json',
+    url: 'load.py?j=strategy.json',
     dataType: 'json',
     error: onTimeout,
     success: parseStrategyJSON,

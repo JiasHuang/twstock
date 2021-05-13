@@ -68,7 +68,7 @@ function loadStocksJSON(obj) {
     codes.push(dbmaps[i].no);
   }
   $.ajax({
-    url: String.format('view?c={0}', codes.join(',')),
+    url: String.format('view.py?c={0}', codes.join(',')),
     dataType: 'json',
     error: onTimeout,
     success: parseStocksJSON,
@@ -112,7 +112,7 @@ function parseJSON(obj) {
 
 function loadJSON() {
   $.ajax({
-    url: 'populate?a=broker',
+    url: 'populate.py?a=broker',
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,

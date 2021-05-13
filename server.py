@@ -22,11 +22,14 @@ class defvals:
 
 def exr(q):
     d = parse_qs(q)
-    path = d['i'][0] if 'i' in d else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'exr.json')
-    data = twstock.get_json_from_file(path)
-    exchange_rate_infos = twstock.get_exchange_rate_infos(data)
-    exchange_rate_json_list = [json.dumps(x.__dict__) for x in exchange_rate_infos]
-    return '{"ExchangeRates":[%s]}' %(','.join(exchange_rate_json_list))
+    if 'j' in d:
+        j = d['j'][0]
+        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', j)
+        data = twstock.get_json_from_file(local)
+        exchange_rate_infos = twstock.get_exchange_rate_infos(data)
+        exchange_rate_json_list = [json.dumps(x.__dict__) for x in exchange_rate_infos]
+        return '{"ExchangeRates":[%s]}' %(','.join(exchange_rate_json_list))
+    return None
 
 def view(q):
     d = parse_qs(q)
@@ -50,9 +53,11 @@ def view(q):
 
 def load(q):
     d = parse_qs(q)
-    j = d['j'][0] if 'j' in d else 'stocks.json'
-    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', os.path.basename(j))
-    return xurl.readLocal(local)
+    if 'j' in d:
+        j = d['j'][0]
+        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', j)
+        return xurl.readLocal(local)
+    return None
 
 def dividend(q):
     d = parse_qs(q)
@@ -107,8 +112,8 @@ class TWStockServer(BaseHTTPRequestHandler):
         content_len = int(self.headers.get('Content-Length'))
         post_data = self.rfile.read(content_len)
         p = urlparse(self.path)
-        if p.path in ['/upload']:
-            eval('%s(post_data, p.query)' %(p.path[1:]))
+        if p.path in ['/upload.py']:
+            eval('%s(post_data, p.query)' %(p.path[1:-3]))
             self.send_response(200)
             self.send_header('Content-type', "text/html")
             self.end_headers()
@@ -124,11 +129,11 @@ class TWStockServer(BaseHTTPRequestHandler):
             self.end_headers()
             return
         p = urlparse(self.path)
-        if p.path in ['/exr', '/view', '/load', '/dividend', '/report', '/populate']:
+        if p.path.endswith('.py'):
             self.send_response(200)
             self.send_header('Content-type', "text/html")
             self.end_headers()
-            results = eval('%s(p.query)' %(p.path[1:]))
+            results = eval('%s(p.query)' %(os.path.basename(p.path)[:-3]))
             try:
                 self.wfile.write(bytes(results, 'utf8'))
             except:
@@ -183,6 +188,8 @@ def main():
     parser.add_argument('-n', '--hostname', default=defvals.hostname)
     parser.add_argument('-p', '--hostport', default=defvals.hostport)
     parser.add_argument('-c', '--config', action=LoadConfig)
+    parser.add_argument('-e', '--eval')
+    parser.add_argument('-o', '--output')
     parser.add_argument('--workdir')
     parser.add_argument('--ua')
     parser.add_argument('--expiration', default=defvals.expiration)
@@ -192,6 +199,11 @@ def main():
     for k in ['workdir', 'ua', 'expiration']:
         if getattr(args, k):
             setattr(xurl.defvals, k, getattr(args, k))
+
+    if args.eval and args.output:
+        with open(args.output, 'w') as fd:
+            fd.write(eval(args.eval))
+        return
 
     webServer = HTTPServer((args.hostname, args.hostport), TWStockServer)
     print('TWStock Server started http://%s:%s' % (args.hostname, args.hostport))

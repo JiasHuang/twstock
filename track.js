@@ -230,7 +230,7 @@ function parseJSON(obj) {
 
 function loadJSON() {
   $.ajax({
-    url: 'populate' + window.location.search + '&a=track',
+    url: 'populate.py' + window.location.search + '&a=track',
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,

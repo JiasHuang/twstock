@@ -156,7 +156,7 @@ function updateResult(obj) {
 
   if (stocks_with_qty.length) {
     $.ajax({
-      url: 'dividend?c=' + stocks_with_qty.join(','),
+      url: 'dividend.py?c=' + stocks_with_qty.join(','),
       dataType: 'json',
       error: onTimeout,
       success: function(data){ updateDividendForecast(data, obj.stocks); },
@@ -178,7 +178,7 @@ function onTimeout () {
 
 function updateAccount() {
   $.ajax({
-    url: 'load?j=account.json',
+    url: 'load.py?j=account.json',
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,

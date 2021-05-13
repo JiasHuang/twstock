@@ -671,7 +671,7 @@ function updateStockReport() {
   var code = params.get('c');
   showLoading(code);
   $.ajax({
-    url: 'report' + window.location.search,
+    url: 'report.py' + window.location.search,
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,

@@ -12,11 +12,12 @@ def index(req):
     form = req.form or util.FieldStorage(req)
 
     j = form.get('j', None) # json
+    data = form.get('data', None) # data
 
     if j:
         local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', os.path.basename(j))
         with open(local, 'w') as fd:
-            fd.write(j)
+            fd.write(data)
         req.write('OK')
 
     return

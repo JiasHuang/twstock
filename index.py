@@ -14,7 +14,7 @@ def index(req):
 
     x = req.unparsed_uri.split('?')
     f = os.path.basename(x[0]).strip('.py')
-    q = x[1]
+    q = x[1] if len(x) > 1 else ''
     o = tempfile.NamedTemporaryFile(delete=False).name
 
     s = os.path.join(os.path.dirname(__file__), 'server.py')

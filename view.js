@@ -281,7 +281,7 @@ function updateStockInfo() {
     dataType: 'json',
     error: onTimeout,
     success: parseStockJSON,
-    timeout: 2000
+    timeout: 5000
   });
 }
 

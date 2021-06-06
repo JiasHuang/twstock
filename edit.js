@@ -134,6 +134,10 @@ function loadStockJSON() {
   });
 }
 
+function onSuccess() {
+  window.location.href = 'edit.html';
+}
+
 function onSave() {
   var table = document.getElementById("stocks");
   var jsons = [];
@@ -160,6 +164,7 @@ function onSave() {
     type: 'POST',
     url: 'upload.py?j=stocks.json',
     data: {data: data},
+    success: onSuccess,
   });
 }
 

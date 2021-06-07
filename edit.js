@@ -169,6 +169,7 @@ function onSave() {
 }
 
 function onDocumentReady() {
+  loadTopMenu();
   loadStockJSON();
 }
 

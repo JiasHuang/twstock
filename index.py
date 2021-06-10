@@ -13,7 +13,7 @@ def index(req):
     form = req.form or util.FieldStorage(req)
 
     x = req.unparsed_uri.split('?')
-    f = os.path.basename(x[0]).strip('.py')
+    f = os.path.basename(x[0]).replace('.py', '')
     q = x[1] if len(x) > 1 else ''
     o = tempfile.NamedTemporaryFile(delete=False).name
 

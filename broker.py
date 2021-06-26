@@ -8,6 +8,10 @@ import argparse
 
 import xurl
 
+class defvals:
+    config_section = 'TWStock'
+    config_path = os.path.join(os.path.expanduser('~'), '.myconfig')
+
 class broker:
     codemap = {
         '1360':'　麥格理',
@@ -174,14 +178,16 @@ def list_db(args):
 
 class LoadConfig(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
         cfg = configparser.ConfigParser()
         cfg.read(values)
-        for k in cfg['TWStock']:
-            setattr(namespace, k, cfg['TWStock'][k])
+        section = cfg[defvals.config_section]
+        for k in section:
+            setattr(namespace, k, section[k])
 
 def str2bool(v):
     if isinstance(v, bool):
-       return v
+        return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
     elif v.lower() in ('no', 'false', 'f', 'n', '0'):
@@ -194,7 +200,7 @@ def main():
     parser.add_argument('-b', '--broker')
     parser.add_argument('-n', '--stockno')
     parser.add_argument('-l', '--lines', default=20)
-    parser.add_argument('-c', '--config', action=LoadConfig)
+    act_cfg = parser.add_argument('-c', '--config', action=LoadConfig)
     parser.add_argument('-v', '--verbose', type=str2bool, nargs='?', const=True, default=False)
     parser.add_argument('--track', type=str2bool, nargs='?', const=True, default=True)
     parser.add_argument('--cache', type=str2bool, nargs='?', const=True, default=True)
@@ -204,6 +210,11 @@ def main():
     parser.add_argument('--cookies')
     args = parser.parse_args()
 
+    # auto load config
+    if not args.config and os.path.exists(defvals.config_path):
+        act_cfg(parser, args, defvals.config_path)
+        args = parser.parse_args(namespace=args)
+
     if args.listbn:
         list_bn()
         return
@@ -212,7 +223,7 @@ def main():
         list_db(args)
         return
 
-    if args.broker:
+    if args.broker and args.stockno:
         results = []
         for bno in (args.broker or '').split(','):
             ret = trace_broker(args.stockno, bno, args)

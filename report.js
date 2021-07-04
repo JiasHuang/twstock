@@ -8,6 +8,7 @@ Chart.defaults.global.title.fontSize = 16;
 Chart.defaults.global.events = ['click'];
 
 var colors = ['DarkGrey', 'Grey', 'SteelBlue', 'Blue'];
+var def_color = colors[colors.length - 1];
 
 String.format = function() {
   var s = arguments[0];
@@ -16,6 +17,19 @@ String.format = function() {
     s = s.replace(reg, arguments[i + 1]);
   }
   return s;
+}
+
+function init_colors_idx(vec, subidx)
+{
+  var subid =  null;
+  var cnt = 0;
+  for (var i=0; i<vec.length; i++) {
+    if (subid != vec[i][subidx]) {
+      subid = vec[i][subidx];
+      cnt++;
+    }
+  }
+  return Math.max(0, colors.length - cnt);
 }
 
 function getBiasText(pz, ma) {
@@ -182,8 +196,8 @@ function updateMAChart(wap) {
   datasets.push({
     label: 'MA',
     data: data,
-    borderColor: 'Blue',
-    backgroundColor: 'Blue',
+    borderColor: def_color,
+    backgroundColor: def_color,
     fill: false,
   });
 
@@ -215,7 +229,7 @@ function updateMAChartByYear(wap) {
   var ctx = document.getElementById('chart_MA_by_year').getContext('2d');
   var datasets = [];
   var labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  var colors_idx = 0;
+  var colors_idx = init_colors_idx(wap, 0);
   var Y = null;
 
   for (var i=0; i<wap.length; i++) {
@@ -290,7 +304,7 @@ function updateEPSChart(eps, cumulative) {
   var ctx = document.getElementById(cumulative ? 'chart_cumulative_EPS' : 'chart_EPS').getContext('2d');
   var datasets = [];
   var labels = ['Q1','Q2','Q3','Q4'];
-  var colors_idx = 0;
+  var colors_idx = init_colors_idx(eps, 0)
   var Y = null;
 
   for (var i=0; i<eps.length; i++) {
@@ -338,8 +352,8 @@ function updateProfitMarginChart(eps) {
   datasets.push({
     label: 'ProfitMargin',
     data: data,
-    borderColor: 'blue',
-    backgroundColor: 'blue',
+    borderColor: def_color,
+    backgroundColor: def_color,
     fill: false,
   });
 
@@ -361,7 +375,7 @@ function updateProfitMarginChartByYear(eps) {
   var ctx = document.getElementById('chart_profit_margin_by_year').getContext('2d');
   var datasets = [];
   var labels = ['Q1','Q2','Q3','Q4'];
-  var colors_idx = 0;
+  var colors_idx = init_colors_idx(eps, 0);
   var Y = null;
 
   for (var i=0; i<eps.length; i++) {
@@ -435,7 +449,7 @@ function updateRevenueChart(rev, cumulative) {
   var ctx = document.getElementById(cumulative ? 'chart_cumulative_revenue' : 'chart_revenue').getContext('2d');
   var datasets = [];
   var labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-  var colors_idx = 0;
+  var colors_idx = init_colors_idx(rev, 0);
   var Y = null;
 
   for (var i=0; i<rev.length; i++) {
@@ -499,7 +513,7 @@ function getEPSHTMLText(obj) {
           note += String.format('本益比：{0}<br>', year_price_to_earning);
           note += String.format('收益率：{0}%<br>', year_earning_yield);
         }
-        else {
+        else if (eps.length >= 4) {
           let last4Q_eps = 0;
           for (var j=0; j<4; j++) {
             last4Q_eps += parseFloat(eps[eps.length-1-j][8]); // After Tax

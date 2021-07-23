@@ -129,12 +129,16 @@ def trace_broker(no, bno, args):
         print('\n{}\n{}\n'.format('-' * 100, get_broker_name(bno)))
 
     for idx, x in enumerate(vec):
-        qty += x.b_qty - x.s_qty;
-        if qty > 0:
-            cost = (cost + x.b_qty * x.b_pz) / (qty + x.s_qty) * qty
+        if x.s_qty:
+            if qty < x.s_qty:
+                qty = cost = avg = 0
+            else:
+                qty -= x.s_qty
+                cost -= x.s_qty * avg
+        if x.b_qty:
+            qty += x.b_qty
+            cost += x.b_qty * x.b_pz
             avg = cost / qty
-        else:
-            qty = cost = avg = 0
         text = ['-', '-']
         if x.b_qty:
             text[0] = '{0:+8} {1:8.2f}'.format(x.b_qty, x.b_pz)

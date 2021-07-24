@@ -101,7 +101,7 @@ def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expi
     if cacheOnly or (cache and not checkExpire(local, expiration)):
         if verbose:
             print('[xurl] %s -> %s (cache)' %(url, local))
-        return readLocal(local)
+        return readLocal(local, encoding)
     checkDelay(url)
     t0 = time.time()
     ret = eval('%s(url, local, opts=opts, ref=ref, encoding=encoding)' %(cmd))

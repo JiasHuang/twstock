@@ -64,6 +64,11 @@ class stock_report:
         self.revenue = []
         self.pz_vol_pairs = []
         self.news = []
+        self.pz_close = 0
+        self.per = 0
+        self.nav = 0
+        self.per_max = []
+        self.per_min = []
     def show(self):
         print('-- wap --')
         for x in self.wap:
@@ -80,6 +85,12 @@ class stock_report:
         print('-- news --')
         for x in self.news:
             print(x)
+        print('-- overall --')
+        print(self.pz_close)
+        print(self.per)
+        print(self.nav)
+        print(self.per_max)
+        print(self.per_min)
 
 def get_stat_pz_vol_pairs(code, cacheOnly):
     obj = {}
@@ -382,6 +393,26 @@ def update_stock_report_eps_from_news(obj):
             break
     return
 
+def update_stock_report_overall(obj):
+    url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_%s.djhtm' %(obj.code)
+    txt = xurl.load(url, encoding='big5')
+    m = re.search(r'>收盤價</td>\s*<td class="t3n1">(.*)</td>', txt)
+    if m:
+        obj.pz_close = float(m.group(1))
+    m = re.search(r'>本益比</td>\s*<td class="t3n1">(.*)</td>', txt)
+    if m:
+        obj.per = float(m.group(1))
+    m = re.search(r'>每股淨值\(元\)</td>\s*<td class="t3n1"><span class="t3n1">(.*?)</span></td>', txt)
+    if m:
+        obj.nav = float(m.group(1))
+    m = re.search(r'>最高本益比</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
+    if m:
+        obj.per_max = [float(x) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
+    m = re.search(r'>最低本益比</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
+    if m:
+        obj.per_min = [float(x) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
+    return
+
 def get_stock_report(code):
     obj = stock_report(code)
     info = get_stock_info_by_code(code)
@@ -402,6 +433,7 @@ def get_stock_report(code):
     update_stock_report_revenue(obj)
     update_stock_report_news(obj)
     update_stock_report_eps_from_news(obj)
+    update_stock_report_overall(obj)
     return obj
 
 def init_xcurl():

@@ -135,6 +135,8 @@ function getMAs(obj) {
 function getLinkDict(code, nf) {
   var dict = [];
   dict.push({key:'基本', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm', code)});
+  dict.push({key:'財務', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcr/zcr0.djhtm?b=Y&a={0}', code)});
+  dict.push({key:'資產', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcp/zcpa/zcpa_{0}.djhtm', code)});
   dict.push({key:'營收', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm', code)});
   dict.push({key:'新聞', val:String.format('https://tw.stock.yahoo.com/q/h?s={0}', code)});
   dict.push({key:'法人持股', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcl/zcl_{0}.djhtm', code)});
@@ -615,7 +617,76 @@ function getTopPricesHTMLText(obj) {
     text += String.format('<td>${0} <span class="grey">#{1}</span></td>', pairs[i][0], pairs[i][1]);
   }
 
-  text += '</table>';
+  text += '</table><br>';
+
+  return text;
+}
+
+function getOverallHTMLText(obj) {
+  var text = '';
+  var per_max_total_weight = 0;
+  var per_max_total_sum = 0;
+  var per_min_total_weight = 0;
+  var per_min_total_sum = 0;
+
+  text += String.format('<table><tr><th colspan={0}>PER</th></tr>', obj.per_max.length + 1);
+  text += '<tr><td>Max</td>';
+  for (var i=0; i<obj.per_max.length; i++)
+    text += String.format('<td>{0}</td>', obj.per_max[i]);
+  text += '</tr>';
+
+  text += '<tr><td>Min</td>';
+  for (var i=0; i<obj.per_min.length; i++)
+    text += String.format('<td>{0}</td>', obj.per_min[i]);
+  text += '</tr>';
+
+  text += '</table><br>';
+
+  for (var i=0; i<Math.min(4, obj.per_max.length); i++) {
+    if (obj.per_max[i] <= 0)
+      continue;
+    let weight = Math.pow(0.9, i);
+    per_max_total_sum += weight * obj.per_max[i];
+    per_max_total_weight += weight;
+  }
+
+  for (var i=0; i<Math.min(4, obj.per_min.length); i++) {
+    if (obj.per_min[i] <= 0)
+      continue;
+    let weight = Math.pow(0.9, i);
+    per_min_total_sum += weight * obj.per_min[i];
+    per_min_total_weight += weight;
+  }
+
+  var pz = obj.pz_close;
+  var eps = pz / obj.per;
+  var per_max = per_max_total_sum / per_max_total_weight;
+  var per_min = per_min_total_sum / per_min_total_weight;
+
+  if (obj.per_max[0] > 0)
+    per_max = Math.min(obj.per_max[0], per_max)
+
+  if (obj.per_min[0] > 0)
+    per_min = Math.min(obj.per_min[0], per_min)
+
+  var pz_max = eps * per_max;
+  var pz_min = eps * per_min;
+  var pz_mid = (pz_max + pz_min) / 2;
+
+  text += '<table><tr><th colspan=3>Overall</th></tr>';
+
+  text += String.format('<tr><td colspan=2></td><td rowspan=5>');
+  text += String.format('推估PER：{0} ~ {1}<br>', per_min.toFixed(2), per_max.toFixed(2));
+  text += String.format('推估最高價：{0} ({1}%)<br>', pz_max.toFixed(2), ((pz_max - pz) / pz * 100).toFixed(2));
+  text += String.format('推估中間價：{0} ({1}%)<br>', pz_mid.toFixed(2), ((pz_mid - pz) / pz * 100).toFixed(2));
+  text += String.format('推估最低價：{0} ({1}%)<br>', pz_min.toFixed(2), ((pz_min - pz) / pz * 100).toFixed(2));
+  text += String.format('</td></tr>', pz_min.toFixed(2));
+
+  text += String.format('<tr><td>最近收盤價</td><td>{0}</td></tr>', pz.toFixed(2));
+  text += String.format('<tr><td>最近淨值</td><td>{0}</td></tr>', obj.nav.toFixed(2));
+  text += String.format('<tr><td>最近PER</td><td>{0}</td></tr>', obj.per.toFixed(2));
+  text += String.format('<tr><td>最近EPS</td><td>{0}</td></tr>', eps.toFixed(2));
+  text += '</table>'
 
   return text;
 }
@@ -629,6 +700,7 @@ function updateResult(obj) {
   }
   text += getDividendHTMLText(obj);
   text += getTopPricesHTMLText(obj);
+  text += getOverallHTMLText(obj);
 
   $('#result').html(text);
 }

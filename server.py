@@ -91,6 +91,8 @@ def populate(q):
         json_list = [json.dumps(x.__dict__) for x in bshtm.get_db()]
         return '{"db":[%s]}' %(','.join(json_list))
     if a == 'track':
+        if 'latest' in d:
+            broker.main(['-n', no])
         (hdrs, tracks) = broker.get_cached_tracks(no)
         hdrs_json_list = [json.dumps(x.__dict__) for x in hdrs]
         tracks_json_list = [json.dumps(x.__dict__) for x in tracks]

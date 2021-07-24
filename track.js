@@ -228,13 +228,13 @@ function parseJSON(obj) {
   updateResult();
 }
 
-function loadJSON() {
+function loadJSON(url_args) {
   $.ajax({
-    url: 'populate.py' + window.location.search + '&a=track',
+    url: 'populate.py' + window.location.search + url_args,
     dataType: 'json',
     error: onTimeout,
     success: parseJSON,
-    timeout: 2000
+    timeout: 20000
   });
 }
 
@@ -243,10 +243,15 @@ function updateResultByInput() {
   window.location.href = 'track.html?no=' + code;
 }
 
+function updateLatestResult() {
+  $('#result').html('Loading ...');
+  loadJSON('&a=track&latest=1');
+}
+
 function onDocumentReady() {
   loadTopMenu();
   if (window.location.search != '') {
-    loadJSON();
+    loadJSON('&a=track');
   }
 }
 

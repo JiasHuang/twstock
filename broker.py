@@ -199,7 +199,7 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--broker')
     parser.add_argument('-n', '--stockno')
@@ -212,12 +212,12 @@ def main():
     parser.add_argument('--listbn', type=str2bool, nargs='?', const=True, default=False)
     parser.add_argument('--listdb', type=str2bool, nargs='?', const=True, default=False)
     parser.add_argument('--cookies')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # auto load config
     if not args.config and os.path.exists(defvals.config_path):
         act_cfg(parser, args, defvals.config_path)
-        args = parser.parse_args(namespace=args)
+        args = parser.parse_args(argv, namespace=args)
 
     if args.listbn:
         list_bn()

@@ -645,7 +645,7 @@ function getOverallHTMLText(obj) {
   for (var i=0; i<Math.min(4, obj.per_max.length); i++) {
     if (obj.per_max[i] <= 0)
       continue;
-    let weight = Math.pow(0.9, i);
+    let weight = Math.pow(0.67, i);
     per_max_total_sum += weight * obj.per_max[i];
     per_max_total_weight += weight;
   }
@@ -653,7 +653,7 @@ function getOverallHTMLText(obj) {
   for (var i=0; i<Math.min(4, obj.per_min.length); i++) {
     if (obj.per_min[i] <= 0)
       continue;
-    let weight = Math.pow(0.9, i);
+    let weight = Math.pow(0.67, i);
     per_min_total_sum += weight * obj.per_min[i];
     per_min_total_weight += weight;
   }
@@ -675,7 +675,7 @@ function getOverallHTMLText(obj) {
 
   text += '<table><tr><th colspan=3>Overall</th></tr>';
 
-  text += String.format('<tr><td colspan=2></td><td rowspan=5>');
+  text += String.format('<tr><td colspan=2></td><td rowspan=6>');
   text += String.format('推估PER：{0} ~ {1}<br>', per_min.toFixed(2), per_max.toFixed(2));
   text += String.format('推估最高價：{0} ({1}%)<br>', pz_max.toFixed(2), ((pz_max - pz) / pz * 100).toFixed(2));
   text += String.format('推估中間價：{0} ({1}%)<br>', pz_mid.toFixed(2), ((pz_mid - pz) / pz * 100).toFixed(2));
@@ -684,6 +684,7 @@ function getOverallHTMLText(obj) {
 
   text += String.format('<tr><td>最近收盤價</td><td>{0}</td></tr>', pz.toFixed(2));
   text += String.format('<tr><td>最近淨值</td><td>{0}</td></tr>', obj.nav.toFixed(2));
+  text += String.format('<tr><td>最近ROE</td><td>{0}%</td></tr>', (eps / obj.nav * 100).toFixed(2));
   text += String.format('<tr><td>最近PER</td><td>{0}</td></tr>', obj.per.toFixed(2));
   text += String.format('<tr><td>最近EPS</td><td>{0}</td></tr>', eps.toFixed(2));
   text += '</table>'

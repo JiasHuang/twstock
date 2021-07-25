@@ -62,11 +62,11 @@ class stock_report:
         self.eps = []
         self.dividend = []
         self.revenue = []
-        self.pz_vol_pairs = []
         self.news = []
         self.pz_close = 0
         self.per = 0
         self.nav = 0
+        self.per_year = []
         self.per_max = []
         self.per_min = []
     def show(self):
@@ -89,29 +89,22 @@ class stock_report:
         print(self.pz_close)
         print(self.per)
         print(self.nav)
+        print(self.per_year)
         print(self.per_max)
         print(self.per_min)
 
-def get_stat_pz_vol_pairs(code, cacheOnly):
+def get_stat_vol(code, cacheOnly):
     obj = {}
     url = 'https://jdata.yuanta.com.tw/z/zc/zcw/zcwg_%s.djhtm' %(code)
     txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000, encoding='big5')
     m = re.search(r'GetBcdData\(\'([^ ]*) ([^\']*)\'', txt)
     if m:
-        pzs = m.group(1).split(',')
         vols = m.group(2).split(',')
-        total = 0
         total_v = 0
-        pairs = []
-        for i in range(len(pzs)):
-            z = float(pzs[i])
+        for i in range(len(vols)):
             v = int(vols[i])
-            total = total + z * v
             total_v = total_v + v
-            pairs.append((z, v))
-        obj['30d_pz'] = total / total_v
         obj['30d_vol'] = total_v / 30
-        obj['30d_pz_vol_pairs']= pairs
     return obj
 
 def get_ex_ch_by_code(code):
@@ -141,7 +134,7 @@ def get_stock_infos(data):
 
 def update_stock_stats(infos, cacheOnly):
     for info in infos:
-        info.avg.update(get_stat_pz_vol_pairs(info.code, cacheOnly))
+        info.avg.update(get_stat_vol(info.code, cacheOnly))
     return
 
 def parse_info(info):
@@ -219,11 +212,6 @@ def show_stock_info(info):
     if info.l > 0:
         chg, ratio, txt = chg_ratio_txt(info.l, info.y)
         print('\t\tLo %s' %(txt))
-
-    for x in ['30d_pz', '1m_pz', '3m_pz', '6m_pz', '1y_pz']:
-        if x in info.avg:
-            chg, ratio, txt = chg_ratio_txt(info.z, info.avg[x])
-            print('\t\t%s: %s' %(x, txt))
 
     if len(info.notes):
         print('\t\t%s' %('|'.join(info.notes)))
@@ -405,6 +393,9 @@ def update_stock_report_overall(obj):
     m = re.search(r'>每股淨值\(元\)</td>\s*<td class="t3n1"><span class="t3n1">(.*?)</span></td>', txt)
     if m:
         obj.nav = float(m.group(1))
+    m = re.search(r'>年度</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
+    if m:
+        obj.per_year = [int(x) for x in re.findall(r'>([^<]+)</td>', m.group(1))]
     m = re.search(r'>最高本益比</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
     if m:
         obj.per_max = [float(x) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
@@ -423,7 +414,6 @@ def get_stock_report(code):
     obj.n = info.msg['n']
     obj.nf = info.msg['nf']
     obj.ex = info.msg['ex']
-    obj.pz_vol_pairs = info.avg['30d_pz_vol_pairs']
     if obj.ex == 'otc':
         update_stock_report_wap_otc(obj)
     else:

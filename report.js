@@ -589,39 +589,6 @@ function getDividendHTMLText(obj) {
   return text;
 }
 
-function getTopPricesHTMLText(obj) {
-  var text = '';
-  var pairs = obj.pz_vol_pairs;
-
-  text += '<table><tr><th colspan=6>近期分價統計</th></tr>';
-
-  text += '<tr><th>最低5檔</th>';
-  for (var i=0; i<5; i++) {
-    text += String.format('<td>${0} <span class="grey">#{1}</span></td>', pairs[i][0], pairs[i][1]);
-  }
-
-  pairs.reverse();
-  text += '<tr><th>最高5檔</th>';
-  for (var i=0; i<5; i++) {
-    text += String.format('<td>${0} <span class="grey">#{1}</span></td>', pairs[i][0], pairs[i][1]);
-  }
-
-  pairs.sort(function (a, b) {
-    if (a[1] < b[1]) return 1;
-    if (a[1] > b[1]) return -1;
-    return 0;
-  });
-
-  text += '<tr><th>最多5檔</th>';
-  for (var i=0; i<5; i++) {
-    text += String.format('<td>${0} <span class="grey">#{1}</span></td>', pairs[i][0], pairs[i][1]);
-  }
-
-  text += '</table><br>';
-
-  return text;
-}
-
 function getOverallHTMLText(obj) {
   var text = '';
   var per_max_total_weight = 0;
@@ -629,13 +596,19 @@ function getOverallHTMLText(obj) {
   var per_min_total_weight = 0;
   var per_min_total_sum = 0;
 
-  text += String.format('<table><tr><th colspan={0}>PER</th></tr>', obj.per_max.length + 1);
-  text += '<tr><td>Max</td>';
+  text += String.format('<table><tr><th colspan={0}>PER</th></tr>', obj.per_year.length + 1);
+
+  text += '<tr><td>年度</td>';
+  for (var i=0; i<obj.per_year.length; i++)
+    text += String.format('<td>{0}</td>', obj.per_year[i]);
+  text += '</tr>';
+
+  text += '<tr><td>最高本益比</td>';
   for (var i=0; i<obj.per_max.length; i++)
     text += String.format('<td>{0}</td>', obj.per_max[i]);
   text += '</tr>';
 
-  text += '<tr><td>Min</td>';
+  text += '<tr><td>最低本益比</td>';
   for (var i=0; i<obj.per_min.length; i++)
     text += String.format('<td>{0}</td>', obj.per_min[i]);
   text += '</tr>';
@@ -675,18 +648,20 @@ function getOverallHTMLText(obj) {
 
   text += '<table><tr><th colspan=3>Overall</th></tr>';
 
-  text += String.format('<tr><td colspan=2></td><td rowspan=6>');
+  text += String.format('<tr><td colspan=2></td><td rowspan=7>');
   text += String.format('推估PER：{0} ~ {1}<br>', per_min.toFixed(2), per_max.toFixed(2));
   text += String.format('推估最高價：{0} ({1}%)<br>', pz_max.toFixed(2), ((pz_max - pz) / pz * 100).toFixed(2));
   text += String.format('推估中間價：{0} ({1}%)<br>', pz_mid.toFixed(2), ((pz_mid - pz) / pz * 100).toFixed(2));
   text += String.format('推估最低價：{0} ({1}%)<br>', pz_min.toFixed(2), ((pz_min - pz) / pz * 100).toFixed(2));
   text += String.format('</td></tr>', pz_min.toFixed(2));
 
-  text += String.format('<tr><td>最近收盤價</td><td>{0}</td></tr>', pz.toFixed(2));
-  text += String.format('<tr><td>最近淨值</td><td>{0}</td></tr>', obj.nav.toFixed(2));
-  text += String.format('<tr><td>最近ROE</td><td>{0}%</td></tr>', (eps / obj.nav * 100).toFixed(2));
-  text += String.format('<tr><td>最近PER</td><td>{0}</td></tr>', obj.per.toFixed(2));
-  text += String.format('<tr><td>最近EPS</td><td>{0}</td></tr>', eps.toFixed(2));
+  text += String.format('<tr><td>收盤價</td><td>{0}</td></tr>', pz.toFixed(2));
+  text += String.format('<tr><td>淨值 (NAV)</td><td>{0}</td></tr>', obj.nav.toFixed(2));
+  text += String.format('<tr><td>股價淨值比	(PBR)</td><td>{0}</td></tr>', (pz / obj.nav).toFixed(2));
+  text += String.format('<tr><td>股東權益報酬率 (ROE)</td><td>{0}%</td></tr>', (eps / obj.nav * 100).toFixed(2));
+  text += String.format('<tr><td>本益比 (PER)</td><td>{0}</td></tr>', obj.per.toFixed(2));
+  text += String.format('<tr><td>EPS</td><td>{0}</td></tr>', eps.toFixed(2));
+
   text += '</table>'
 
   return text;
@@ -700,7 +675,6 @@ function updateResult(obj) {
     text += getEPSHTMLText(obj);
   }
   text += getDividendHTMLText(obj);
-  text += getTopPricesHTMLText(obj);
   text += getOverallHTMLText(obj);
 
   $('#result').html(text);

@@ -21,10 +21,11 @@ String.format = function() {
 }
 
 class bstat_info {
-  constructor(idx, qty, avg) {
+  constructor(idx, qty, avg, pzc) {
     this.idx = idx;
     this.qty = qty;
     this.avg = avg;
+    this.pzc = pzc;
   }
 }
 
@@ -70,6 +71,7 @@ function update_chart(bs) {
   var labels = [];
   var data_qty = [];
   var data_avg = [];
+  var data_pzc = [];
   var datasets = [];
   var qty = 0;
   var cost = 0;
@@ -81,6 +83,7 @@ function update_chart(bs) {
     labels.push(x.date);
     data_qty.push(info.qty);
     data_avg.push(info.avg);
+    data_pzc.push(info.pzc);
   }
 
   datasets.push({
@@ -95,9 +98,18 @@ function update_chart(bs) {
   datasets.push({
     label: 'Avg',
     data: data_avg,
-    yAxisID: 'Avg',
+    yAxisID: 'Pz',
     borderColor: 'Green',
     backgroundColor: 'Green',
+    fill: false,
+  });
+
+  datasets.push({
+    label: 'Pzc',
+    data: data_pzc,
+    yAxisID: 'Pz',
+    borderColor: 'Gray',
+    backgroundColor: 'Gray',
     fill: false,
   });
 
@@ -113,7 +125,7 @@ function update_chart(bs) {
           type: 'linear',
           position: 'left',
         }, {
-          id: 'Avg',
+          id: 'Pz',
           type: 'linear',
           position: 'right',
         }]
@@ -148,7 +160,7 @@ function getBrokerStatus() {
         qty = cost = avg = 0;
       }
       if (i >= Math.max(hdr.idx_start, hdr.idx_end - limit))
-        infos.push(new bstat_info(i, qty, avg));
+        infos.push(new bstat_info(i, qty, avg, x.pz_close));
     }
     bstats.push(new bstat(hdr.bno, hdr.bname, qty, avg, tracks[hdr.idx_end - 1].date, infos));
   }
@@ -185,16 +197,16 @@ function updateResult() {
   for (var i=0; i<bstats.length; i++) {
     let bs = bstats[i];
     text += '<table class="tracks" id="tbl_bno_' + bs.bno + '">';
-    text += '<tr><th colspan=8>' + bs.bname + '</th></tr>';
-    text += '<tr><th>日期</th><th>買張</th><th>均價</th><th>賣張</th><th>均價</th><th>買賣超</th><th>張數</th><th>均價</th></tr>';
+    text += '<tr><th colspan=9>' + bs.bname + '</th></tr>';
+    text += '<tr><th>日期</th><th>買張</th><th>均價</th><th>賣張</th><th>均價</th><th>收盤價</th><th>買賣超</th><th>張數</th><th>均價</th></tr>';
     for (var j=0; j<bs.infos.length; j++) {
       let info = bs.infos[j];
       let x = tracks[info.idx];
       let net_bs = x.b_qty - x.s_qty;
       let net_bs_cls = (net_bs>0)? 'red' : (net_bs<0? 'green':'');
       let net_bs_span = String.format('<span class="{0}">{1}</span>', net_bs_cls, to_signed(net_bs));
-      text += String.format('<tr><td>{' + Array.from(Array(8).keys()).join('}</td><td>{') + '}</td></tr>',
-        x.date, to_signed(x.b_qty), x.b_pz, to_signed(-x.s_qty), x.s_pz,
+      text += String.format('<tr><td>{' + Array.from(Array(9).keys()).join('}</td><td>{') + '}</td></tr>',
+        x.date, to_signed(x.b_qty), x.b_pz, to_signed(-x.s_qty), x.s_pz, x.pz_close,
         net_bs_span, info.qty.toLocaleString(), info.avg.toFixed(2));
     }
     text += '</table>';

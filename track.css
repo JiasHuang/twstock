@@ -25,14 +25,14 @@
 }
 
 #result th {
-  font-size: 20px;
+  font-size: 16px;
   border: 1px solid;
   padding: 0px 10px;
   text-align: center;
 }
 
 #result td {
-  font-size: 18px;
+  font-size: 14px;
   border: 1px solid;
   padding: 0px 10px;
   text-align: right;
@@ -64,7 +64,7 @@
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 20px;
+  font-size: 16px;
   margin: 5px;
   cursor: pointer;
 }
@@ -79,7 +79,7 @@
 
 .chart {
   display: inline-block;
-  width: 800px;
+  width: 750px;
   height: 400px;
   margin: 10px;
 }

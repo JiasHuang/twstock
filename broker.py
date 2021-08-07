@@ -38,12 +38,13 @@ class broker:
         self.date = date
 
 class track:
-    def __init__(self, date, b_qty, b_pz, s_qty, s_pz):
+    def __init__(self, date, b_qty, b_pz, s_qty, s_pz, pz_close):
         self.date = date
         self.b_qty = int(b_qty.replace(',',''))
         self.b_pz = float(b_pz)
         self.s_qty = int(s_qty.replace(',',''))
         self.s_pz = float(s_pz)
+        self.pz_close = float(pz_close)
     def show(self):
         print('{0.date} {0.b_qty:+8} {0.b_pz:8.2f} | {1:+8} {0.s_pz:8.2f}'.format(self, -x.s_qty))
 
@@ -88,8 +89,8 @@ def get_tracks(no, bno, args):
     txt = xurl.load(url, local=local, opts=url_opts, cache=args.cache, cacheOnly=args.cacheOnly, verbose=args.verbose)
 
     vec = []
-    for m in re.finditer(r'<td>(.*?)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td>', txt):
-        vec.insert(0, track(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)))
+    for m in re.finditer(r'<td>(.*?)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td><td>([\d|,]+)</td><td>(\d+[.]\d*)</td><td>(\d+[.]\d*)</td>', txt):
+        vec.insert(0, track(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)))
 
     if len(vec) == 0 and re.search('alert', txt):
         os.remove(local)

@@ -52,7 +52,7 @@ def parse_csv(local):
     otc = False
     fd = open(local)
     lines = fd.readlines()
-    m = re.search(r',="(\d{4})"', lines[1])
+    m = re.search(r',="(\d{4})"', lines[1]) or re.search(r',="(\d{5})"', lines[1])
     if not m:
         m = re.search(r',(\d{4})', lines[1])
         otc = True

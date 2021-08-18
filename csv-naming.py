@@ -18,7 +18,7 @@ def get_code(f, encoding=None):
         l1 = fd.readline()
         m = None
         if f.endswith('.csv'):
-            m = re.search(r',="(\d{4})"', l1)
+            m = re.search(r',="(\d{4})"', l1) or re.search(r',="(\d{5})"', l1)
         if f.endswith('.CSV'):
             m = re.search(r',(\d{4})', l1)
         if m:

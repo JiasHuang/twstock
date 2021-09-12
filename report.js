@@ -135,15 +135,16 @@ function getMAs(obj) {
 function getLinkDict(code, nf) {
   var dict = [];
   dict.push({key:'基本', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm', code)});
+  dict.push({key:'獲利', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zce/zce_{0}.djhtm', code)});
   dict.push({key:'財務', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcr/zcr0.djhtm?b=Y&a={0}', code)});
   dict.push({key:'資產', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcp/zcpa/zcpa_{0}.djhtm', code)});
+  dict.push({key:'損益', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcq/zcq_{0}.djhtm', code)});
   dict.push({key:'營收', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm', code)});
   dict.push({key:'新聞', val:String.format('https://tw.stock.yahoo.com/q/h?s={0}', code)});
   dict.push({key:'法人持股', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcl/zcl_{0}.djhtm', code)});
   dict.push({key:'持股分級', val:String.format('https://goodinfo.tw/StockInfo/EquityDistributionClassHis.asp?STOCK_ID={0}', code)});
   dict.push({key:'券商買賣', val:String.format('https://histock.tw/stock/branch.aspx?no={0}', code)});
   dict.push({key:'Ｋ線', val:String.format('https://goodinfo.tw/StockInfo/ShowK_Chart.asp?STOCK_ID={0}&CHT_CAT2=DATE', code)});
-  dict.push({key:'損益', val:String.format('https://goodinfo.tw/StockInfo/StockFinDetail.asp?RPT_CAT=IS_M_QUAR_ACC&STOCK_ID={0}', code)});
   dict.push({key:'股利', val:String.format('https://goodinfo.tw/StockInfo/StockDividendPolicy.asp?STOCK_ID={0}', code)});
   dict.push({key:'除權息', val:String.format('https://goodinfo.tw/StockInfo/StockDividendSchedule.asp?STOCK_ID={0}', code)});
   dict.push({key:'GoodInfo', val:String.format('https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}', code)});
@@ -273,7 +274,7 @@ function getEPSsByYear(eps, Y, cumulative) {
       continue;
     }
     let x = 'Q' + eps[i][1];
-    val = parseFloat(eps[i][8]); // After Tax
+    val = parseFloat(eps[i][11]);
     if (cumulative) {
       accu += val;
       ret.push({x: x, y: accu.toFixed(2)});
@@ -285,6 +286,7 @@ function getEPSsByYear(eps, Y, cumulative) {
   return ret;
 }
 
+// 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
 function getProfitMarginByYear(eps, Y) {
   var ret = [];
 
@@ -293,8 +295,8 @@ function getProfitMarginByYear(eps, Y) {
       continue;
     }
     let x = 'Q' + eps[i][1];
-    let rev = parseFloat(eps[i][3].replaceAll(',', ''));
-    let net_profit = parseFloat(eps[i][5].replaceAll(',', ''));
+    let rev = parseFloat(eps[i][2].replaceAll(',', ''));
+    let net_profit = parseFloat(eps[i][6].replaceAll(',', ''));
     let profit_margin = net_profit / rev * 100;
     ret.push({x: x, y: profit_margin.toFixed(2)});
   }
@@ -337,6 +339,7 @@ function updateEPSChart(eps, cumulative) {
   });
 }
 
+// 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
 function updateProfitMarginChart(eps) {
   var ctx = document.getElementById('chart_profit_margin').getContext('2d');
   var datasets = [];
@@ -344,8 +347,8 @@ function updateProfitMarginChart(eps) {
   var labels = [];
 
   for (var i=0; i<eps.length; i++) {
-    let rev = parseFloat(eps[i][3].replaceAll(',', ''));
-    let net_profit = parseFloat(eps[i][5].replaceAll(',', ''));
+    let rev = parseFloat(eps[i][2].replaceAll(',', ''));
+    let net_profit = parseFloat(eps[i][6].replaceAll(',', ''));
     let profit_margin = net_profit / rev * 100;
     data.push(profit_margin.toFixed(2));
     labels.push(eps[i][0] + 'Q' + eps[i][1]);
@@ -363,7 +366,7 @@ function updateProfitMarginChart(eps) {
     type: 'line',
     options: {
       title: {
-        text: '淨利率',
+        text: '營益率',
       }
     },
     data: {
@@ -398,7 +401,7 @@ function updateProfitMarginChartByYear(eps) {
     type: 'line',
     options: {
       title: {
-        text: '年度單季淨利率',
+        text: '年度單季營益率',
       }
     },
     data: {
@@ -489,13 +492,13 @@ function getEPSHTMLText(obj) {
 
   text += '<table>';
 
-  // 0年 1季, 2加權平均股數, 3營業收入, 4稅前淨利, 5稅後淨利, 6每股營收(元), 7稅前每股盈餘(元), 8稅後每股盈餘(元)
+  // 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
   // 單位：千股 / 百萬元
   for (var i=0; i<eps.length; i++) {
     if (Y != eps[i][0]) {
         Y = eps[i][0];
         text += '</table><table>';
-        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>股數(億股)</th><th>稅後淨利(億)</th><th>淨利率(%)</th><th>稅後EPS</th><th></th></tr>';
+        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>營利(億)</th><th>營益率(%)</th><th>業外(億)</th><th>本業(%)</th><th>EPS</th><th></th></tr>';
         let note = '';
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
@@ -504,46 +507,42 @@ function getEPSHTMLText(obj) {
           let parsed = parseWAPByYear(obj.wap, Y);
           let year_wap = '-';
           let year_price_to_earning = '-';
-          let year_earning_yield = '-';
           if (parsed[2]) {
             year_wap = parsed[2].toFixed(2);
             year_price_to_earning = (year_wap / year_eps).toFixed(2);
-            year_earning_yield = (year_eps / year_wap * 100).toFixed(2);
           }
           note += String.format('年度EPS：{0}<br>', year_eps);
           note += String.format('年度均價：{0}<br>', year_wap);
           note += String.format('本益比：{0}<br>', year_price_to_earning);
-          note += String.format('收益率：{0}%<br>', year_earning_yield);
         }
         else if (eps.length >= 4) {
           let last4Q_eps = 0;
           for (var j=0; j<4; j++) {
-            last4Q_eps += parseFloat(eps[eps.length-1-j][8]); // After Tax
+            last4Q_eps += parseFloat(eps[eps.length-1-j][11]);
           }
           let price_to_earning = (obj.z / last4Q_eps).toFixed(2);
           let earning_yield = (last4Q_eps / obj.z * 100).toFixed(2);
           note += String.format('近四季EPS：{0} (累季：{1})<br>', last4Q_eps.toFixed(2), year_eps);
           note += String.format('目前股價：{0}<br>', obj.z);
           note += String.format('近四季本益比：{0}<br>', price_to_earning);
-          note += String.format('近四季收益率：{0}%<br>', earning_yield);
         }
-        text += '<tr><td colspan=7></td><td rowspan=5>' + note + '</td></tr>';
+        text += '<tr><td colspan=8></td><td rowspan=5>' + note + '</td></tr>';
         for (var q=1; q<eps[i][1]; q++) {
-          text += '<tr>' + '<td>-</td>'.repeat(7) + '</tr>';
+          text += '<tr>' + '<td>-</td>'.repeat(8) + '</tr>';
         }
     }
-    let rev = parseFloat(eps[i][3].replaceAll(',', ''));
-    let net_profit = parseFloat(eps[i][5].replaceAll(',', '')); // 單位： 百萬
-    let profit_margin = net_profit / rev * 100;
-    let stocks_in_100M = parseFloat(eps[i][2].replaceAll(',', '')) / 100000; // 單位： 千->億
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td></tr>',
-      eps[i][0], eps[i][1], (rev / 100).toFixed(2), stocks_in_100M.toFixed(2), (net_profit / 100).toFixed(2), profit_margin.toFixed(2), eps[i][8]);
+    let rev = parseFloat(eps[i][2].replaceAll(',', ''));
+    let profit = parseFloat(eps[i][6].replaceAll(',', ''));
+    let profit_other = parseFloat(eps[i][8].replaceAll(',', ''));
+    let profit_rate = (profit >= 0 && profit_other >=0) ? (profit / (profit + profit_other) * 100).toFixed(2) : '-';
+    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td></tr>',
+      eps[i][0], eps[i][1], (rev / 100).toFixed(2), (profit / 100).toFixed(2), eps[i][7], (profit_other / 100).toFixed(2), profit_rate, eps[i][11]);
   }
 
   for (var Q=parseInt(eps[eps.length-1][1])+1; Q<=4; Q++) {
     let rev = getRevenueByYearQ(obj.revenue, Y, Q);
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td>{3}</tr>',
-      Y, Q, rev.vol.toFixed(2), '<td>-</td>'.repeat(4));
+      Y, Q, rev.vol.toFixed(2), '<td>-</td>'.repeat(5));
   }
 
   text += '</table><br>';

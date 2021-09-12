@@ -304,17 +304,17 @@ def update_stock_report_wap_otc(obj):
 def update_stock_report_eps(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - defs.from_year_offset
-    url = 'https://jdata.yuanta.com.tw/z/zc/zcd/zcd_%s.djhtm' %(obj.code)
+    url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zce/zce_%s.djhtm' %(obj.code)
     txt = xurl.load(url, encoding='big5')
-    # 季別,加權平均股數,營業收入,稅前淨利,稅後淨利,每股營收(元),稅前每股盈餘(元),稅後每股盈餘(元)
-    for m in re.finditer(r'<tr><td class="t3n0">(\d+)\.(\d)Q</td>(.*?)</tr>', txt):
+    # 季別,營業收入,營業成本,營業毛利,毛利率,營業利益,營益率,業外收支,稅前淨利,稅後淨利,EPS(元)
+    for m in re.finditer(r'<td class="t3n0">(\d+)\.(\d)Q(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         Y, Q = m.group(1), m.group(2)
         if int(Y) < from_year:
             break
-        m2 = re.findall(r'>([^<]+)<', m.group(3))
-        if len(m2) == 7:
-            # 0年 1季, 2加權平均股數, 3營業收入, 4稅前淨利, 5稅後淨利, 6每股營收(元), 7稅前每股盈餘(元), 8稅後每股盈餘(元)
-            obj.eps.insert(0, (Y, Q, m2[0], m2[1], m2[2], m2[3], m2[4], m2[5], m2[6]))
+        m2 = re.findall(r'>([^\n<]*)<', m.group(3))
+        if len(m2) == 10:
+            # 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
+            obj.eps.insert(0, (Y, Q, m2[0], m2[1], m2[2], m2[3], m2[4], m2[5], m2[6], m2[7], m2[8], m2[9]))
     return
 
 def update_stock_report_dividend(obj):

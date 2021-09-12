@@ -498,7 +498,7 @@ function getEPSHTMLText(obj) {
     if (Y != eps[i][0]) {
         Y = eps[i][0];
         text += '</table><table>';
-        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>營利(億)</th><th>營益率(%)</th><th>業外(億)</th><th>本業(%)</th><th>EPS</th><th></th></tr>';
+        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>營利(億)</th><th>營益率(%)</th><th>業外(億)</th><th>本業(%)</th><th>稅後淨利(億)</th><th>EPS</th><th></th></tr>';
         let note = '';
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
@@ -526,23 +526,24 @@ function getEPSHTMLText(obj) {
           note += String.format('目前股價：{0}<br>', obj.z);
           note += String.format('近四季本益比：{0}<br>', price_to_earning);
         }
-        text += '<tr><td colspan=8></td><td rowspan=5>' + note + '</td></tr>';
+        text += '<tr><td colspan=9></td><td rowspan=5>' + note + '</td></tr>';
         for (var q=1; q<eps[i][1]; q++) {
-          text += '<tr>' + '<td>-</td>'.repeat(8) + '</tr>';
+          text += '<tr>' + '<td>-</td>'.repeat(9) + '</tr>';
         }
     }
     let rev = parseFloat(eps[i][2].replaceAll(',', ''));
     let profit = parseFloat(eps[i][6].replaceAll(',', ''));
     let profit_other = parseFloat(eps[i][8].replaceAll(',', ''));
+    let profix_after_tax = parseFloat(eps[i][10].replaceAll(',', ''));
     let profit_rate = (profit >= 0 && profit_other >=0) ? (profit / (profit + profit_other) * 100).toFixed(2) : '-';
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td></tr>',
-      eps[i][0], eps[i][1], (rev / 100).toFixed(2), (profit / 100).toFixed(2), eps[i][7], (profit_other / 100).toFixed(2), profit_rate, eps[i][11]);
+    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td></tr>',
+      eps[i][0], eps[i][1], (rev / 100).toFixed(2), (profit / 100).toFixed(2), eps[i][7], (profit_other / 100).toFixed(2), profit_rate, (profix_after_tax / 100).toFixed(2), eps[i][11]);
   }
 
   for (var Q=parseInt(eps[eps.length-1][1])+1; Q<=4; Q++) {
     let rev = getRevenueByYearQ(obj.revenue, Y, Q);
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td>{3}</tr>',
-      Y, Q, rev.vol.toFixed(2), '<td>-</td>'.repeat(5));
+      Y, Q, rev.vol.toFixed(2), '<td>-</td>'.repeat(6));
   }
 
   text += '</table><br>';
@@ -647,7 +648,7 @@ function getOverallHTMLText(obj) {
 
   text += '<table><tr><th colspan=3>Overall</th></tr>';
 
-  text += String.format('<tr><td colspan=2></td><td rowspan=7>');
+  text += String.format('<tr><td colspan=2></td><td rowspan=8>');
   text += String.format('推估PER：{0} ~ {1}<br>', per_min.toFixed(2), per_max.toFixed(2));
   text += String.format('推估最高價：{0} ({1}%)<br>', pz_max.toFixed(2), ((pz_max - pz) / pz * 100).toFixed(2));
   text += String.format('推估中間價：{0} ({1}%)<br>', pz_mid.toFixed(2), ((pz_mid - pz) / pz * 100).toFixed(2));
@@ -656,6 +657,7 @@ function getOverallHTMLText(obj) {
 
   text += String.format('<tr><td>收盤價</td><td>{0}</td></tr>', pz.toFixed(2));
   text += String.format('<tr><td>淨值 (NAV)</td><td>{0}</td></tr>', obj.nav.toFixed(2));
+  text += String.format('<tr><td>股數(億)</td><td>{0}</td></tr>', (obj.capital_stock / 10).toFixed(2));
   text += String.format('<tr><td>股價淨值比	(PBR)</td><td>{0}</td></tr>', (pz / obj.nav).toFixed(2));
   text += String.format('<tr><td>股東權益報酬率 (ROE)</td><td>{0}%</td></tr>', (eps / obj.nav * 100).toFixed(2));
   text += String.format('<tr><td>本益比 (PER)</td><td>{0}</td></tr>', obj.per.toFixed(2));

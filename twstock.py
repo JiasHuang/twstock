@@ -378,8 +378,9 @@ def update_stock_report_eps_from_news(obj):
                 or (Q == '4' and re.search(r'\d+年', m.group(1))):
                 x = float(m.group(2))
                 for i in range(1, int(Q)):
-                    x = x - float(obj.eps[len(obj.eps) - i][8])
-                obj.eps.append((Y, Q, '-', '-', '-', '-', '-', '-', str(x)))
+                    x = x - float(obj.eps[len(obj.eps) - i][11])
+                # 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
+                obj.eps.append((Y, Q, '-', '-', '-', '-', '-', '-', '-', '-', '-', str(x)))
             break
     return
 

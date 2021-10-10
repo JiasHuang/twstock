@@ -35,6 +35,77 @@ class exchange_rate_info:
         self.sell_cash = sell_cash
         self.sell_spot = sell_spot
 
+class wap_info:
+    # # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
+    def __init__(self, Y, M, h, l, a, A, B):
+        self.Y = Y
+        self.M = M
+        self.h = h
+        self.l = l
+        self.a = a
+        self.A = A
+        self.B = B
+
+    def __str__(self):
+        return 'Y {} M {} h {} l {} a {} A {} B {}'.format(self.Y, self.M, self.h, self.l, self.a, self.A, self.B)
+
+    def __jsonencode__(self):
+        return {'Y':self.Y, 'M':self.M, 'h':self.h, 'l':self.l, 'a':self.a, 'A':self.A, 'B':self.B}
+
+class revenue_info:
+    def __init__(self, Y, M, rev=0):
+        self.Y = Y
+        self.M = M
+        self.rev = rev
+
+    def __str__(self):
+        return 'Y {} M {} rev {}'.format(self.Y, self.M, self.rev)
+
+    def __jsonencode__(self):
+        return {'Y':self.Y, 'M':self.M, 'rev':self.rev}
+
+class dividend_info:
+    def __init__(self, Y, cash_a=0, cash_b=0, stock_a=0, stock_b=0):
+        self.Y = Y
+        self.cash_a = cash_a
+        self.cash_b = cash_b
+        self.stock_a = stock_a
+        self.stock_b = stock_b
+
+    def __str__(self):
+        return 'Y {} cash {} {} stock {} {}'.format(self.Y, self.cash_a, self.cash_b, self.stock_a, self.stock_b)
+
+    def __jsonencode__(self):
+        return {'Y':self.Y, 'cash_a':self.cash_a, 'cash_b':self.cash_b, 'stock_a':self.stock_a, 'stock_b':self.stock_b}
+
+class eps_info:
+    def __init__(self, Y, Q, rev='-', profit='-', nor='-', ni='-', eps='-'):
+        self.Y = Y
+        self.Q = Q
+        self.rev = rev  # 營業收入
+        self.profit = profit # 營業毛利
+        self.nor = nor #Total Non-operating Revenue 業外收支
+        self.ni = ni #Net Income 稅後淨利
+        self.eps = eps
+
+    def __str__(self):
+        return 'Y {} Q {} rev {} profit {} nor {} ni {} eps {}'.format(self.Y, self.Q, self.rev, self.profit, self.nor, self.ni, self.eps)
+
+    def __jsonencode__(self):
+        return {'Y':self.Y, 'Q':self.Q, 'rev':self.rev, 'profit':self.profit, 'nor':self.nor, 'ni':self.ni, 'eps':self.eps}
+
+class news_info:
+    def __init__(self, date, title, url):
+        self.date = date
+        self.title = title
+        self.url = url
+
+    def __str__(self):
+        return '{} {}'.format(self.date, self.title)
+
+    def __jsonencode__(self):
+        return {'date':self.date, 'title':self.title, 'url':self.url}
+
 class stock_info:
     def __init__(self, code, flts = None, tags = None, notes = None):
         self.code = code
@@ -94,6 +165,12 @@ class stock_report:
         print(self.per_max)
         print(self.per_min)
         print(self.capital_stock)
+
+class MyJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, '__jsonencode__'):
+            return obj.__jsonencode__()
+        return json.JSONEncoder.default(self, obj)
 
 def get_stat_vol(code, cacheOnly):
     obj = {}
@@ -285,7 +362,7 @@ def update_stock_report_wap(obj):
             h, l, a, = d[2], d[3], d[4]
             A = d[6].replace(',','')
             B = d[7].replace(',','')
-            obj.wap.append((Y, M, h, l, a, A, B))
+            obj.wap.append(wap_info(Y, M, h, l, a, A, B))
     return
 
 def update_stock_report_wap_otc(obj):
@@ -300,7 +377,7 @@ def update_stock_report_wap_otc(obj):
             A = m.group(6).replace(',','')
             B = m.group(7).replace(',','')
             a = '%.2f' %(float(A) / float(B))
-            obj.wap.append((Y, M, h, l, a, A + '000', B + '000'))
+            obj.wap.append(wap_info(Y, M, h, l, a, A + '000', B + '000'))
     return
 
 def update_stock_report_eps(obj):
@@ -308,24 +385,24 @@ def update_stock_report_eps(obj):
     from_year = int(now.year) - 1911 - defs.from_year_offset
     url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zce/zce_%s.djhtm' %(obj.code)
     txt = xurl.load(url, encoding='big5')
-    # 季別,營業收入,營業成本,營業毛利,毛利率,營業利益,營益率,業外收支,稅前淨利,稅後淨利,EPS(元)
+    # 季別,0營業收入,1營業成本,2營業毛利,3毛利率,4營業利益,5營益率,6業外收支,7稅前淨利,8稅後淨利,9EPS(元)
     for m in re.finditer(r'<td class="t3n0">(\d+)\.(\d)Q(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         Y, Q = m.group(1), m.group(2)
         if int(Y) < from_year:
             break
         m2 = re.findall(r'>([^\n<]*)<', m.group(3))
         if len(m2) == 10:
-            # 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
-            obj.eps.insert(0, (Y, Q, m2[0], m2[1], m2[2], m2[3], m2[4], m2[5], m2[6], m2[7], m2[8], m2[9]))
+            obj.eps.insert(0, eps_info(Y, Q, rev=m2[0], profit=m2[4], nor=m2[6], ni=m2[8], eps=m2[9]))
     return
 
 def update_stock_report_dividend(obj):
     url = 'https://jdata.yuanta.com.tw/z/zc/zcc/zcc_%s.djhtm' %(obj.code)
     txt = xurl.load(url, encoding='big5')
+    # 股利所屬年度,	現金股利(盈餘),現金股利(公積),現金股利(小計),股票股利(盈餘),股票股利(公積),股票股利(小計)
     for m in re.finditer(r'<td class="t3n0">(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         m2 = re.findall(r'>([^<]+)</td>', m.group(0))
         if len(m2) == 9:
-            obj.dividend.append((m2[0], m2[1], m2[2], m2[4], m2[5]))
+            obj.dividend.append(dividend_info(Y=m2[0], cash_a=m2[1], cash_b=m2[2], stock_a=m2[4], stock_b=m2[5]))
         if len(obj.dividend) >= 5:
             break
     return
@@ -341,7 +418,7 @@ def update_stock_report_revenue(obj):
             break
         m2 = re.findall(r'>([^<]+)</td>', m.group(3))
         if len(m2) > 0:
-            obj.revenue.insert(0, (Y, M, m2[0].replace(',','')))
+            obj.revenue.insert(0, revenue_info(Y, M, m2[0].replace(',','')))
     return
 
 def update_stock_report_news(obj):
@@ -353,24 +430,24 @@ def update_stock_report_news(obj):
             link = 'https://jdata.yuanta.com.tw' + m.group(2)
             title = m.group(3)
             if re.search(r'(每股稅後|每股盈餘|EPS|法說)', title):
-                obj.news.append((date, title, link))
+                obj.news.append(news_info(date, title, link))
     return
 
 def update_stock_report_eps_from_news(obj):
     if not len(obj.eps):
         return
     eps = obj.eps[len(obj.eps) - 1]
-    if eps[1] == '4':
-        Y = str(int(eps[0]) + 1)
+    if eps.Q == '4':
+        Y = str(int(eps.Y) + 1)
         Q = '1'
     else:
-        Y = eps[0]
-        Q = str(int(eps[1]) + 1)
+        Y = eps.Y
+        Q = str(int(eps.Q) + 1)
     for n in obj.news:
         # 自結第一季合併獲利229.4億元，每股稅後2.24元
         # 富邦金前三季合併獲利682.06億元，每股稅後6.38元
         # 富邦金自結108年合併獲利587.3億元，每股稅後5.48元
-        m = re.search(r'(第1季|第一季|上半年|前3季|前三季|\d+年)合併.*?每股稅後.*?([0-9.-]*)元', n[1])
+        m = re.search(r'(第1季|第一季|上半年|前3季|前三季|\d+年)合併.*?每股稅後.*?([0-9.-]*)元', n.title)
         if m:
             if (Q == '1' and m.group(1) in ['第1季', '第一季']) \
                 or (Q == '2' and m.group(1) in ['上半年']) \
@@ -378,9 +455,9 @@ def update_stock_report_eps_from_news(obj):
                 or (Q == '4' and re.search(r'\d+年', m.group(1))):
                 x = float(m.group(2))
                 for i in range(1, int(Q)):
-                    x = x - float(obj.eps[len(obj.eps) - i][11])
+                    x = x - float(obj.eps[len(obj.eps) - i].eps)
                 # 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
-                obj.eps.append((Y, Q, '-', '-', '-', '-', '-', '-', '-', '-', '-', str(x)))
+                obj.eps.append(eps_info(Y, Q, eps=str(x)))
             break
     return
 

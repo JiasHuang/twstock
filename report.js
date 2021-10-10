@@ -19,13 +19,13 @@ String.format = function() {
   return s;
 }
 
-function init_colors_idx(vec, subidx)
+function init_colors_idx(vec)
 {
-  var subid =  null;
+  var Y = null;
   var cnt = 0;
   for (var i=0; i<vec.length; i++) {
-    if (subid != vec[i][subidx]) {
-      subid = vec[i][subidx];
+    if (Y != vec[i].Y) {
+      Y = vec[i].Y;
       cnt++;
     }
   }
@@ -48,12 +48,12 @@ function parseWAPByYear(wap, Y) {
   var total_B = 0;
 
   for (var i=0; i<wap.length; i++) {
-    if (wap[i][0] == Y) {
-      let h = parseFloat(wap[i][2]);
-      let l = parseFloat(wap[i][3]);
-      let a = parseFloat(wap[i][4]);
-      let A = parseFloat(wap[i][5]);
-      let B = parseFloat(wap[i][6]);
+    if (wap[i].Y == Y) {
+      let h = parseFloat(wap[i].h);
+      let l = parseFloat(wap[i].l);
+      let a = parseFloat(wap[i].a);
+      let A = parseFloat(wap[i].A);
+      let B = parseFloat(wap[i].B);
 
       if (!hi || h > hi) {
         hi = h;
@@ -92,8 +92,8 @@ function getWAPHTMLText(wap, z) {
   text += '<table>';
 
   for (var i=0; i<wap.length; i++) {
-    if (Y != wap[i][0]) {
-      Y = wap[i][0];
+    if (Y != wap[i].Y) {
+      Y = wap[i].Y;
       text += '</table><table>';
       text += '<tr><th>年</th><th>月</th><th>最高</th><th>最低</th><th>平均</th><th></th></tr>';
       parsed = parseWAPByYear(wap, Y);
@@ -104,18 +104,18 @@ function getWAPHTMLText(wap, z) {
       //note += String.format('月均最高：{0}<br>', getBiasText(parsed[3], z));
       //note += String.format('月均最低：{0}<br>', getBiasText(parsed[4], z));
       text += '<tr><td colspan=5></td><td rowspan=13>' + note + '</td></tr>';
-      for (var m=1; m<wap[i][1]; m++) {
+      for (var m=1; m<wap[i].M; m++) {
         text += '<tr>' + '<td>-</td>'.repeat(5) + '</tr>';
       }
     }
-    let c1 = (wap[i][2] == parsed[0]) ? 'red' : '';
-    let c2 = (wap[i][3] == parsed[1]) ? 'green' : '';
-    let c3 = (wap[i][4] == parsed[3]) ? 'red' : ((wap[i][4] == parsed[4]) ? 'green' : '');
+    let c1 = (wap[i].h == parsed[0]) ? 'red' : '';
+    let c2 = (wap[i].l == parsed[1]) ? 'green' : '';
+    let c3 = (wap[i].a == parsed[3]) ? 'red' : ((wap[i][4] == parsed[4]) ? 'green' : '');
     text += String.format('<tr><td>{0}</td><td>{1}</td><td><span class={2}>{3}</span></td><td><span class={4}>{5}</span></td><td><span class={6}>{7}</span></td></tr>',
-      wap[i][0], wap[i][1], c1, wap[i][2], c2, wap[i][3], c3, wap[i][4]);
+      wap[i].Y, wap[i].M, c1, wap[i].h, c2, wap[i].l, c3, wap[i].a);
   }
 
-  for (var i=0; i<(12-wap[wap.length-1][1]); i++) {
+  for (var i=0; i<(12-wap[wap.length-1].M); i++) {
     text += '<tr>' + '<td>-</td>'.repeat(5) + '</tr>';
   }
 
@@ -178,7 +178,7 @@ function updateNews(news) {
   if (news.length) {
     text += '<hr>';
     for (var i=0; i<news.length; i++) {
-      text += String.format('<span class="news"><a href="{0}" target="_blank">{1} {2}</a></span>', news[i][2], news[i][0], news[i][1]);
+      text += String.format('<span class="news"><a href="{0}" target="_blank">{1} {2}</a></span>', news[i].url, news[i].date, news[i].title);
     }
   }
 
@@ -192,8 +192,8 @@ function updateMAChart(wap) {
   var datasets = [];
 
   for (var i=0; i<wap.length; i++) {
-    labels.push(wap[i][0] + '/' + wap[i][1]);
-    data.push(wap[i][4]);
+    labels.push(wap[i].Y + '/' + wap[i].M);
+    data.push(wap[i].a);
   }
 
   datasets.push({
@@ -221,8 +221,8 @@ function updateMAChart(wap) {
 function getWAPsByYear(wap, Y) {
   var ret = [];
   for (var i=0; i<wap.length; i++) {
-    if (wap[i][0] == Y) {
-      ret.push({x: wap[i][1].toString(), y: wap[i][4]});
+    if (wap[i].Y == Y) {
+      ret.push({x: wap[i].M.toString(), y: wap[i].a});
     }
   }
   return ret;
@@ -232,12 +232,12 @@ function updateMAChartByYear(wap) {
   var ctx = document.getElementById('chart_MA_by_year').getContext('2d');
   var datasets = [];
   var labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  var colors_idx = init_colors_idx(wap, 0);
+  var colors_idx = init_colors_idx(wap);
   var Y = null;
 
   for (var i=0; i<wap.length; i++) {
-    if (Y != wap[i][0]) {
-      Y = wap[i][0];
+    if (Y != wap[i].Y) {
+      Y = wap[i].Y;
       datasets.push({
         label: Y,
         data: getWAPsByYear(wap, Y),
@@ -270,11 +270,11 @@ function getEPSsByYear(eps, Y, cumulative) {
   var val = 0;
 
   for (var i=0; i<eps.length; i++) {
-    if (eps[i][0] != Y) {
+    if (eps[i].Y != Y) {
       continue;
     }
-    let x = 'Q' + eps[i][1];
-    val = parseFloat(eps[i][11]);
+    let x = 'Q' + eps[i].Q;
+    val = parseFloat(eps[i].eps);
     if (cumulative) {
       accu += val;
       ret.push({x: x, y: accu.toFixed(2)});
@@ -286,17 +286,16 @@ function getEPSsByYear(eps, Y, cumulative) {
   return ret;
 }
 
-// 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
 function getProfitMarginByYear(eps, Y) {
   var ret = [];
 
   for (var i=0; i<eps.length; i++) {
-    if (eps[i][0] != Y) {
+    if (eps[i].Y != Y) {
       continue;
     }
-    let x = 'Q' + eps[i][1];
-    let rev = parseFloat(eps[i][2].replaceAll(',', ''));
-    let net_profit = parseFloat(eps[i][6].replaceAll(',', ''));
+    let x = 'Q' + eps[i].Q;
+    let rev = parseFloat(eps[i].rev.replaceAll(',', ''));
+    let net_profit = parseFloat(eps[i].profit.replaceAll(',', ''));
     let profit_margin = net_profit / rev * 100;
     ret.push({x: x, y: profit_margin.toFixed(2)});
   }
@@ -308,12 +307,12 @@ function updateEPSChart(eps, cumulative) {
   var ctx = document.getElementById(cumulative ? 'chart_cumulative_EPS' : 'chart_EPS').getContext('2d');
   var datasets = [];
   var labels = ['Q1','Q2','Q3','Q4'];
-  var colors_idx = init_colors_idx(eps, 0)
+  var colors_idx = init_colors_idx(eps);
   var Y = null;
 
   for (var i=0; i<eps.length; i++) {
-    if (Y != eps[i][0]) {
-      Y = eps[i][0];
+    if (Y != eps[i].Y) {
+      Y = eps[i].Y;
       datasets.push({
         label: Y,
         data: getEPSsByYear(eps, Y, cumulative),
@@ -339,7 +338,6 @@ function updateEPSChart(eps, cumulative) {
   });
 }
 
-// 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
 function updateProfitMarginChart(eps) {
   var ctx = document.getElementById('chart_profit_margin').getContext('2d');
   var datasets = [];
@@ -347,11 +345,11 @@ function updateProfitMarginChart(eps) {
   var labels = [];
 
   for (var i=0; i<eps.length; i++) {
-    let rev = parseFloat(eps[i][2].replaceAll(',', ''));
-    let net_profit = parseFloat(eps[i][6].replaceAll(',', ''));
+    let rev = parseFloat(eps[i].rev.replaceAll(',', ''));
+    let net_profit = parseFloat(eps[i].profit.replaceAll(',', ''));
     let profit_margin = net_profit / rev * 100;
     data.push(profit_margin.toFixed(2));
-    labels.push(eps[i][0] + 'Q' + eps[i][1]);
+    labels.push(eps[i].Y + 'Q' + eps[i].Q);
   }
 
   datasets.push({
@@ -380,12 +378,12 @@ function updateProfitMarginChartByYear(eps) {
   var ctx = document.getElementById('chart_profit_margin_by_year').getContext('2d');
   var datasets = [];
   var labels = ['Q1','Q2','Q3','Q4'];
-  var colors_idx = init_colors_idx(eps, 0);
+  var colors_idx = init_colors_idx(eps);
   var Y = null;
 
   for (var i=0; i<eps.length; i++) {
-    if (Y != eps[i][0]) {
-      Y = eps[i][0];
+    if (Y != eps[i].Y) {
+      Y = eps[i].Y;
       datasets.push({
         label: Y,
         data: getProfitMarginByYear(eps, Y),
@@ -417,16 +415,16 @@ function getRevenueByYear(rev, Y, cumulative) {
   var val = 0;
 
   for (var i=0; i<rev.length; i++) {
-    if (rev[i][0] != Y) {
+    if (rev[i].Y != Y) {
       continue;
     }
-    val = parseFloat(rev[i][2]) / 100000; //單位：1億
+    val = parseFloat(rev[i].rev) / 100000; //單位：1億
     if (cumulative) {
       accu += val;
-      ret.push({x: rev[i][1], y: accu});
+      ret.push({x: rev[i].M, y: accu});
     }
     else {
-      ret.push({x: rev[i][1], y: val});
+      ret.push({x: rev[i].M, y: val});
     }
   }
   return ret;
@@ -437,13 +435,13 @@ function getRevenueByYearQ(rev, Y, Q) {
   var months = 0;
 
   for (var i=0; i<rev.length; i++) {
-    if (rev[i][0] != Y) {
+    if (rev[i].Y != Y) {
       continue;
     }
-    if (Math.ceil(parseInt(rev[i][1]) / 3) != Q) {
+    if (Math.ceil(parseInt(rev[i].M) / 3) != Q) {
       continue;
     }
-    vol += parseFloat(rev[i][2]) / 100000; //單位：仟->億
+    vol += parseFloat(rev[i].rev) / 100000; //單位：仟->億
     months += 1;
   }
 
@@ -454,12 +452,12 @@ function updateRevenueChart(rev, cumulative) {
   var ctx = document.getElementById(cumulative ? 'chart_cumulative_revenue' : 'chart_revenue').getContext('2d');
   var datasets = [];
   var labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-  var colors_idx = init_colors_idx(rev, 0);
+  var colors_idx = init_colors_idx(rev);
   var Y = null;
 
   for (var i=0; i<rev.length; i++) {
-    if (Y != rev[i][0]) {
-      Y = rev[i][0];
+    if (Y != rev[i].Y) {
+      Y = rev[i].Y;
       datasets.push({
         label: Y,
         data: getRevenueByYear(rev, Y, cumulative),
@@ -492,11 +490,10 @@ function getEPSHTMLText(obj) {
 
   text += '<table>';
 
-  // 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
   // 單位：千股 / 百萬元
   for (var i=0; i<eps.length; i++) {
-    if (Y != eps[i][0]) {
-        Y = eps[i][0];
+    if (Y != eps[i].Y) {
+        Y = eps[i].Y;
         text += '</table><table>';
         text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>營利(億)</th><th>營益率(%)</th><th>業外(億)</th><th>本業(%)</th><th>稅後淨利(億)</th><th>EPS</th><th></th></tr>';
         let note = '';
@@ -518,7 +515,7 @@ function getEPSHTMLText(obj) {
         else if (eps.length >= 4) {
           let last4Q_eps = 0;
           for (var j=0; j<4; j++) {
-            last4Q_eps += parseFloat(eps[eps.length-1-j][11]);
+            last4Q_eps += parseFloat(eps[eps.length-1-j].eps);
           }
           let price_to_earning = (obj.z / last4Q_eps).toFixed(2);
           let earning_yield = (last4Q_eps / obj.z * 100).toFixed(2);
@@ -531,16 +528,17 @@ function getEPSHTMLText(obj) {
           text += '<tr>' + '<td>-</td>'.repeat(9) + '</tr>';
         }
     }
-    let rev = parseFloat(eps[i][2].replaceAll(',', ''));
-    let profit = parseFloat(eps[i][6].replaceAll(',', ''));
-    let profit_other = parseFloat(eps[i][8].replaceAll(',', ''));
-    let profix_after_tax = parseFloat(eps[i][10].replaceAll(',', ''));
-    let profit_rate = (profit >= 0 && profit_other >=0) ? (profit / (profit + profit_other) * 100).toFixed(2) : '-';
+    let rev = parseFloat(eps[i].rev.replaceAll(',', ''));
+    let profit = parseFloat(eps[i].profit.replaceAll(',', ''));
+    let profit_ratio = profit / rev * 100; // operating profit ratio / Operating profit Margin
+    let nor = parseFloat(eps[i].nor.replaceAll(',', '')); // Total Non-operating Revenue
+    let profit_rate = (profit >= 0 && nor >=0) ? (profit / (profit + nor) * 100).toFixed(2) : '-';
+    let ni = parseFloat(eps[i].ni.replaceAll(',', '')); // Net Income
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td></tr>',
-      eps[i][0], eps[i][1], (rev / 100).toFixed(2), (profit / 100).toFixed(2), eps[i][7], (profit_other / 100).toFixed(2), profit_rate, (profix_after_tax / 100).toFixed(2), eps[i][11]);
+      eps[i].Y, eps[i].Q, (rev / 100).toFixed(2), (profit / 100).toFixed(2), profit_ratio.toFixed(2), (nor / 100).toFixed(2), profit_rate, (ni / 100).toFixed(2), eps[i].eps);
   }
 
-  for (var Q=parseInt(eps[eps.length-1][1])+1; Q<=4; Q++) {
+  for (var Q=parseInt(eps[eps.length-1].Q)+1; Q<=4; Q++) {
     let rev = getRevenueByYearQ(obj.revenue, Y, Q);
     text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td>{3}</tr>',
       Y, Q, rev.vol.toFixed(2), '<td>-</td>'.repeat(6));
@@ -560,15 +558,15 @@ function getDividendHTMLText(obj) {
 
   for (var i=0; i<div.length; i++) {
     let d = div[i];
-    let cash_dividend_a = parseFloat(d[1]);
-    let cash_dividend_b = parseFloat(d[2]);
+    let cash_dividend_a = parseFloat(d.cash_a);
+    let cash_dividend_b = parseFloat(d.cash_b);
     let cash_dividend = cash_dividend_a + cash_dividend_b;
-    let stock_dividend_a = parseFloat(d[3]);
-    let stock_dividend_b = parseFloat(d[4]);
+    let stock_dividend_a = parseFloat(d.stock_a);
+    let stock_dividend_b = parseFloat(d.stock_b);
     let stock_dividend = stock_dividend_a + stock_dividend_b;
     let dividend_yield = '-';
-    let era = parseInt(d[0]) - 1911;
-    let era_txt = d[0].replace(parseInt(d[0]), era);
+    let era = parseInt(d.Y) - 1911;
+    let era_txt = d.Y.replace(parseInt(d.Y), era);
     let eps = getEPSsByYear(obj.eps, era, true);
     let parsed = parseWAPByYear(obj.wap, era);
     let payout_ratio = '-';

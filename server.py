@@ -68,7 +68,7 @@ def dividend(q):
             obj = twstock.stock_report(c)
             twstock.update_stock_report_dividend(obj)
             objs.append(obj)
-        json_list = [json.dumps(obj.__dict__) for obj in objs]
+        json_list = [json.dumps(obj.__dict__, cls=twstock.MyJSONEncoder) for obj in objs]
         return '{"stocks":[%s]}' %(','.join(json_list))
     return
 
@@ -77,7 +77,7 @@ def report(q):
     code = d['c'][0] if 'c' in d else None
     if code:
         rpt_obj = twstock.get_stock_report(code)
-        return json.dumps(rpt_obj.__dict__)
+        return json.dumps(rpt_obj.__dict__, cls=twstock.MyJSONEncoder)
     return
 
 def populate(q):

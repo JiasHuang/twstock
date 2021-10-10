@@ -108,7 +108,7 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_pz);
-    text += String.format('<td><a href="report.html?c={0}" target="_blank" style="text-decoration: none">', s.code);
+    text += String.format('<td><a href="report.html?c={0}" style="text-decoration: none">', s.code);
     text += String.format('<span class="curpz">{0}</span>', z.toFixed(2));
     text += String.format('\n<span class="{0}">{1} ({2}%)</span></a></td>', z_diff<0?'green':'grey', z_diff.toFixed(2), z_ratio);
     for (var j=0; j<3; j++) {

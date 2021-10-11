@@ -110,7 +110,7 @@ function getWAPHTMLText(wap, z) {
     }
     let c1 = (wap[i].h == parsed[0]) ? 'red' : '';
     let c2 = (wap[i].l == parsed[1]) ? 'green' : '';
-    let c3 = (wap[i].a == parsed[3]) ? 'red' : ((wap[i][4] == parsed[4]) ? 'green' : '');
+    let c3 = (wap[i].a == parsed[3]) ? 'red' : ((wap[i].a == parsed[4]) ? 'green' : '');
     text += String.format('<tr><td>{0}</td><td>{1}</td><td><span class={2}>{3}</span></td><td><span class={4}>{5}</span></td><td><span class={6}>{7}</span></td></tr>',
       wap[i].Y, wap[i].M, c1, wap[i].h, c2, wap[i].l, c3, wap[i].a);
   }

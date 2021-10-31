@@ -74,7 +74,8 @@ button {
 }
 
 .green {
-  color: green;
+  color: black;
+  background-color: darkseagreen;
 }
 
 .curpz {

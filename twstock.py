@@ -468,7 +468,7 @@ def update_stock_report_overall(obj):
     if m:
         obj.pz_close = float(m.group(1))
     m = re.search(r'>本益比</td>\s*<td class="t3n1">(.*)</td>', txt)
-    if m:
+    if m and m.group(1) != 'N/A':
         obj.per = float(m.group(1))
     m = re.search(r'>每股淨值\(元\)</td>\s*<td class="t3n1"><span class="t3n1">(.*?)</span></td>', txt)
     if m:

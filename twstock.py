@@ -466,22 +466,22 @@ def update_stock_report_overall(obj):
     txt = xurl.load(url, encoding='big5')
     m = re.search(r'>收盤價</td>\s*<td class="t3n1">(.*)</td>', txt)
     if m:
-        obj.pz_close = float(m.group(1))
+        obj.pz_close = float(m.group(1).replace(',',''))
     m = re.search(r'>本益比</td>\s*<td class="t3n1">(.*)</td>', txt)
     if m and m.group(1) != 'N/A':
-        obj.per = float(m.group(1))
+        obj.per = float(m.group(1).replace(',',''))
     m = re.search(r'>每股淨值\(元\)</td>\s*<td class="t3n1"><span class="t3n1">(.*?)</span></td>', txt)
     if m:
-        obj.nav = float(m.group(1))
+        obj.nav = float(m.group(1).replace(',',''))
     m = re.search(r'>年度</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
     if m:
-        obj.per_year = [int(x) for x in re.findall(r'>([^<]+)</td>', m.group(1))]
+        obj.per_year = [int(x.replace(',','')) for x in re.findall(r'>([^<]+)</td>', m.group(1))]
     m = re.search(r'>最高本益比</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
     if m:
-        obj.per_max = [float(x) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
+        obj.per_max = [float(x.replace(',','')) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
     m = re.search(r'>最低本益比</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
     if m:
-        obj.per_min = [float(x) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
+        obj.per_min = [float(x.replace(',','')) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
     m = re.search(r'>股本\(億, 台幣\)</td>\s*<td class="t3n1">(.*)</td>', txt)
     if m:
         obj.capital_stock = float(m.group(1).replace(',',''))

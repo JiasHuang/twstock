@@ -353,7 +353,10 @@ def update_stock_report_wap(obj):
     for year in range(now.year - defs.from_year_offset, now.year + 1):
         url = 'https://www.twse.com.tw/exchangeReport/FMSRFK?response=json&stockNo=%s&date=%4d0101' %(obj.code, year)
         txt = xurl.load(url)
-        data = json.loads(txt)
+        try:
+            data = json.loads(txt)
+        except:
+            continue
         if 'data' not in data:
             continue
         # 年度,月份,最高價,最低價,加權(A/B)平均價,成交筆數,成交金額(A),成交股數(B),週轉率(%),

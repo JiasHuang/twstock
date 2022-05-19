@@ -104,13 +104,17 @@ function updateResult() {
       }
     }
 
+    var regexp = /現金股利\s*([\d|.]+)/g;
+    var m = regexp.exec(s.note);
+    var yield = m ? (parseFloat(m[1]) / z * 100).toFixed(2) : 0;
+
     text += '<tr>';
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_pz);
     text += String.format('<td><a href="report.html?c={0}" style="text-decoration: none">', s.code);
     text += String.format('<span class="curpz">{0}</span>', z.toFixed(2));
-    text += String.format('\n<span class="{0}">{1} ({2}%)</span></a></td>', z_diff<0?'green':'grey', z_diff.toFixed(2), z_ratio);
+    text += String.format('\n<span class="{0}">{1} ({2}%) (殖利率 {3}%)</span></a></td>', z_diff<0?'green':'grey', z_diff.toFixed(2), z_ratio, yield);
     for (var j=0; j<3; j++) {
       text += String.format('<td><span class="{0}"><={1}</span>\n', r_cls[j], st.ref[j].toFixed(2));
       if (st.qty[j]) {

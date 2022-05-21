@@ -277,7 +277,7 @@ function showLoading() {
 
 function updateStockInfo() {
   $.ajax({
-    url: 'view.py' + window.location.search,
+    url: 'stock.py' + window.location.search,
     dataType: 'json',
     error: onTimeout,
     success: parseStockJSON,
@@ -286,7 +286,7 @@ function updateStockInfo() {
 }
 
 function initStockInfo() {
-  var api_url = 'view.py' + window.location.search;
+  var api_url = 'stock.py' + window.location.search;
 
   api_url += (window.location.search != '') ? '&s=1' : '?s=1';
 

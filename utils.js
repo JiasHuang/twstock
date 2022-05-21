@@ -21,7 +21,7 @@ function loadTopMenu() {
   text += `
     <td>
     <select onchange="onGotoSelectChange.call(this)">
-      <option value="view.html">View</option>
+      <option value="stock.html">Stock</option>
       <option value="edit.html">Edit</option>
       <option value="account.html">Account</option>
       <option value="report.html">Report</option>

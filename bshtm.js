@@ -141,7 +141,7 @@ function loadStocksJSON(maps) {
   }
 
   $.ajax({
-    url: String.format('view.py?c={0}', codes.join(',')),
+    url: String.format('stock.py?c={0}', codes.join(',')),
     dataType: 'json',
     error: onTimeout,
     success: parseStocksJSON,

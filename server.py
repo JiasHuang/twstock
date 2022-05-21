@@ -31,7 +31,7 @@ def exr(q):
         return '{"ExchangeRates":[%s]}' %(','.join(exchange_rate_json_list))
     return None
 
-def view(q):
+def stock(q):
     d = parse_qs(q)
     path = d['i'][0] if 'i' in d else None
     code = d['c'][0] if 'c' in d else None

@@ -741,7 +741,8 @@ function updateStockReport() {
 
 function updateReportByInput() {
   var code = document.getElementById('input_code').value;
-  window.location.href = 'report.html?c=' + code;
+  if (code != '')
+    window.location.href = 'report.html?c=' + code;
 }
 
 function onDocumentReady() {

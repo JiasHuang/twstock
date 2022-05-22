@@ -11,7 +11,7 @@ import xurl
 from optparse import OptionParser
 
 class defs:
-    from_year_offset = 3
+    from_year_offset = 5
 
 class bcolors:
     BLACK_ON_RED = '\x1b[3;30;41m'

@@ -7,7 +7,7 @@ Chart.defaults.global.title.display = true;
 Chart.defaults.global.title.fontSize = 16;
 Chart.defaults.global.events = ['click'];
 
-var colors = ['DarkGrey', 'Grey', 'SteelBlue', 'Blue'];
+var colors = ['DarkGrey', 'Grey', '#95B9C7', '#659EC7', '#157DEC', 'Blue'];
 var def_color = colors[colors.length - 1];
 
 String.format = function() {
@@ -29,6 +29,7 @@ function init_colors_idx(vec)
       cnt++;
     }
   }
+
   return Math.max(0, colors.length - cnt);
 }
 
@@ -101,8 +102,6 @@ function getWAPHTMLText(wap, z) {
       note += String.format('最高：{0}<br>', getBiasText(parsed[0], z));
       note += String.format('最低：{0}<br>', getBiasText(parsed[1], z));
       note += String.format('平均：{0}<br>', getBiasText(parsed[2], z));
-      //note += String.format('月均最高：{0}<br>', getBiasText(parsed[3], z));
-      //note += String.format('月均最低：{0}<br>', getBiasText(parsed[4], z));
       text += '<tr><td colspan=5></td><td rowspan=13>' + note + '</td></tr>';
       for (var m=1; m<wap[i].M; m++) {
         text += '<tr>' + '<td>-</td>'.repeat(5) + '</tr>';
@@ -122,14 +121,6 @@ function getWAPHTMLText(wap, z) {
   text += '</table><br>';
 
   return text;
-}
-
-function getMAs(obj) {
-  var MAs = [];
-  for (var i=0; i<obj.length; i++) {
-    MAs.push(obj[i][4]);
-  }
-  return MAs;
 }
 
 function getLinkDict(code, nf) {
@@ -193,7 +184,7 @@ function updateMAChart(wap) {
 
   for (var i=0; i<wap.length; i++) {
     labels.push(wap[i].Y + '/' + wap[i].M);
-    data.push(wap[i].a);
+    data.push(wap[i].a.replaceAll(',', ''));
   }
 
   datasets.push({
@@ -222,7 +213,7 @@ function getWAPsByYear(wap, Y) {
   var ret = [];
   for (var i=0; i<wap.length; i++) {
     if (wap[i].Y == Y) {
-      ret.push({x: wap[i].M.toString(), y: wap[i].a});
+      ret.push({x: wap[i].M.toString(), y: wap[i].a.replaceAll(',', '')});
     }
   }
   return ret;

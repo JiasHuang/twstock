@@ -175,7 +175,7 @@ class MyJSONEncoder(json.JSONEncoder):
 def get_stat_vol(code, cacheOnly):
     obj = {}
     url = 'https://jdata.yuanta.com.tw/z/zc/zcw/zcwg_%s.djhtm' %(code)
-    txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000, encoding='big5')
+    txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000, encoding='big5_hkscs')
     m = re.search(r'GetBcdData\(\'([^ ]*) ([^\']*)\'', txt)
     if m:
         vols = m.group(2).split(',')
@@ -387,7 +387,7 @@ def update_stock_report_eps(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - defs.from_year_offset
     url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zce/zce_%s.djhtm' %(obj.code)
-    txt = xurl.load(url, encoding='big5')
+    txt = xurl.load(url, encoding='big5_hkscs')
     # 季別,0營業收入,1營業成本,2營業毛利,3毛利率,4營業利益,5營益率,6業外收支,7稅前淨利,8稅後淨利,9EPS(元)
     for m in re.finditer(r'<td class="t3n0">(\d+)\.(\d)Q(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         Y, Q = m.group(1), m.group(2)
@@ -400,7 +400,7 @@ def update_stock_report_eps(obj):
 
 def update_stock_report_dividend(obj):
     url = 'https://jdata.yuanta.com.tw/z/zc/zcc/zcc_%s.djhtm' %(obj.code)
-    txt = xurl.load(url, encoding='big5')
+    txt = xurl.load(url, encoding='big5_hkscs')
     # 股利所屬年度,	現金股利(盈餘),現金股利(公積),現金股利(小計),股票股利(盈餘),股票股利(公積),股票股利(小計)
     for m in re.finditer(r'<td class="t3n0">(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         m2 = re.findall(r'>([^<]+)</td>', m.group(0))
@@ -414,7 +414,7 @@ def update_stock_report_revenue(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - defs.from_year_offset
     url = 'https://jdata.yuanta.com.tw/z/zc/zch/zch_%s.djhtm' %(obj.code)
-    txt = xurl.load(url, encoding='big5')
+    txt = xurl.load(url, encoding='big5_hkscs')
     for m in re.finditer(r'<td class="t3n0">(\d+)/(\d+)</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         Y, M = m.group(1), m.group(2)
         if int(Y) < from_year:
@@ -427,7 +427,7 @@ def update_stock_report_revenue(obj):
 def update_stock_report_news(obj):
     for i in range(1, 3):
         url = 'https://jdata.yuanta.com.tw/Z/ZC/ZCV/ZCV_%s_E_%d.djhtm' %(obj.code, i)
-        txt = xurl.load(url, encoding='big5')
+        txt = xurl.load(url, encoding='big5_hkscs')
         for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
             date = m.group(1)
             link = 'https://jdata.yuanta.com.tw' + m.group(2)
@@ -466,7 +466,7 @@ def update_stock_report_eps_from_news(obj):
 
 def update_stock_report_overall(obj):
     url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_%s.djhtm' %(obj.code)
-    txt = xurl.load(url, encoding='big5')
+    txt = xurl.load(url, encoding='big5_hkscs')
     m = re.search(r'>收盤價</td>\s*<td class="t3n1">(.*)</td>', txt)
     if m:
         obj.pz_close = float(m.group(1).replace(',',''))

@@ -9,7 +9,8 @@ Chart.defaults.global.events = ['click'];
 
 var hdrs = null;
 var tracks = null;
-var limit = 30;
+var limit = 120;
+var limit_table = 30;
 
 String.format = function() {
   var s = arguments[0];
@@ -99,8 +100,8 @@ function update_chart(bs) {
     label: 'Avg',
     data: data_avg,
     yAxisID: 'Pz',
-    borderColor: 'Green',
-    backgroundColor: 'Green',
+    borderColor: 'Gray',
+    backgroundColor: 'Gray',
     fill: false,
   });
 
@@ -108,8 +109,8 @@ function update_chart(bs) {
     label: 'Pzc',
     data: data_pzc,
     yAxisID: 'Pz',
-    borderColor: 'Gray',
-    backgroundColor: 'Gray',
+    borderColor: 'Green',
+    backgroundColor: 'Green',
     fill: false,
   });
 
@@ -199,7 +200,8 @@ function updateResult() {
     text += '<table class="tracks" id="tbl_bno_' + bs.bno + '">';
     text += '<tr><th colspan=9>' + bs.bname + '</th></tr>';
     text += '<tr><th>日期</th><th>買張</th><th>均價</th><th>賣張</th><th>均價</th><th>收盤價</th><th>買賣超</th><th>張數</th><th>均價</th></tr>';
-    for (var j=0; j<bs.infos.length; j++) {
+    var begin = Math.max(bs.infos.length - limit_table, 0);
+    for (var j=begin; j<bs.infos.length; j++) {
       let info = bs.infos[j];
       let x = tracks[info.idx];
       let net_bs = x.b_qty - x.s_qty;

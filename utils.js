@@ -44,6 +44,6 @@ function loadTopMenu() {
   $('#topmenu').html(text);
 }
 
-function numFmt(n) {
-  return ((n > 0) ? '+':'') + n.toFixed(2);
+function numFmt(n, p=2) {
+  return ((n > 0) ? '+':'') + n.toFixed(p);
 }

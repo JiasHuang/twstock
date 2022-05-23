@@ -82,8 +82,8 @@ function updateResult() {
 
   text += '<table id="stocks">';
   text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th>'; // 0:代碼, 1:名稱, 2:參考價
-  text += '<th>市價</th><th>批1</th><th>批2</th><th>批3</th>'; // 3:市價, 4:批1, 5:批2, 6:批3
-  text += '<th>備註</th>'; // 7:備註
+  text += '<th>市價</th><th>利率</th><th>批1</th><th>批2</th><th>批3</th>'; // 3:市價, 4:利率 , 5:批1, 6:批2, 7:批3,
+  text += '<th>備註</th>'; // 8:備註
   text += '<th>買入</th><th>賣出</th><th>均價</th><th>成本</th>';
   text += '</tr>';
 
@@ -106,7 +106,7 @@ function updateResult() {
 
     var regexp = /現金股利\s*([\d|.]+)/g;
     var m = regexp.exec(s.note);
-    var yield = m ? (parseFloat(m[1]) / z * 100).toFixed(2) : 0;
+    var yield = m ? (parseFloat(m[1]) / z * 100).toFixed(1) : 0;
 
     text += '<tr>';
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
@@ -114,9 +114,11 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.ref_pz);
     text += String.format('<td><a href="report.html?c={0}" style="text-decoration: none">', s.code);
     text += String.format('<span class="curpz">{0}</span>', z.toFixed(2));
-    text += String.format('\n<span class="{0}">{1} ({2}%)</span>', z_diff < 0 ? 'green':'grey', numFmt(z_diff), numFmt(z_ratio));
-    text += String.format(' | <span class="{0}">殖利率 {1}%</span>', yield > 5 ? 'green':'grey', yield);
     text += String.format('</a></td>');
+    text += String.format('<td>');
+    text += String.format('<span class="{0}">{1} ({2}%)</span>', z_diff < 0 ? 'green':'grey', numFmt(z_diff), numFmt(z_ratio, 1));
+    text += String.format('\n<span class="{0}">殖利率 {1}%</span>', yield > 5 ? '':'grey', yield);
+    text += String.format('</td>');
     for (var j=0; j<3; j++) {
       text += String.format('<td><span class="{0}"><={1}</span>\n', r_cls[j], st.ref[j].toFixed(2));
       if (st.qty[j]) {
@@ -151,7 +153,7 @@ function updateResult() {
   for (var i=0; i<3; i++) {
     text += '<tr>';
     text += '<td contenteditable=true></td>'.repeat(4);
-    text += td_na.repeat(8);
+    text += td_na.repeat(9);
     text += '</tr>';
   }
 

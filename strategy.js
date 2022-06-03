@@ -82,8 +82,8 @@ function updateResult() {
 
   text += '<table id="stocks">';
   text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th>'; // 0:代碼, 1:名稱, 2:參考價
-  text += '<th>市價</th><th>漲跌</th><th>殖利率</th><th>批1</th><th>批2</th><th>批3</th>'; // 3:市價, 4:利率 , 5:批1, 6:批2, 7:批3,
-  text += '<th>備註</th>'; // 8:備註
+  text += '<th>市價</th><th>漲跌</th><th>殖利率</th><th>批1</th><th>批2</th><th>批3</th>'; // 3:市價, 4:漲跌, 5:殖利率 , 6:批1, 7:批2, 8:批3,
+  text += '<th>備註</th>'; // 9:備註
   text += '<th>買入</th><th>賣出</th><th>均價</th><th>成本</th>';
   text += '</tr>';
 

@@ -249,7 +249,7 @@ function onSave() {
     let code = row.cells[0].textContent;
     let name = row.cells[1].textContent;
     let ref_pz = row.cells[2].textContent;
-    let note = row.cells[7].textContent;
+    let note = row.cells[9].textContent;
     if (code.length) {
       let obj = {};
       obj.code = code;

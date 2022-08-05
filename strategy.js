@@ -244,6 +244,9 @@ function onSuccess() {
 
 function onSave() {
   var table = document.getElementById("stocks");
+  var objs = [];
+  var objs_a = []; // after
+  var objs_b = []; // before
   var jsons = [];
   for (var i = 1, row; row = table.rows[i]; i++) {
     let code = row.cells[0].textContent;
@@ -256,9 +259,46 @@ function onSave() {
       obj.name = name;
       obj.ref_pz = ref_pz;
       obj.note = note;
-      jsons.push(JSON.stringify(obj));
+      if (code.indexOf('>') != -1)
+        objs_a.push(obj);
+      else if (code.indexOf('<') != -1)
+        objs_b.push(obj);
+      else
+        objs.push(obj);
     }
   }
+
+  for (var i = 0; i < objs_a.length; i++) {
+    let obj = objs_a[i];
+    let sep_index = obj.code.indexOf('>');
+    let code = obj.code.substring(0, sep_index);
+    let target_code = obj.code.substring(sep_index + 1);
+    for (var j = 0; j < objs.length; j++) {
+      if (objs[j].code == target_code) {
+        obj.code = code;
+        objs.splice(j + 1, 0, obj);
+        break;
+      }
+    }
+  }
+
+  for (var i = 0; i < objs_b.length; i++) {
+    let obj = objs_b[i];
+    let sep_index = obj.code.indexOf('<');
+    let code = obj.code.substring(0, sep_index);
+    let target_code = obj.code.substring(sep_index + 1);
+    for (var j = 0; j < objs.length; j++) {
+      if (objs[j].code == target_code) {
+        obj.code = code;
+        objs.splice(j, 0, obj);
+        break;
+      }
+    }
+  }
+
+  for (var i = 0; i < objs.length - 1; i++)
+    jsons.push(JSON.stringify(objs[i]));
+
   let data = '{"stocks":[\n\t' + jsons.join(',\n\t') + '\n]}';
   console.log(data);
   $.ajax({

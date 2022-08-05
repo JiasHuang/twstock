@@ -296,7 +296,7 @@ function onSave() {
     }
   }
 
-  for (var i = 0; i < objs.length - 1; i++)
+  for (var i = 0; i < objs.length; i++)
     jsons.push(JSON.stringify(objs[i]));
 
   let data = '{"stocks":[\n\t' + jsons.join(',\n\t') + '\n]}';

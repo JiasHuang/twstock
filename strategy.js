@@ -245,9 +245,9 @@ function onSuccess() {
 function onSave() {
   var table = document.getElementById("stocks");
   var objs = [];
-  var objs_a = []; // after
-  var objs_b = []; // before
+  var objs_move = [];
   var jsons = [];
+
   for (var i = 1, row; row = table.rows[i]; i++) {
     let code = row.cells[0].textContent;
     let name = row.cells[1].textContent;
@@ -259,41 +259,40 @@ function onSave() {
       obj.name = name;
       obj.ref_pz = ref_pz;
       obj.note = note;
-      if (code.indexOf('>') != -1)
-        objs_a.push(obj);
-      else if (code.indexOf('<') != -1)
-        objs_b.push(obj);
+      if (code.indexOf('>') != -1) {
+        sep_index = obj.code.indexOf('>');
+        obj.code = code.substring(0, sep_index);
+        obj.target_code = code.substring(sep_index + 1);
+        obj.target_offset = 1;
+        objs_move.push(obj);
+      }
+      else if (code.indexOf('<') != -1) {
+        sep_index = obj.code.indexOf('<');
+        obj.code = code.substring(0, sep_index);
+        obj.target_code = code.substring(sep_index + 1);
+        obj.target_offset = 0;
+        objs_move.push(obj);
+      }
       else
         objs.push(obj);
     }
   }
 
-  for (var i = 0; i < objs_a.length; i++) {
-    let obj = objs_a[i];
-    let sep_index = obj.code.indexOf('>');
-    let code = obj.code.substring(0, sep_index);
-    let target_code = obj.code.substring(sep_index + 1);
+  for (var i = 0; i < objs_move.length; i++) {
+    let obj = objs_move[i];
+    let target_code = obj.target_code;
+    let target_offset = obj.target_offset;
+    delete obj.target_code; // delete temp attr
+    delete obj.target_offset; // delete temp attr
     for (var j = 0; j < objs.length; j++) {
       if (objs[j].code == target_code) {
-        obj.code = code;
-        objs.splice(j + 1, 0, obj);
+        objs.splice(j + target_offset, 0, obj);
         break;
       }
     }
-  }
-
-  for (var i = 0; i < objs_b.length; i++) {
-    let obj = objs_b[i];
-    let sep_index = obj.code.indexOf('<');
-    let code = obj.code.substring(0, sep_index);
-    let target_code = obj.code.substring(sep_index + 1);
-    for (var j = 0; j < objs.length; j++) {
-      if (objs[j].code == target_code) {
-        obj.code = code;
-        objs.splice(j, 0, obj);
-        break;
-      }
-    }
+    // not found
+    if (j == objs.length)
+      objs.push(obj);
   }
 
   for (var i = 0; i < objs.length; i++)

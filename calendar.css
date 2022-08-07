@@ -1,0 +1,67 @@
+
+button {
+  background-color: #4682B4;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  padding: 5px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 28px;
+  margin: 0px 10px;
+  cursor: pointer;
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 30;
+}
+
+#result table {
+  border-collapse: collapse;
+  margin: 5px;
+  width: 80%;
+}
+
+#result th {
+  font-size: 16px;
+  border: 1px solid;
+  padding: 0px 10px;
+  white-space: pre;
+  text-lign: center;
+  background-color: #FF8C00;
+}
+
+#result td {
+  font-size: 16px;
+  border: 1px solid;
+  padding: 0px 5px;
+  white-space: pre;
+  text-align: right;
+}
+
+#result .odd {
+  background-color: #FFFAFA;
+}
+
+#result .even {
+  background-color: #F5DEB3;
+}
+
+#result .edit {
+  text-align: left;
+}
+
+#result .note {
+  text-align: left;
+}
+
+.grey {
+  color: grey;
+}
+
+.bg_yellow {
+  background-color: yellow;
+}
+
+

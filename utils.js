@@ -29,6 +29,7 @@ function loadTopMenu() {
       <option value="broker.html">Broker</option>
       <option value="bshtm.html">bshtm</option>
       <option value="track.html">Track</option>
+      <option value="calendar.html">Calendar</option>
     </select>
     </td>
   `;

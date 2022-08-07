@@ -36,8 +36,10 @@ function get_week_html(q, m, w) {
   var today = new Date();
 
   for (var i=0; i<7; i++) {
-    cls = today.getMonth() + 1 == m.M && today.getDate() == w.days[i] ? 'bg_yellow' : 'grey';
-    text += String.format('<td class="{0}">{1}</td>', cls, w.days[i]);
+    if (today.getMonth() + 1 == m.M && today.getDate() == w.days[i])
+      text += String.format('<td id="today"><span class="bg_yellow">{0}</span></td>', w.days[i]);
+    else
+      text += String.format('<td><span class="grey">{0}</span></td>', w.days[i]);
   }
 
   text += String.format('<td id="M{0}W{1}" class="edit" contenteditable=true>{2}</td>', m.M, w.W, w.note);
@@ -47,11 +49,10 @@ function get_week_html(q, m, w) {
 
 function updateResult() {
   var text = '';
-  var td_na = '<td rows=0 cols=0></td>';
 
-  text += '<table><tr>';
-  text += '<th>Quarter</th><th>Month</th><th>Note</th>';
-  text += '<th>Week</th>';
+  text += String.format('<h1>{0}</h1>', Calendar.Y);
+  text += '<table>';
+  text += '<tr><th>Quarter</th><th>Month</th><th>Note</th><th>Week</th>';
 
   var weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
@@ -84,6 +85,8 @@ function parseCalendarJSON(obj) {
   console.log(obj);
   Calendar = obj;
   updateResult();
+  window.location.hash = '#today';
+  window.history.replaceState({}, document.title, "calendar.html");
 }
 
 function loadCalendarJSON() {
@@ -126,6 +129,7 @@ function onSave() {
 }
 
 function onDocumentReady() {
+  loadTopMenu();
   loadCalendarJSON();
 }
 

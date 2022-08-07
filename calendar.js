@@ -36,7 +36,7 @@ function get_week_html(q, m, w) {
   var today = new Date();
 
   for (var i=0; i<7; i++) {
-    cls = today.getMonth() == m.M && today.getDate() == w.days[i] ? 'bg_yellow' : 'grey';
+    cls = today.getMonth() + 1 == m.M && today.getDate() == w.days[i] ? 'bg_yellow' : 'grey';
     text += String.format('<td class="{0}">{1}</td>', cls, w.days[i]);
   }
 

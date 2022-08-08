@@ -19,8 +19,9 @@ function get_weeks_by_q(q) {
 }
 
 function get_week_html(q, m, w) {
-  text = String.format('<tr class="{0}">', q.Q % 2 == 1 ? "even":"");
+  var text = '<tr>';
   var first_w = w == m.weeks[0];
+  var cls = m.M % 2 == 0 ? 'even':'';
 
   if (first_w && (m.M == 1 || m.M == 4 || m.M == 7 || m.M == 10)) {
     text += String.format('<td rowspan={0}>Q{1}</td>', get_weeks_by_q(q), q.Q);
@@ -31,15 +32,15 @@ function get_week_html(q, m, w) {
     text += String.format('<td id="M{0}" rowspan={1} class="edit" contenteditable=true>{2}</td>', m.M, m.weeks.length, m.note);
   }
 
-  text += String.format('<td>W{0}</td>', w.W);
+  text += String.format('<td class="{0}">W{1}</td>', cls, w.W);
 
   var today = new Date();
 
   for (var i=0; i<7; i++) {
     if (today.getMonth() + 1 == m.M && today.getDate() == w.days[i])
-      text += String.format('<td id="today"><span class="bg_yellow">{0}</span></td>', w.days[i]);
+      text += String.format('<td id="today" class="{0}"><span class="bg_yellow">{1}</span></td>', cls, w.days[i]);
     else
-      text += String.format('<td><span class="grey">{0}</span></td>', w.days[i]);
+      text += String.format('<td class="{0}"><span class="grey">{1}</span></td>', cls, w.days[i]);
   }
 
   text += String.format('<td id="M{0}W{1}" class="edit" contenteditable=true>{2}</td>', m.M, w.W, w.note);
@@ -123,7 +124,7 @@ function onSave() {
   $.ajax({
     type: 'POST',
     url: 'upload.py?j=calendar.json',
-    data: {data: JSON.stringify(Calendar)},
+    data: {data: JSON.stringify(Calendar, null, 2)},
     success: onSuccess,
   });
 }

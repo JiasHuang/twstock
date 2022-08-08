@@ -41,7 +41,6 @@ class YearInfo:
 
 def gen_calendar(Y):
     y = YearInfo(Y)
-    week_offset = 0
     for Q in range(1, 5):
         q = QuarterInfo(Q)
         for M in range(Q*3-2, Q*3+1):
@@ -49,12 +48,6 @@ def gen_calendar(Y):
             m = MonthInfo(M)
             for D in range(1, days + 1):
                 year, week, weekday = date(Y, M, D).isocalendar()
-                # adjust week
-                if year != Y:
-                    week = 1
-                    week_offset = 1
-                else:
-                    week += week_offset
                 if len(m.weeks) == 0 or m.weeks[-1].W != week:
                     m.weeks.append(WeekInfo(week))
                 m.weeks[-1].days[weekday-1] = D

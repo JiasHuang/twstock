@@ -18,7 +18,7 @@ function get_weeks_by_q(q) {
   return weeks;
 }
 
-function get_week_html(q, m, w) {
+function get_week_html(y, q, m, w) {
   var text = '<tr>';
   var first_w = w == m.weeks[0];
   var cls = m.M % 2 == 0 ? 'even':'';
@@ -37,7 +37,7 @@ function get_week_html(q, m, w) {
   var today = new Date();
 
   for (var i=0; i<7; i++) {
-    if (today.getMonth() + 1 == m.M && today.getDate() == w.days[i])
+    if (today.getFullYear() == y.Y && today.getMonth() + 1 == m.M && today.getDate() == w.days[i])
       text += String.format('<td id="today" class="{0}"><span class="bg_yellow">{1}</span></td>', cls, w.days[i]);
     else
       text += String.format('<td class="{0}"><span class="grey">{1}</span></td>', cls, w.days[i]);
@@ -53,7 +53,7 @@ function updateResult() {
 
   text += String.format('<h1>{0}</h1>', Calendar.Y);
   text += '<table>';
-  text += '<tr><th>Quarter</th><th>Month</th><th>Note</th><th>Week</th>';
+  text += '<tr><th>Q</th><th>M</th><th>Note</th><th>W</th>';
 
   var weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
@@ -69,7 +69,7 @@ function updateResult() {
       let m = q.months[j];
       for (var k=0; k<m.weeks.length; k++) {
         let w = m.weeks[k];
-        text += get_week_html(q, m, w);
+        text += get_week_html(Calendar, q, m, w);
       }
     }
   }

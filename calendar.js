@@ -21,26 +21,27 @@ function get_weeks_by_q(q) {
 function get_week_html(y, q, m, w) {
   var text = '<tr>';
   var first_w = w == m.weeks[0];
-  var cls = m.M % 2 == 0 ? 'even':'';
+  var td_cls = m.M % 2 == 0 ? 'even':'';
+  var today = new Date();
+  var cur_m = today.getFullYear() == y.Y && today.getMonth() + 1 == m.M;
 
   if (first_w && (m.M == 1 || m.M == 4 || m.M == 7 || m.M == 10)) {
     text += String.format('<td rowspan={0}>Q{1}</td>', get_weeks_by_q(q), q.Q);
   }
 
   if (first_w) {
-    text += String.format('<td rowspan={0}>M{1}</td>', m.weeks.length, m.M);
+    if (cur_m)
+      text += String.format('<td rowspan={0}><span id="cur_m" class="hl">M{1}</span></td>', m.weeks.length, m.M);
+    else
+      text += String.format('<td rowspan={0}><span>M{1}</span></td>', m.weeks.length, m.M);
     text += String.format('<td id="M{0}" rowspan={1} class="edit" contenteditable=true>{2}</td>', m.M, m.weeks.length, m.note);
   }
 
-  text += String.format('<td class="{0}">W{1}</td>', cls, w.W);
-
-  var today = new Date();
+  text += String.format('<td class="{0}">W{1}</td>', td_cls, w.W);
 
   for (var i=0; i<7; i++) {
-    if (today.getFullYear() == y.Y && today.getMonth() + 1 == m.M && today.getDate() == w.days[i])
-      text += String.format('<td id="today" class="{0}"><span class="bg_yellow">{1}</span></td>', cls, w.days[i]);
-    else
-      text += String.format('<td class="{0}"><span class="grey">{1}</span></td>', cls, w.days[i]);
+    let span_cls = (cur_m && today.getDate() == w.days[i]) ? 'hl':'grey';
+    text += String.format('<td class="{0}"><span class="{1}">{2}</span></td>', td_cls, span_cls, w.days[i]);
   }
 
   text += String.format('<td id="M{0}W{1}" class="edit" contenteditable=true>{2}</td>', m.M, w.W, w.note);
@@ -86,7 +87,7 @@ function parseCalendarJSON(obj) {
   console.log(obj);
   Calendar = obj;
   updateResult();
-  window.location.hash = '#today';
+  window.location.hash = '#cur_m';
   window.history.replaceState({}, document.title, "calendar.html");
 }
 

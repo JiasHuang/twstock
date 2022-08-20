@@ -136,7 +136,6 @@ function getLinkDict(code, nf) {
   dict.push({key:'持股分級', val:String.format('https://goodinfo.tw/StockInfo/EquityDistributionClassHis.asp?STOCK_ID={0}', code)});
   dict.push({key:'券商買賣', val:String.format('https://histock.tw/stock/branch.aspx?no={0}', code)});
   dict.push({key:'Ｋ線', val:String.format('https://goodinfo.tw/StockInfo/ShowK_Chart.asp?STOCK_ID={0}&CHT_CAT2=DATE', code)});
-  dict.push({key:'股利', val:String.format('https://goodinfo.tw/StockInfo/StockDividendPolicy.asp?STOCK_ID={0}', code)});
   dict.push({key:'除權息', val:String.format('https://goodinfo.tw/StockInfo/StockDividendSchedule.asp?STOCK_ID={0}', code)});
   dict.push({key:'GoodInfo', val:String.format('https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID={0}', code)});
   if (code.startsWith('00'))
@@ -160,7 +159,7 @@ function updateInfo(obj) {
     text += String.format('<span class="link"><a href="{0}" target="_blank">{1}</a></span>', dict[i].val, dict[i].key);
   }
 
-  text += '<span class="link"><a href="#result">#result</a></span>';
+  text += '<span class="link"><a href="#result">#Result</a></span>';
 
   $('title').html(String.format('{0} {1} (${2})', obj.code, obj.n, obj.z));
   $('#info').html(text);

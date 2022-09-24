@@ -68,12 +68,15 @@ function updateResult(obj) {
   for (var i=0; i<obj.stocks.length; i++) {
     let s = obj.stocks[i];
     let total_qty = 0;
-    let total_expense = 0;
     let total_stock_cost = 0;
     let total_stock_gain = 0;
     let total_cash_dividend = 0;
     let total_fee = 0;
     let total_tax = 0;
+    let total_buy_qty = 0;
+    let total_buy_amount = 0;
+    let total_sell_qty = 0;
+    let total_sell_amount = 0;
 
     text += '<table>';
     text += String.format('<tr><th colspan=7>{0} {1}</th></tr>', s.code, s.name);
@@ -86,10 +89,11 @@ function updateResult(obj) {
       let stock_dividend = parseFloat(e.stock);
       let vec = [];
       if (e.type == 'buy') {
-        total_expense += pz * qty * 1000;
         total_stock_cost += pz * qty * 1000;
         total_fee += Math.round(pz * qty * 0.855); //電子下單，手續費6折
         total_qty += qty;
+        total_buy_qty += qty;
+        total_buy_amount += pz * qty * 1000;
         vec.push(e.date, '<span class=red>買入</span>', pz.toFixed(2), e.qty, '-', '-', '-');
       }
       else if (e.type == 'sell') {
@@ -98,6 +102,8 @@ function updateResult(obj) {
         total_stock_gain += gain;
         total_stock_cost = total_stock_cost * (total_qty - qty) / total_qty;
         total_qty -= qty;
+        total_sell_qty += qty;
+        total_sell_amount += pz * qty * 1000;
         total_fee += Math.round(pz * qty * 0.855); //電子下單，手續費6折
         total_tax += Math.round(pz * qty * 3);
         vec.push(e.date, '<span class=green>賣出</span>', pz.toFixed(2), e.qty, '-', '-', Math.round(gain).toLocaleString());
@@ -120,8 +126,10 @@ function updateResult(obj) {
       text += '</tr>'
     }
     s.total_qty = total_qty;
+    total_stock_gain = Math.round(total_stock_gain);
     text += '<tr><td colspan=6 class=note><hr>';
-    text += String.format('成本支出：{0}<br>', total_expense.toLocaleString());
+    text += String.format('買入均價：{0} (#{1})<br>', (total_buy_amount / total_buy_qty / 1000).toLocaleString(), total_buy_qty);
+    text += String.format('賣出均價：{0} (#{1})<br>', (total_sell_amount / total_sell_qty / 1000).toLocaleString(), total_sell_qty);
     text += String.format('證交稅：{0}<br>', total_tax);
     text += String.format('手續費：{0}<br>', total_fee);
     text += String.format('現金股利：{0}<br>', total_cash_dividend.toLocaleString());
@@ -133,12 +141,11 @@ function updateResult(obj) {
       stocks_with_qty.push(obj.stocks[i].code);
     }
     let total_gain = total_stock_gain + total_cash_dividend - total_fee - total_tax;
-    let total_gain_ratio = total_gain / total_expense * 100;
     if (total_qty > 0) {
-      text += String.format('目前損益：{0} ({1}%)<br>', total_gain.toLocaleString(), total_gain_ratio.toLocaleString());
+      text += String.format('目前損益：{0}<br>', total_gain.toLocaleString());
     }
     else {
-      text += String.format('損益合計：{0} ({1}%)<br>', total_gain.toLocaleString(), total_gain_ratio.toLocaleString());
+      text += String.format('損益合計：{0}<br>', total_gain.toLocaleString());
     }
     text += '</td></tr>';
     text += '</table>';

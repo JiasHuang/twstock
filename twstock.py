@@ -172,6 +172,12 @@ class MyJSONEncoder(json.JSONEncoder):
             return obj.__jsonencode__()
         return json.JSONEncoder.default(self, obj)
 
+def to_float(num):
+    try:
+        return float(num)
+    except:
+        return 0.0
+
 def get_stat_vol(code, cacheOnly):
     obj = {}
     url = 'https://jdata.yuanta.com.tw/z/zc/zcw/zcwg_%s.djhtm' %(code)
@@ -405,7 +411,8 @@ def update_stock_report_dividend(obj):
     for m in re.finditer(r'<td class="t3n0">(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         m2 = re.findall(r'>([^<]+)</td>', m.group(0))
         if len(m2) == 9:
-            obj.dividend.append(dividend_info(Y=m2[0], cash_a=m2[1], cash_b=m2[2], stock_a=m2[4], stock_b=m2[5]))
+            cash_a, cash_b, stock_a, stock_b = to_float(m2[1]), to_float(m2[2]), to_float(m2[4]), to_float(m2[5])
+            obj.dividend.append(dividend_info(m2[0], cash_a, cash_b, stock_a, stock_b))
         if len(obj.dividend) >= 5:
             break
     return

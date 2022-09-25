@@ -29,8 +29,8 @@ function updateDividendForecast(obj, stocks) {
     let s = stocks[i];
     if (s.total_qty > 0) {
       let div = getDividendByCode(obj, s.code);
-      let dividend_cash = parseFloat(div.dividend[0][1]) + parseFloat(div.dividend[0][2]);
-      let dividend_stock = parseFloat(div.dividend[0][3]) + parseFloat(div.dividend[0][4]);
+      let dividend_cash = parseFloat(div.dividend[0]['cash_a']) + parseFloat(div.dividend[0]['cash_b']);
+      let dividend_stock = parseFloat(div.dividend[0]['stock_a']) + parseFloat(div.dividend[0]['stock_b']);
       let total_dividend_cash = Math.round(s.total_qty * 1000 * dividend_cash);
       let total_dividend_cash_ratio = dividend_cash / s.avg_pz * 100;
       let ref_sell_pz = s.avg_pz + Math.max(dividend_cash * 2, s.avg_pz * 0.1);
@@ -136,8 +136,7 @@ function updateResult(obj) {
     text += String.format('買賣損益：{0}<br>', total_stock_gain.toLocaleString());
     if (total_qty > 0) {
       s.avg_pz = total_stock_cost / (total_qty * 1000);
-      text += String.format('目前張數：{0}<br>', total_qty);
-      text += String.format('目前均價：{0}<br>', s.avg_pz.toLocaleString());
+      text += String.format('目前均價：{0} (#{1})<br>', s.avg_pz.toLocaleString(), total_qty);
       stocks_with_qty.push(obj.stocks[i].code);
     }
     let total_gain = total_stock_gain + total_cash_dividend - total_fee - total_tax;

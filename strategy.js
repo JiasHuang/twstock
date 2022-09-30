@@ -75,11 +75,6 @@ function updateResult() {
     return;
   }
 
-  if (strategy.stocks.length && strategy.stocks.length != info.stocks.length) {
-    console.log('strategy/info mismatch');
-    return;
-  }
-
   text += '<table id="stocks">';
   text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th>'; // 0:代碼, 1:名稱, 2:參考價
   text += '<th>市價</th><th>漲跌</th><th>殖利率</th><th>批1</th><th>批2</th><th>批3</th>'; // 3:市價, 4:漲跌, 5:殖利率 , 6:批1, 7:批2, 8:批3,
@@ -88,9 +83,21 @@ function updateResult() {
   text += '</tr>';
 
   for (var i=0; i<strategy.stocks.length; i++) {
+
+    let info_stock = null;
+
+    for (var j=0; j<info.stocks.length; j++)
+    {
+      if (strategy.stocks[i].code == info.stocks[j].code)
+      {
+        info_stock = info.stocks[j];
+        break;
+      }
+    }
+
     let s = strategy.stocks[i];
     let st = getStat(s);
-    let z = info.stocks[i].z;
+    let z = info_stock ? info_stock.z : 0;
     let z_diff = z - s.ref_pz;
     let z_ratio = Math.round(z_diff / s.ref_pz * 100);
     let r_cls = Array(3).fill('grey');

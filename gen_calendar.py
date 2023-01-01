@@ -64,7 +64,7 @@ class ComplexEncoder(json.JSONEncoder):
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-Y', '--year', default=date.today().year)
+    parser.add_argument('-Y', '--year', type=int, default=date.today().year)
     args = parser.parse_args(argv)
     obj = gen_calendar(args.year)
     print(json.dumps(obj.reprJSON(), cls=ComplexEncoder, indent=2))

@@ -113,7 +113,7 @@ function updateResult() {
 
     var regexp = /現金股利\s*([\d|.]+)/g;
     var m = regexp.exec(s.note);
-    var yield = m ? (parseFloat(m[1]) / z * 100).toFixed(1) : 0;
+    var yield = m ? (parseFloat(m[1]) / z * 100).toFixed(2) : 0;
 
     text += '<tr>';
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);

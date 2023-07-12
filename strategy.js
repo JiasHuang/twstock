@@ -99,7 +99,7 @@ function updateResult() {
     let st = getStat(s);
     let z = info_stock ? info_stock.z : 0;
     let z_diff = z - s.ref_pz;
-    let z_ratio = Math.round(z_diff / s.ref_pz * 100);
+    let z_ratio = (z_diff / s.ref_pz * 100).toFixed(2);
     let r_cls = Array(3).fill('grey');
 
     if (z < s.ref_pz) {
@@ -119,10 +119,10 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
     text += String.format('<td class="edit grey" contenteditable=true>{0}</td>', s.ref_pz);
-    text += String.format('<td><a href="report.html?c={0}" style="text-decoration: none">', s.code);
+    text += String.format('<td><a href="report.html?c={0}', s.code);
     text += String.format('<span class="curpz">{0}</span>', z.toFixed(2));
     text += String.format('</a></td>');
-    text += String.format('<td><span class="{0}">{1}%</span></td>', z_ratio < 0 ? 'green':'grey', numFmt(z_ratio, 1));
+    text += String.format('<td><span class="{0}">{1}%</span></td>', z_ratio < 0 ? 'green':'grey', z_ratio);
     text += String.format('<td><span class="{0}">{1}%</span></td>', yield > 5 ? '':'grey', yield);
     for (var j=0; j<3; j++) {
       text += String.format('<td><span class="{0}"><={1}</span>\n', r_cls[j], st.ref[j].toFixed(2));

@@ -119,7 +119,7 @@ function updateResult() {
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
     text += String.format('<td class="edit grey" contenteditable=true>{0}</td>', s.ref_pz);
-    text += String.format('<td><a href="report.html?c={0}>', s.code);
+    text += String.format('<td><a href="report.html?c={0}">', s.code);
     text += String.format('<span class="curpz">{0}</span>', z.toFixed(2));
     text += String.format('</a></td>');
     text += String.format('<td><span class="{0}">{1}%</span></td>', z_ratio < 0 ? 'green':'grey', z_ratio);

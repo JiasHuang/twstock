@@ -93,7 +93,8 @@ function parseCalendarJSON(obj) {
 
 function loadCalendarJSON() {
   $.ajax({
-    url: 'load.py?j=calendar.json',
+    //url: 'load.py?j=calendar.json',
+    url: 'jsons/calendar.json',
     dataType: 'json',
     error: onTimeout,
     success: parseCalendarJSON,

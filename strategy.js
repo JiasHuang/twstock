@@ -206,7 +206,8 @@ function parseStrategyJSON(obj) {
  
 function loadStrategyJSON() {
   $.ajax({
-    url: 'load.py?j=strategy.json',
+    //url: 'load.py?j=strategy.json',
+    url: 'jsons/strategy.json',
     dataType: 'json',
     error: onTimeout,
     success: parseStrategyJSON,
@@ -237,7 +238,8 @@ function parseAccountJSON(obj) {
 
 function loadAccountJSON() {
   $.ajax({
-    url: 'load.py?j=account.json',
+    //url: 'load.py?j=account.json',
+    url: 'jsons/account.json',
     dataType: 'json',
     error: onTimeout,
     success: parseAccountJSON,

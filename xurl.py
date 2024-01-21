@@ -95,7 +95,7 @@ def curl(url, local, opts, ref, encoding):
         print('Exception:\n' + cmd)
     return readLocal(local, encoding)
 
-def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl', verbose=True, encoding=None):
+def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl', verbose=False, encoding=None):
     local = local or genLocal(url, opts=opts)
     expiration = expiration or defvals.expiration
     if cacheOnly or (cache and not checkExpire(local, expiration)):

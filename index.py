@@ -4,26 +4,31 @@
 import os
 import re
 import tempfile
+import cgi
+import cgitb
 
-from mod_python import util, Cookie
+def main():
 
-def index(req):
+    print('Content-type:text/html\n')
 
-    req.content_type = 'text/html; charset=utf-8'
-    form = req.form or util.FieldStorage(req)
+    args = cgi.FieldStorage()
+    func_args = None
 
-    x = req.unparsed_uri.split('?')
-    f = os.path.basename(x[0]).replace('.py', '')
-    q = x[1] if len(x) > 1 else ''
-    o = tempfile.NamedTemporaryFile(delete=False).name
+    for k in ['j', 'c']:
+        if k in args:
+            func_args = '{}={}'.format(k, args.getvalue(k))
 
-    s = os.path.join(os.path.dirname(__file__), 'server.py')
-    cmd = '%s -o %s -e \'%s("%s")\'' %(s, o, f, q)
+    func = os.path.basename(__file__).replace('.py', '')
+    tmpf = tempfile.NamedTemporaryFile(delete=False).name
+    server = os.path.join(os.path.dirname(__file__), 'server.py')
+    cmd = '%s -o %s -e \'%s("%s")\'' %(server, tmpf, func, func_args)
 
     os.system(cmd)
-    with open(o, 'r') as fd:
-        req.write(fd.read())
-    os.remove(o)
+    with open(tmpf, 'r') as fd:
+        print(fd.read())
+    os.remove(tmpf)
 
     return
 
+cgitb.enable()
+main()

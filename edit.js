@@ -126,7 +126,6 @@ function onTimeout() {
 
 function loadStockJSON() {
   $.ajax({
-    //url: 'load.py?j=stocks.json',
     url: 'jsons/stocks.json',
     dataType: 'json',
     error: onTimeout,

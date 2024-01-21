@@ -3,22 +3,24 @@
 
 import os
 import re
+import cgi
+import cgitb
 
-from mod_python import util, Cookie
+def main():
 
-def index(req):
+    print('Content-type:text/html\n')
 
-    req.content_type = 'text/html; charset=utf-8'
-    form = req.form or util.FieldStorage(req)
+    args = cgi.FieldStorage()
+    j = args.getvalue('j', None)
+    data = args.getvalue('data', None)
 
-    j = form.get('j', None) # json
-    data = form.get('data', None) # data
-
-    if j:
-        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', os.path.basename(j))
+    if j and data:
+        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', j)
         with open(local, 'w') as fd:
             fd.write(data)
-        req.write('OK')
+        print('OK')
 
     return
 
+cgitb.enable()
+main()

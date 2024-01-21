@@ -184,7 +184,6 @@ function onTimeout () {
 
 function updateAccount() {
   $.ajax({
-    //url: 'load.py?j=account.json',
     url: 'jsons/account.json',
     dataType: 'json',
     error: onTimeout,

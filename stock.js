@@ -374,7 +374,7 @@ function onDocumentReady() {
   loadStrategyJSON();
   initStockInfo();
   updateExchangeRateInfo();
-  setInterval(updateInfoIfNeeded, 5000);
+  setInterval(updateInfoIfNeeded, 30000); // 30s
 }
 
 function onSelectChange() {

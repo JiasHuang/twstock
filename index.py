@@ -12,11 +12,10 @@ def main():
     print('Content-type:text/html\n')
 
     args = cgi.FieldStorage()
-    func_args = None
+    func_args = ''
 
-    for k in ['j', 'c']:
-        if k in args:
-            func_args = '{}={}'.format(k, args.getvalue(k))
+    for k in args.keys():
+        func_args = '{}={}'.format(k, args.getvalue(k))
 
     func = os.path.basename(__file__).replace('.py', '')
     tmpf = tempfile.NamedTemporaryFile(delete=False).name

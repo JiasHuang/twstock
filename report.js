@@ -135,7 +135,7 @@ function getLinkDict(code, nf) {
   dict.push({key:'法人持股', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcl/zcl_{0}.djhtm', code)});
   dict.push({key:'主力進出', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zco/zco_{0}.djhtm', code)});
   dict.push({key:'Ｋ線', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcw1_{0}.djhtm', code)});
-  dict.push({key:'股利', val:String.format('https://tw.stock.yahoo.com/quote/{0}/dividend', code)});
+  dict.push({key:'股利', val:String.format('https://www.wantgoo.com/stock/etf/{0}/dividend-policy/ex-dividend', code)});
   if (code.startsWith('00'))
     dict.push({key:'MoneyDJ', val:String.format('https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid={0}.TW', code)});
   else

@@ -17,7 +17,6 @@ def main():
         os.makedirs(d)
     init_file(d, 'stocks.json', '{"stocks":[]}')
     init_file(d, 'strategy.json', '{"stocks":[]}')
-    init_file(d, 'account.json', '{"stocks":[]}')
     init_file(d, 'exr.json', '{"ExchangeRates":[]}')
 
 if __name__ == '__main__':

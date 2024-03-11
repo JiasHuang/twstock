@@ -23,12 +23,8 @@ function loadTopMenu() {
     <select onchange="onGotoSelectChange.call(this)">
       <option value="stock.html">Stock</option>
       <option value="edit.html">Edit</option>
-      <option value="account.html">Account</option>
       <option value="report.html">Report</option>
       <option value="strategy.html">Strategy</option>
-      <option value="broker.html">Broker</option>
-      <option value="bshtm.html">bshtm</option>
-      <option value="track.html">Track</option>
       <option value="calendar.html">Calendar</option>
     </select>
     </td>

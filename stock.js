@@ -4,7 +4,6 @@ var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
 var strategy = null;
-var in_stock = [];
 var cur_stock_json = null;
 var sort_by = null;
 
@@ -331,33 +330,6 @@ function parseStrategyJSON(obj) {
   strategy = obj;
 }
 
-function parseAccountJSON(obj) {
-  var account = obj;
-  for (var i=0; i<account.stocks.length; i++) {
-    let a = account.stocks[i];
-    let total = 0;
-    for (var j=0; j<a.events.length; j++) {
-      let e = a.events[j];
-      if (e.type == 'buy')
-        total += parseInt(e.qty);
-      else if (e.type == 'sell')
-        total -= parseInt(e.qty);
-    }
-    if (total)
-      in_stock.push(a.code);
-  }
-}
-
-function loadAccountJSON() {
-  $.ajax({
-    url: 'jsons/account.json',
-    dataType: 'json',
-    error: onTimeout,
-    success: parseAccountJSON,
-    timeout: 2000
-  });
-}
-
 function loadStrategyJSON() {
   $.ajax({
     url: 'jsons/strategy.json',
@@ -370,7 +342,6 @@ function loadStrategyJSON() {
 
 function onDocumentReady() {
   loadTopMenu();
-  loadAccountJSON();
   loadStrategyJSON();
   initStockInfo();
   updateExchangeRateInfo();

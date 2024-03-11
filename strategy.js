@@ -1,7 +1,6 @@
 
 var strategy = null;
 var info = null;
-var in_stock = [];
 
 String.format = function() {
   var s = arguments[0];
@@ -31,35 +30,6 @@ function getStat(s) {
   // caculate ref prize by levels
   for (var i=0; i<3; i++) {
     st.ref[i] = ref_pz * (9 - i) / 10;
-  }
-
-  for (var i=0; i<in_stock.length; i++) {
-    let a = in_stock[i];
-    if (a.code == s.code) {
-      for (var j=0; j<a.events.length; j++) {
-        let e = a.events[j];
-        let qty = parseInt(e.qty);
-        let pz = parseFloat(e.pz);
-        if (e.type == 'buy') {
-          for (var x=2; x>=0; x--) {
-            if (!x || e.pz <= st.ref[x]) {
-              let cost = pz * qty * 1000;
-              st.qty[x] += qty;
-              st.cost[x] += cost;
-              st.total_buy_qty += qty;
-              st.total_qty += qty;
-              st.total_cost += cost;
-              break;
-            }
-          }
-        } else if (e.type == 'sell') {
-          let avg = st.total_cost / st.total_qty;
-          st.total_sell_qty += qty;
-          st.total_qty -= qty;
-          st.total_cost = avg * st.total_qty;
-        }
-      }
-    }
   }
 
   return st;

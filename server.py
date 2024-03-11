@@ -12,8 +12,6 @@ from urllib.parse import urlparse, parse_qs, quote, unquote, unquote_plus
 
 import xurl
 import twstock
-import broker
-import bshtm
 
 class defvals:
     hostname = ''
@@ -79,25 +77,6 @@ def report(q):
         rpt_obj = twstock.get_stock_report(code)
         return json.dumps(rpt_obj.__dict__, cls=twstock.MyJSONEncoder)
     return
-
-def populate(q):
-    d = parse_qs(q)
-    a = d['a'][0] if 'a' in d else None
-    no = d['no'][0] if 'no' in d else None
-    if a == 'broker':
-        json_list = [json.dumps(x.__dict__) for x in broker.get_db()]
-        return '{"db":[%s]}' %(','.join(json_list))
-    if a == 'bshtm':
-        json_list = [json.dumps(x.__dict__) for x in bshtm.get_db()]
-        return '{"db":[%s]}' %(','.join(json_list))
-    if a == 'track':
-        if 'latest' in d:
-            broker.main(['-n', no])
-        (hdrs, tracks) = broker.get_cached_tracks(no)
-        hdrs_json_list = [json.dumps(x.__dict__) for x in hdrs]
-        tracks_json_list = [json.dumps(x.__dict__) for x in tracks]
-        return '{"hdrs":[%s],"tracks":[%s]}' %(','.join(hdrs_json_list), ','.join(tracks_json_list))
-    return None
 
 def upload(post_data, q):
     d = parse_qs(q)

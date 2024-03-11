@@ -1,9 +1,7 @@
 
 var strategy = null;
-var account = null;
 var info = null;
 var in_stock = [];
-var all_total_cost = 0;
 
 String.format = function() {
   var s = arguments[0];
@@ -71,15 +69,13 @@ function updateResult() {
   var text = '';
   var td_na = '<td><span class="grey">-</span></td>';
 
-  if (!strategy || !account || !info) {
+  if (!strategy || !info) {
     return;
   }
 
   text += '<table id="stocks">';
   text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th>'; // 0:代碼, 1:名稱, 2:參考價
-  text += '<th>市價</th><th>漲跌</th><th>殖利率</th><th>批1</th><th>批2</th><th>批3</th>'; // 3:市價, 4:漲跌, 5:殖利率 , 6:批1, 7:批2, 8:批3,
-  text += '<th>備註</th>'; // 9:備註
-  text += '<th>買入</th><th>賣出</th><th>均價</th><th>成本</th>';
+  text += '<th>市價</th><th>漲跌</th><th>殖利率</th><th>備註</th>'; // 3:市價, 4:漲跌, 5:殖利率, 6:備註
   text += '</tr>';
 
   for (var i=0; i<strategy.stocks.length; i++) {
@@ -124,48 +120,18 @@ function updateResult() {
     text += String.format('</a></td>');
     text += String.format('<td><span class="{0}">{1}%</span></td>', z_ratio < 0 ? 'green':'grey', z_ratio);
     text += String.format('<td><span class="{0}">{1}%</span></td>', yield > 5 ? '':'grey', yield);
-    for (var j=0; j<3; j++) {
-      text += String.format('<td><span class="{0}"><={1}</span>\n', r_cls[j], st.ref[j].toFixed(2));
-      if (st.qty[j]) {
-        let avg = st.cost[j] / 1000 / st.qty[j];
-        let avg_cls = (!j && avg > st.ref[0]) ? "batch_avg_warn" : "batch_avg";
-        text += String.format('<span class="batch_qty">#{0}</span>', st.qty[j]);
-        text += String.format('<span class="{0}">${1}</span>', avg_cls, avg.toFixed(2));
-      } else {
-        text += '<span class="batch_avg_na">-</span>';
-      }
-      text += '</td>';
-    }
     text += String.format('<td class="note" contenteditable=true>{0}</td>', s.note);
-    if (st.total_cost) {
-      let avg = st.total_cost / 1000 / st.total_qty;
-      let cost = Math.round(st.total_cost);
-      let gain = z - avg;
-      let gain_ratio = Math.round(gain / avg * 100);
-      let gain_cls = (gain_ratio < 0) ? "gain_ratio_warn" : "gain_ratio";
-      text += String.format('<td>{0}</td>', st.total_buy_qty);
-      text += String.format('<td>{0}</td>', st.total_sell_qty);
-      text += String.format('<td><span class="avg">{0}</span>', avg.toFixed(2));
-      text += String.format('\n<span class="{0}">{1} ({2}%)</span></td>', gain_cls, gain.toFixed(2), gain_ratio);
-      text += String.format('<td>{0}</td>', cost.toLocaleString());
-      all_total_cost += cost;
-    } else {
-      text += td_na.repeat(4);
-    }
     text += '</tr>';
   }
 
   for (var i=0; i<3; i++) {
     text += '<tr>';
     text += '<td contenteditable=true></td>'.repeat(4);
-    text += td_na.repeat(10);
+    text += td_na.repeat(3);
     text += '</tr>';
   }
 
   text += '</table>';
-
-  text += '<hr>'
-  text += String.format('<div class=total>總成本：{0}</div>', Math.round(all_total_cost).toLocaleString());
 
   $('#result').html(text);
 }
@@ -214,37 +180,6 @@ function loadStrategyJSON() {
   });
 }
 
-function parseAccountJSON(obj) {
-  console.log('--- account ---');
-  console.log(obj);
-  for (var i=0; i<obj.stocks.length; i++) {
-    let a = obj.stocks[i];
-    let total = 0;
-    for (var j=0; j<a.events.length; j++) {
-      let e = a.events[j];
-      if (e.type == 'buy')
-        total += parseInt(e.qty);
-      else if (e.type == 'sell')
-        total -= parseInt(e.qty);
-    }
-    if (total)
-      in_stock.push(a);
-  }
-  account = obj;
-  console.log(in_stock);
-  updateResult();
-}
-
-function loadAccountJSON() {
-  $.ajax({
-    url: 'jsons/account.json',
-    dataType: 'json',
-    error: onTimeout,
-    success: parseAccountJSON,
-    timeout: 2000
-  });
-}
-
 function onSuccess() {
   window.location.href = 'strategy.html';
 }
@@ -259,7 +194,7 @@ function onSave() {
     let code = row.cells[0].textContent;
     let name = row.cells[1].textContent;
     let ref_pz = row.cells[2].textContent;
-    let note = row.cells[9].textContent;
+    let note = row.cells[6].textContent;
     if (code.length) {
       let obj = {};
       obj.code = code;
@@ -317,7 +252,6 @@ function onSave() {
 
 function onDocumentReady() {
   loadTopMenu();
-  loadAccountJSON();
   loadStrategyJSON();
 }
 

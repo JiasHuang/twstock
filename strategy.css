@@ -19,7 +19,8 @@ button {
 
 #result table {
   border-collapse: collapse;
-  margin: 5px;
+  margin-left: auto;
+  margin-right: auto;
   width: 80%;
 }
 

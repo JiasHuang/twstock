@@ -111,8 +111,6 @@ function onTimeout() {
 }
 
 function parseStocksJSON(obj) {
-  console.log('--- stocks ---');
-  console.log(obj);
   info = obj;
   updateResult();
 }
@@ -134,8 +132,6 @@ function loadStocksJSON() {
 }
 
 function parseStrategyJSON(obj) {
-  console.log('--- strategy ---');
-  console.log(obj);
   strategy = obj;
   loadStocksJSON();
 }
@@ -211,7 +207,6 @@ function onSave() {
     jsons.push(JSON.stringify(objs[i]));
 
   let data = '{"stocks":[\n\t' + jsons.join(',\n\t') + '\n]}';
-  console.log(data);
   $.ajax({
     type: 'POST',
     url: 'upload.py?j=strategy.json',

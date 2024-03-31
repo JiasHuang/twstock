@@ -543,7 +543,7 @@ function getEPSHTMLText(obj) {
 function getOverallHTMLText(obj) {
   var text = '';
 
-  text += String.format('<table><tr><th colspan={0}>-</th></tr>', obj.per_year.length + 1);
+  text += String.format('<table><tr><th colspan={0}>Overall</th></tr>', obj.per_year.length + 1);
 
   text += '<tr><td>年度</td>';
   for (let year of obj.per_year)
@@ -625,7 +625,8 @@ function getOverallHTMLText(obj) {
   text += String.format('推估最低價：{0}<br>', pz_min.toFixed(2));
   text += String.format('推估中間價：{0}<br>', pz_mid.toFixed(2));
   text += String.format('推估最高價：{0}<br>', pz_max.toFixed(2));
-  text += String.format('近期平均股利：{0}<br>', last_dividend_avg.toFixed(2));
+  text += String.format('近期股利：{0}<br>', last_dividend_avg.toFixed(2));
+  text += String.format('近期殖利率：{0}%<br>', (last_dividend_avg / pz * 100).toFixed(2));
   text += String.format('近期殖利率股價：[7%, 5%, 3%] = [{0}, {1}, {2}]<br>', (last_dividend_avg / 0.07).toFixed(2), (last_dividend_avg / 0.05).toFixed(2), (last_dividend_avg / 0.03).toFixed(2));
   text += String.format('</td></tr>', pz_min.toFixed(2));
 
@@ -683,10 +684,6 @@ function parseJSON(obj) {
   }
 }
 
-function onTimeout () {
-  console.log('timeout');
-}
-
 function showLoading(code) {
   var text = '';
   var dict = getLinkDict(code, '');
@@ -708,9 +705,7 @@ function updateStockReport() {
   $.ajax({
     url: 'report.py' + window.location.search,
     dataType: 'json',
-    error: onTimeout,
     success: parseJSON,
-    timeout: 20000
   });
 }
 

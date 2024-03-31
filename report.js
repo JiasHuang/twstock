@@ -485,7 +485,6 @@ function getEPSHTMLText(obj) {
   for (var i=0; i<eps.length; i++) {
     if (Y != eps[i].Y) {
         Y = eps[i].Y;
-        text += '</table><table>';
         text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>營利(億)</th><th>營益率(%)</th><th>業外(億)</th><th>本業(%)</th><th>稅後淨利(億)</th><th>EPS</th><th></th></tr>';
         let note = '';
         let cumulative_eps = getEPSsByYear(eps, Y, true);

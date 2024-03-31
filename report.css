@@ -35,7 +35,13 @@
   margin: 5px;
 }
 
-#result th, #result td {
+#result th {
+  border: 1px solid;
+  padding: 0px 10px;
+  background-color: #FF8C00;
+}
+
+#result td {
   border: 1px solid;
   padding: 0px 10px;
 }
@@ -49,10 +55,6 @@
 }
 
 #result tr:nth-child(1) {
-  background-color: #FF8C00;
-}
-
-.tbl_title {
   background-color: #FF8C00;
 }
 
@@ -83,4 +85,3 @@
 .bg_yellow {
   background-color: yellow;
 }
-

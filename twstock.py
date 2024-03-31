@@ -141,6 +141,7 @@ class stock_report:
         self.per_year = []
         self.per_max = []
         self.per_min = []
+        self.dividend_cash = []
         self.capital_stock = 0
     def show(self):
         print('-- wap --')
@@ -165,6 +166,7 @@ class stock_report:
         print(self.per_year)
         print(self.per_max)
         print(self.per_min)
+        print(self.dividend_cash)
         print(self.capital_stock)
 
 class MyJSONEncoder(json.JSONEncoder):
@@ -493,6 +495,9 @@ def update_stock_report_overall(obj):
     m = re.search(r'>最低本益比</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
     if m:
         obj.per_min = [float(x.replace(',','')) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
+    m = re.search(r'>現金股利</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
+    if m:
+        obj.dividend_cash = [float(x.replace(',','')) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
     m = re.search(r'>股本\(億, 台幣\)</td>\s*<td class="t3n1">(.*)</td>', txt)
     if m:
         obj.capital_stock = float(m.group(1).replace(',',''))

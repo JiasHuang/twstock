@@ -604,6 +604,9 @@ function getOverallHTMLText(obj) {
 
   text += '</table><br>';
 
+  const dividend_cash_sum = obj.dividend_cash.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+  const dividend_cash_avg = dividend_cash_sum / obj.dividend_cash.length;
+
   for (var i=0; i<Math.min(4, obj.per_max.length); i++) {
     if (obj.per_max[i] <= 0)
       continue;
@@ -642,6 +645,7 @@ function getOverallHTMLText(obj) {
   text += String.format('推估最高價：{0} ({1}%)<br>', pz_max.toFixed(2), ((pz_max - pz) / pz * 100).toFixed(2));
   text += String.format('推估中間價：{0} ({1}%)<br>', pz_mid.toFixed(2), ((pz_mid - pz) / pz * 100).toFixed(2));
   text += String.format('推估最低價：{0} ({1}%)<br>', pz_min.toFixed(2), ((pz_min - pz) / pz * 100).toFixed(2));
+  text += String.format('平均現金股利：{0} (3%: {1}, 5%: {2}, 7%: {3}) <br>', dividend_cash_avg.toFixed(2), (dividend_cash_avg / 0.03).toFixed(2), (dividend_cash_avg / 0.05).toFixed(2), (dividend_cash_avg / 0.07).toFixed(2));
   text += String.format('</td></tr>', pz_min.toFixed(2));
 
   text += String.format('<tr><td>收盤價</td><td>{0}</td></tr>', pz.toFixed(2));

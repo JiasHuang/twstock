@@ -540,52 +540,10 @@ function getEPSHTMLText(obj) {
   return text;
 }
 
-function getDividendHTMLText(obj) {
-  var text = '';
-  var div = obj.dividend;
-
-  text += '<table>';
-  text += '<tr><th>股利所屬年度</th></th><th colspan=3>現金股利<br>盈餘/公積/合計</th><th colspan=3>股票股利<br>盈餘/公積/合計</th><th>現金殖利率(%)</th><th>盈餘分配率(%)</th></tr>';
-
-  for (var i=0; i<div.length; i++) {
-    let d = div[i];
-    let cash_dividend_a = parseFloat(d.cash_a);
-    let cash_dividend_b = parseFloat(d.cash_b);
-    let cash_dividend = cash_dividend_a + cash_dividend_b;
-    let stock_dividend_a = parseFloat(d.stock_a);
-    let stock_dividend_b = parseFloat(d.stock_b);
-    let stock_dividend = stock_dividend_a + stock_dividend_b;
-    let dividend_yield = '-';
-    let era = parseInt(d.Y) - 1911;
-    let era_txt = d.Y.replace(parseInt(d.Y), era);
-    let eps = getEPSsByYear(obj.eps, era, true);
-    let parsed = parseWAPByYear(obj.wap, era);
-    let payout_ratio = '-';
-    if (eps.length == 4) {
-      payout_ratio = (cash_dividend / eps[3].y * 100).toFixed(2);
-    }
-    if (parsed[2]) {
-      dividend_yield = (cash_dividend / parsed[2] * 100).toFixed(2);
-    }
-    text += String.format('<tr><td>{' + Array.from(Array(9).keys()).join('}</td><td>{') + '}</td></tr>',
-      era_txt, cash_dividend_a.toFixed(2), cash_dividend_b.toFixed(2), cash_dividend.toFixed(2),
-      stock_dividend_a.toFixed(2), stock_dividend_b.toFixed(2), stock_dividend.toFixed(2),
-      dividend_yield, payout_ratio);
-  }
-
-  text += '</table><br>';
-
-  return text;
-}
-
 function getOverallHTMLText(obj) {
   var text = '';
-  var per_max_total_weight = 0;
-  var per_max_total_sum = 0;
-  var per_min_total_weight = 0;
-  var per_min_total_sum = 0;
 
-  text += String.format('<table><tr><th colspan={0}>PER</th></tr>', obj.per_year.length + 1);
+  text += String.format('<table><tr><th colspan={0}>-</th></tr>', obj.per_year.length + 1);
 
   text += '<tr><td>年度</td>';
   for (let year of obj.per_year)
@@ -622,20 +580,27 @@ function getOverallHTMLText(obj) {
   const last_dividend_stock_avg = last_dividend_stock_sum / last_dividend_stock.length;
   const last_dividend_avg = last_dividend_cash_avg + last_dividend_stock_avg;
 
-  for (var i=0; i<Math.min(4, obj.per_max.length); i++) {
-    if (obj.per_max[i] <= 0)
-      continue;
-    let weight = Math.pow(0.67, i);
-    per_max_total_sum += weight * obj.per_max[i];
-    per_max_total_weight += weight;
+  var per_max_total_weight = 0;
+  var per_max_total_sum = 0;
+  var per_min_total_weight = 0;
+  var per_min_total_sum = 0;
+
+  for (let i in  obj.per_max) {
+    if (obj.per_max[i] > 0)
+    {
+      let weight = Math.pow(0.67, i);
+      per_max_total_sum += weight * obj.per_max[i];
+      per_max_total_weight += weight;
+    }
   }
 
-  for (var i=0; i<Math.min(4, obj.per_min.length); i++) {
-    if (obj.per_min[i] <= 0)
-      continue;
-    let weight = Math.pow(0.67, i);
-    per_min_total_sum += weight * obj.per_min[i];
-    per_min_total_weight += weight;
+  for (let i in obj.per_min) {
+    if (obj.per_min[i] > 0)
+    {
+      let weight = Math.pow(0.67, i);
+      per_min_total_sum += weight * obj.per_min[i];
+      per_min_total_weight += weight;
+    }
   }
 
   var pz = obj.pz_close;
@@ -657,11 +622,11 @@ function getOverallHTMLText(obj) {
 
   text += String.format('<tr><td colspan=2></td><td rowspan=8>');
   text += String.format('推估PER：{0} ~ {1}<br>', per_min.toFixed(2), per_max.toFixed(2));
-  text += String.format('推估最高價：{0} ({1}%)<br>', pz_max.toFixed(2), ((pz_max - pz) / pz * 100).toFixed(2));
-  text += String.format('推估中間價：{0} ({1}%)<br>', pz_mid.toFixed(2), ((pz_mid - pz) / pz * 100).toFixed(2));
-  text += String.format('推估最低價：{0} ({1}%)<br>', pz_min.toFixed(2), ((pz_min - pz) / pz * 100).toFixed(2));
-  text += String.format('平均股利：{0}<br>', last_dividend_avg.toFixed(2));
-  text += String.format('殖利率股價：3%: {0}, 5%: {1}, 7%: {2}<br>', (last_dividend_avg / 0.03).toFixed(2), (last_dividend_avg / 0.05).toFixed(2), (last_dividend_avg / 0.07).toFixed(2));
+  text += String.format('推估最低價：{0}<br>', pz_min.toFixed(2));
+  text += String.format('推估中間價：{0}<br>', pz_mid.toFixed(2));
+  text += String.format('推估最高價：{0}<br>', pz_max.toFixed(2));
+  text += String.format('近期平均股利：{0}<br>', last_dividend_avg.toFixed(2));
+  text += String.format('近期殖利率股價：[7%, 5%, 3%] = [{0}, {1}, {2}]<br>', (last_dividend_avg / 0.07).toFixed(2), (last_dividend_avg / 0.05).toFixed(2), (last_dividend_avg / 0.03).toFixed(2));
   text += String.format('</td></tr>', pz_min.toFixed(2));
 
   text += String.format('<tr><td>收盤價</td><td>{0}</td></tr>', pz.toFixed(2));
@@ -684,7 +649,6 @@ function updateResult(obj) {
   if (obj.eps.length) {
     text += getEPSHTMLText(obj);
   }
-  text += getDividendHTMLText(obj);
   text += getOverallHTMLText(obj);
 
   $('#result').html(text);

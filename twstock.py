@@ -65,20 +65,6 @@ class revenue_info:
     def __jsonencode__(self):
         return {'Y':self.Y, 'M':self.M, 'rev':self.rev}
 
-class dividend_info:
-    def __init__(self, Y, cash_a=0, cash_b=0, stock_a=0, stock_b=0):
-        self.Y = Y
-        self.cash_a = cash_a
-        self.cash_b = cash_b
-        self.stock_a = stock_a
-        self.stock_b = stock_b
-
-    def __str__(self):
-        return 'Y {} cash {} {} stock {} {}'.format(self.Y, self.cash_a, self.cash_b, self.stock_a, self.stock_b)
-
-    def __jsonencode__(self):
-        return {'Y':self.Y, 'cash_a':self.cash_a, 'cash_b':self.cash_b, 'stock_a':self.stock_a, 'stock_b':self.stock_b}
-
 class eps_info:
     def __init__(self, Y, Q, rev='-', profit='-', nor='-', ni='-', eps='-'):
         self.Y = Y
@@ -132,7 +118,6 @@ class stock_report:
         self.ex = None
         self.wap = []
         self.eps = []
-        self.dividend = []
         self.revenue = []
         self.news = []
         self.pz_close = 0
@@ -150,9 +135,6 @@ class stock_report:
             print(x)
         print('-- eps --')
         for x in self.eps:
-            print(x)
-        print('-- dividend --')
-        for x in self.dividend:
             print(x)
         print('-- revenue --')
         for x in self.revenue:
@@ -409,19 +391,6 @@ def update_stock_report_eps(obj):
             obj.eps.insert(0, eps_info(Y, Q, rev=m2[0], profit=m2[4], nor=m2[6], ni=m2[8], eps=m2[9]))
     return
 
-def update_stock_report_dividend(obj):
-    url = 'https://jdata.yuanta.com.tw/z/zc/zcc/zcc_%s.djhtm' %(obj.code)
-    txt = xurl.load(url, encoding='big5_hkscs')
-    # 股利所屬年度,	現金股利(盈餘),現金股利(公積),現金股利(小計),股票股利(盈餘),股票股利(公積),股票股利(小計)
-    for m in re.finditer(r'<td class="t3n0">(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
-        m2 = re.findall(r'>([^<]+)</td>', m.group(0))
-        if len(m2) == 9:
-            cash_a, cash_b, stock_a, stock_b = to_float(m2[1]), to_float(m2[2]), to_float(m2[4]), to_float(m2[5])
-            obj.dividend.append(dividend_info(m2[0], cash_a, cash_b, stock_a, stock_b))
-        if len(obj.dividend) >= 5:
-            break
-    return
-
 def update_stock_report_revenue(obj):
     now = datetime.datetime.now()
     from_year = int(now.year) - 1911 - defs.from_year_offset
@@ -523,7 +492,6 @@ def get_stock_report(code):
     else:
         update_stock_report_wap(obj)
     update_stock_report_eps(obj)
-    update_stock_report_dividend(obj)
     update_stock_report_revenue(obj)
     update_stock_report_news(obj)
     update_stock_report_eps_from_news(obj)

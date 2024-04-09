@@ -163,19 +163,6 @@ function updateInfo(obj) {
   $('#info').html(text);
 }
 
-function updateNews(news) {
-  var text = '';
-
-  if (news.length) {
-    text += '<hr>';
-    for (var i=0; i<news.length; i++) {
-      text += String.format('<span class="news"><a href="{0}" target="_blank">{1} {2}</a></span>', news[i].url, news[i].date, news[i].title);
-    }
-  }
-
-  $('#news').html(text);
-}
-
 function updateMAChart(wap) {
   var ctx = document.getElementById('chart_MA').getContext('2d');
   var labels = [];
@@ -657,7 +644,6 @@ function updateResult(obj) {
 function parseJSON(obj) {
   console.log(obj);
   updateInfo(obj);
-  updateNews(obj.news);
   updateResult(obj);
   updateMAChart(obj.wap);
   updateMAChartByYear(obj.wap);

@@ -81,18 +81,6 @@ class eps_info:
     def __jsonencode__(self):
         return {'Y':self.Y, 'Q':self.Q, 'rev':self.rev, 'profit':self.profit, 'nor':self.nor, 'ni':self.ni, 'eps':self.eps}
 
-class news_info:
-    def __init__(self, date, title, url):
-        self.date = date
-        self.title = title
-        self.url = url
-
-    def __str__(self):
-        return '{} {}'.format(self.date, self.title)
-
-    def __jsonencode__(self):
-        return {'date':self.date, 'title':self.title, 'url':self.url}
-
 class stock_info:
     def __init__(self, code, flts = None, tags = None, notes = None):
         self.code = code
@@ -119,7 +107,6 @@ class stock_report:
         self.wap = []
         self.eps = []
         self.revenue = []
-        self.news = []
         self.pz_close = 0
         self.per = 0
         self.nav = 0
@@ -138,9 +125,6 @@ class stock_report:
             print(x)
         print('-- revenue --')
         for x in self.revenue:
-            print(x)
-        print('-- news --')
-        for x in self.news:
             print(x)
         print('-- overall --')
         print(self.pz_close)
@@ -405,46 +389,6 @@ def update_stock_report_revenue(obj):
             obj.revenue.insert(0, revenue_info(Y, M, m2[0].replace(',','')))
     return
 
-def update_stock_report_news(obj):
-    for i in range(1, 3):
-        url = 'https://jdata.yuanta.com.tw/Z/ZC/ZCV/ZCV_%s_E_%d.djhtm' %(obj.code, i)
-        txt = xurl.load(url, encoding='big5_hkscs')
-        for m in re.finditer(r'<tr><td class="t3t1">([^<]*)</td>\s*<td class="t3t1"><a href="([^"]*)">([^<]*)</a>', txt):
-            date = m.group(1)
-            link = 'https://jdata.yuanta.com.tw' + m.group(2)
-            title = m.group(3)
-            if re.search(r'(每股稅後|每股盈餘|EPS|法說)', title):
-                obj.news.append(news_info(date, title, link))
-    return
-
-def update_stock_report_eps_from_news(obj):
-    if not len(obj.eps):
-        return
-    eps = obj.eps[len(obj.eps) - 1]
-    if eps.Q == '4':
-        Y = str(int(eps.Y) + 1)
-        Q = '1'
-    else:
-        Y = eps.Y
-        Q = str(int(eps.Q) + 1)
-    for n in obj.news:
-        # 自結第一季合併獲利229.4億元，每股稅後2.24元
-        # 富邦金前三季合併獲利682.06億元，每股稅後6.38元
-        # 富邦金自結108年合併獲利587.3億元，每股稅後5.48元
-        m = re.search(r'(第1季|第一季|上半年|前3季|前三季|\d+年)合併.*?每股稅後.*?([0-9.-]*)元', n.title)
-        if m:
-            if (Q == '1' and m.group(1) in ['第1季', '第一季']) \
-                or (Q == '2' and m.group(1) in ['上半年']) \
-                or (Q == '3' and m.group(1) in ['前3季', '前三季']) \
-                or (Q == '4' and re.search(r'\d+年', m.group(1))):
-                x = float(m.group(2))
-                for i in range(1, int(Q)):
-                    x = x - float(obj.eps[len(obj.eps) - i].eps)
-                # 0年 1季 2營業收入 3營業成本 4營業毛利 5毛利率 6營業利益 7營益率 8業外收支 9稅前淨利 10稅後淨利 11EPS(元)
-                obj.eps.append(eps_info(Y, Q, eps=str(x)))
-            break
-    return
-
 def update_stock_report_overall(obj):
     url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_%s.djhtm' %(obj.code)
     txt = xurl.load(url, encoding='big5_hkscs')
@@ -493,8 +437,6 @@ def get_stock_report(code):
         update_stock_report_wap(obj)
     update_stock_report_eps(obj)
     update_stock_report_revenue(obj)
-    update_stock_report_news(obj)
-    update_stock_report_eps_from_news(obj)
     update_stock_report_overall(obj)
     return obj
 
@@ -507,11 +449,11 @@ def init_xcurl():
 
 def main():
     parser = OptionParser()
-    parser.add_option("-i", "--input", dest="input")
-    parser.add_option("-e", "--exr", dest="exr")
-    parser.add_option("-c", "--codes", dest="codes")
-    parser.add_option("-s", "--stat", dest="stat", action="store_true", default=False)
-    parser.add_option("-r", "--report", dest="report", action="store_true", default=False)
+    parser.add_option('-i', '--input')
+    parser.add_option('-e', '--exr')
+    parser.add_option('-c', '--codes')
+    parser.add_option('-s', '--stat', action="store_true", default=False)
+    parser.add_option('-r', '--report', action="store_true", default=False)
     (options, args) = parser.parse_args()
     stock_infos = []
     init_xcurl()

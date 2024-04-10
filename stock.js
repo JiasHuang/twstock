@@ -104,8 +104,8 @@ function getStockTableText(s) {
   if (s.nav)
   {
     let z_nav = s.z - s.nav;
-    let z_nav_ratio = (z_nav / s.nav * 100).toFixed(2);
-    text += String.format('<br>淨值 {0} ({1}%)', s.nav, z_nav_ratio);
+    let z_nav_ratio = z_nav / s.nav * 100;
+    text += String.format('<br>淨值 {0} ({1}%)', s.nav.toFixed(2), z_nav_ratio.toFixed(2));
   }
 
   text += '</td>';

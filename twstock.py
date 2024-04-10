@@ -208,7 +208,7 @@ def update_etf_nav(infos):
         if info.msg['c'].startswith('00'):
             msg = get_etf_msg_by_code(twse_data, info.msg['c'])
             if msg:
-                info.nav = msg['f']
+                info.nav = float(msg['f'])
                 info.nav_mtime = msg['i'] + ' ' + msg['j']
     return True
 

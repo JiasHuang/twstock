@@ -96,6 +96,8 @@ class stock_info:
         self.h = 0
         self.l = 0
         self.avg = {}
+        self.nav = 0
+        self.nav_mtime = None
 
 class stock_report:
     def __init__(self, code):
@@ -188,9 +190,32 @@ def get_stock_infos(data):
                 infos.append(info)
     return infos
 
+def get_etf_msg_by_code(data, code):
+    if 'a1' not in data:
+        return None
+    for a1 in data['a1']:
+        if 'msgArray' in a1:
+            for msg in a1['msgArray']:
+                if msg['a'] == code:
+                    return msg
+    return None
+
+def update_etf_nav(infos):
+    url = 'https://mis.twse.com.tw/stock/data/all_etf.txt'
+    txt = xurl.load(url, cache=False)
+    twse_data = json.loads(txt)
+    for info in infos:
+        if info.msg['c'].startswith('00'):
+            msg = get_etf_msg_by_code(twse_data, info.msg['c'])
+            if msg:
+                info.nav = msg['f']
+                info.nav_mtime = msg['i'] + ' ' + msg['j']
+    return True
+
 def update_stock_stats(infos, cacheOnly):
     for info in infos:
         info.avg.update(get_stat_vol(info.code, cacheOnly))
+    update_etf_nav(infos)
     return
 
 def parse_info(info):

@@ -94,32 +94,21 @@ function getStockTableText(s) {
     text += String.format('<br> Lo {0} ({1}, {2}%)', s.l.toFixed(2), chg.toFixed(2), ratio.toFixed(2));
   }
 
-  if ('1m_pz' in s.avg) {
-    chg = s.z - s.avg['1m_pz'];
-    ratio = chg / s.avg['1m_pz'] * 100;
-    text += String.format('<br> 月 {0} ({1}, {2}%)', s.avg['1m_pz'].toFixed(2), chg.toFixed(2), ratio.toFixed(2));
-  }
-
-  if ('3m_pz' in s.avg) {
-    chg = s.z - s.avg['3m_pz'];
-    ratio = chg / s.avg['3m_pz'] * 100;
-    text += String.format('<br> 季 {0} ({1}, {2}%)', s.avg['3m_pz'].toFixed(2), chg.toFixed(2), ratio.toFixed(2));
-  }
-
-  if ('1y_pz' in s.avg) {
-    chg = s.z - s.avg['1y_pz'];
-    ratio = chg / s.avg['1y_pz'] * 100;
-    text += String.format('<br> 年 {0} ({1}, {2}%)', s.avg['1y_pz'].toFixed(2), chg.toFixed(2), ratio.toFixed(2));
-  }
-
   text += '</td>';
 
   text += '<td>';
   text += getFltText(s.flts, s.flts_ret, 'bg_yellow');
   text += getStrategyText(s.code, s.z, 'bg_yellow margin_left');
   text += getNoteText(s.notes, 'note');
-  text += '</td>';
 
+  if (s.nav)
+  {
+    let z_nav = s.z - s.nav;
+    let z_nav_ratio = (z_nav / s.nav * 100).toFixed(2);
+    text += String.format('<br>淨值 {0} ({1}%), {2}', s.nav, z_nav_ratio, s.nav_mtime);
+  }
+
+  text += '</td>';
 
   text += '</tr>';
 

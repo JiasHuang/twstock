@@ -106,10 +106,6 @@ function updateResult() {
   $('#result').html(text);
 }
 
-function onTimeout() {
-  console.log('timeout');
-}
-
 function parseStocksJSON(obj) {
   info = obj;
   updateResult();
@@ -125,9 +121,7 @@ function loadStocksJSON() {
   $.ajax({
     url: String.format('stock.py?c={0}', codes.join(',')),
     dataType: 'json',
-    error: onTimeout,
     success: parseStocksJSON,
-    timeout: 10000
   });
 }
 
@@ -140,9 +134,7 @@ function loadStrategyJSON() {
   $.ajax({
     url: 'jsons/strategy.json',
     dataType: 'json',
-    error: onTimeout,
     success: parseStrategyJSON,
-    timeout: 2000
   });
 }
 

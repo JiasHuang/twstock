@@ -120,17 +120,11 @@ function parseStockJSON(obj) {
   updateResult();
 }
 
-function onTimeout() {
-  console.log('timeout');
-}
-
 function loadStockJSON() {
   $.ajax({
     url: 'jsons/stocks.json',
     dataType: 'json',
-    error: onTimeout,
     success: parseStockJSON,
-    timeout: 2000
   });
 }
 

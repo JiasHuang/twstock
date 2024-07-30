@@ -78,10 +78,6 @@ function updateResult() {
   $('#result').html(text);
 }
 
-function onTimeout() {
-  console.log('timeout');
-}
-
 function parseCalendarJSON(obj) {
   console.log('--- Calendar ---');
   console.log(obj);
@@ -95,9 +91,7 @@ function loadCalendarJSON() {
   $.ajax({
     url: 'jsons/calendar.json',
     dataType: 'json',
-    error: onTimeout,
     success: parseCalendarJSON,
-    timeout: 2000
   });
 }
 

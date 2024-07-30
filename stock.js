@@ -255,10 +255,6 @@ function parseExchangeRateJSON(obj) {
   $('#exrs').html(getExchangeRateTableText(obj.ExchangeRates));
 }
 
-function onTimeout () {
-  console.log('timeout');
-}
-
 function showLoading() {
   $('#result').html('<span class="loading">Loading ...</span>');
 }
@@ -267,9 +263,7 @@ function updateStockInfo() {
   $.ajax({
     url: 'stock.py' + window.location.search,
     dataType: 'json',
-    error: onTimeout,
     success: parseStockJSON,
-    timeout: 5000
   });
 }
 
@@ -282,9 +276,7 @@ function initStockInfo() {
   $.ajax({
     url: api_url,
     dataType: 'json',
-    error: onTimeout,
     success: parseStockJSON,
-    timeout: 20000
   });
 }
 
@@ -294,9 +286,7 @@ function updateExchangeRateInfo() {
   $.ajax({
     url: api_url,
     dataType: 'json',
-    error: onTimeout,
     success: parseExchangeRateJSON,
-    timeout: 2000
   });
 }
 
@@ -323,9 +313,7 @@ function loadStrategyJSON() {
   $.ajax({
     url: 'jsons/strategy.json',
     dataType: 'json',
-    error: onTimeout,
     success: parseStrategyJSON,
-    timeout: 2000
   });
 }
 

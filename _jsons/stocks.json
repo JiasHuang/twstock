@@ -28,5 +28,10 @@
 	{"code":"2412","name":"中華電","tags":["tel"],"flts":["z<=107.5"],"notes":[]},
 	{"code":"3045","name":"台灣大","tags":["tel"],"flts":["z<=95.5"],"notes":[]},
 	{"code":"4904","name":"遠傳","tags":["tel"],"flts":["z<=60"],"notes":[]},
-	{"code":"1216","name":"統一","tags":[],"flts":["z<=60"],"notes":[]}
+	{"code":"1216","name":"統一","tags":[],"flts":["z<=60"],"notes":[]},
+	{"code":"00882","name":"中信中國高股息","tags":["etf"],"flts":["z<=10"],"notes":[]},
+	{"code":"00752","name":"中信中國50","tags":["etf"],"flts":["z<=15"],"notes":[]},
+	{"code":"00786B","name":"元大10年IG銀行債","tags":["bond"],"flts":[],"notes":[]},
+	{"code":"00788B","name":"元大10年IG電能債","tags":["bond"],"flts":[],"notes":[]},
+	{"code":"00937B","name":"群益ESG投等債20+","tags":["bond"],"flts":[],"notes":[]}
 ]}

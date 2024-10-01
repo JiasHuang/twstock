@@ -132,9 +132,7 @@ function getLinkDict(code, nf) {
   dict.push({key:'損益', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcq/zcq_{0}.djhtm', code)});
   dict.push({key:'營收', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm', code)});
   dict.push({key:'新聞', val:String.format('https://tw.stock.yahoo.com/q/h?s={0}', code)});
-  dict.push({key:'法人持股', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcl/zcl_{0}.djhtm', code)});
-  dict.push({key:'主力進出', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zco/zco_{0}.djhtm', code)});
-  dict.push({key:'Ｋ線', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcw/zcw1_{0}.djhtm', code)});
+  dict.push({key:'Ｋ線', val:String.format('https://tw.stock.yahoo.com/quote/{0}.TWO/technical-analysis', code)});
   dict.push({key:'股利', val:String.format('https://www.wantgoo.com/stock/etf/{0}/dividend-policy/ex-dividend', code)});
   if (code.startsWith('00'))
     dict.push({key:'MoneyDJ', val:String.format('https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid={0}.TW', code)});

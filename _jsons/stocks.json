@@ -22,7 +22,7 @@
 	{"code":"3711","name":"日月光投控","tags":["semi"],"flts":["z<=80"],"notes":[]},
 	{"code":"8086","name":"宏捷科","tags":["semi"],"flts":[],"notes":[]},
 	{"code":"2301","name":"光寶科","tags":["elec"],"flts":["z<=44"],"notes":[]},
-	{"code":"2308","name":"台達電","tags":["elec","car"],"flts":["z<=245"],"notes":[]},
+	{"code":"2308","name":"台達電","tags":["elec"],"flts":["z<=245"],"notes":[]},
 	{"code":"2317","name":"鴻海","tags":["elec"],"flts":["z<=70"],"notes":[]},
 	{"code":"2382","name":"廣達","tags":["elec"],"flts":["z<=68"],"notes":[]},
 	{"code":"2412","name":"中華電","tags":["tel"],"flts":["z<=107.5"],"notes":[]},

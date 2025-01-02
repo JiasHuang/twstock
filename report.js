@@ -134,12 +134,7 @@ function getLinkDict(code, nf) {
   dict.push({key:'新聞', val:String.format('https://tw.stock.yahoo.com/q/h?s={0}', code)});
   dict.push({key:'Ｋ線', val:String.format('https://tw.stock.yahoo.com/quote/{0}.TWO/technical-analysis', code)});
   dict.push({key:'股利', val:String.format('https://www.wantgoo.com/stock/etf/{0}/dividend-policy/ex-dividend', code)});
-  if (code.startsWith('00'))
-    dict.push({key:'MoneyDJ', val:String.format('https://www.moneydj.com/etf/x/basic/basic0003.xdjhtm?etfid={0}.TW', code)});
-  else
-    dict.push({key:'MoneyDJ', val:String.format('https://www.moneydj.com/KMDJ/search/searchHome.aspx?_Query_={0}&_QueryType_=Main', nf)});
-  dict.push({key:'Anue', val:String.format('https://invest.cnyes.com/twstock/TWS/{0}/overview', code)});
-  dict.push({key:'HiStock', val:String.format('https://histock.tw/stock/{0}', code)});
+  dict.push({key:'CMoney', val:String.format('https://www.cmoney.tw/forum/stock/{0}', code)});
   dict.push({key:'公開資訊', val:String.format('https://mops.twse.com.tw/mops/web/t146sb05?step=1&firstin=true&co_id={0}', code)});
   dict.push({key:'整合資訊', val:String.format('https://www.twse.com.tw/pdf/ch/{0}_ch.pdf', code)});
   return dict;

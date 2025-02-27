@@ -135,7 +135,6 @@ function getLinkDict(code, nf) {
   dict.push({key:'Ｋ線', val:String.format('https://tw.stock.yahoo.com/quote/{0}.TWO/technical-analysis', code)});
   dict.push({key:'股利', val:String.format('https://www.wantgoo.com/stock/etf/{0}/dividend-policy/ex-dividend', code)});
   dict.push({key:'CMoney', val:String.format('https://www.cmoney.tw/forum/stock/{0}', code)});
-  dict.push({key:'公開資訊', val:String.format('https://mops.twse.com.tw/mops/web/t146sb05?step=1&firstin=true&co_id={0}', code)});
   dict.push({key:'整合資訊', val:String.format('https://www.twse.com.tw/pdf/ch/{0}_ch.pdf', code)});
   return dict;
 }
@@ -606,7 +605,6 @@ function getOverallHTMLText(obj) {
   text += String.format('推估最高價：{0}<br>', pz_max.toFixed(2));
   text += String.format('近期股利：{0}<br>', last_dividend_avg.toFixed(2));
   text += String.format('近期殖利率：{0}%<br>', (last_dividend_avg / pz * 100).toFixed(2));
-  text += String.format('近期殖利率股價：[7%, 5%, 3%] = [{0}, {1}, {2}]<br>', (last_dividend_avg / 0.07).toFixed(2), (last_dividend_avg / 0.05).toFixed(2), (last_dividend_avg / 0.03).toFixed(2));
   text += String.format('</td></tr>', pz_min.toFixed(2));
 
   text += String.format('<tr><td>收盤價</td><td>{0}</td></tr>', pz.toFixed(2));

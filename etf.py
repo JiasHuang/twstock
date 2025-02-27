@@ -15,12 +15,17 @@ def parse(code):
     basic = yuanta.parse(code) or ctbc.parse(code)
     curr_info = twse.get_stock_info(code)
     if basic and curr_info:
+        p = curr_info['price']
+        nav = basic['nav']
+        eps = basic['eps']
         d = {}
         d['code'] = code
-        d['price'] = curr_info['price']
-        d['EPS'] = basic['eps']
-        d['PE'] = curr_info['price'] / basic['eps'] if basic['eps'] else 0
-        d['ROE'] = basic['eps'] / basic['nav'] * 100 if basic['nav'] else 0
+        d['price'] = p
+        d['NAV'] = nav
+        d['EPS'] = eps
+        d['PB'] = p / nav
+        d['PE'] = p / eps if eps else 0
+        d['ROE'] = eps / nav * 100 if nav else 0
         d['name'] = curr_info['n']
         return d
     return None

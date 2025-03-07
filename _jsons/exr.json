@@ -1,5 +1,5 @@
 {"ExchangeRates":[
-	{"currency":"USD", "flts":["sell_spot<=28.00"]},
-	{"currency":"JPY", "flts":["sell_spot<=0.255"]},
+	{"currency":"USD", "flts":["buy_spot>=33"]},
+	{"currency":"JPY", "flts":["buy_spot>=0.255"]},
 	{"currency":"CNY", "flts":["sell_spot<=4.250"]}
 ]}

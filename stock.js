@@ -150,11 +150,11 @@ function getExchangeRateTableText(objs) {
 
   if (objs.length) {
     text += '<table>';
-    text += '<tr><th>幣別</th><th>匯率</th><th></th></tr>';
+    text += '<tr><th>幣別</th><th>買入匯率</th><th>賣出匯率</th> <th></th></tr>';
     for (var i=0; i<objs.length; i++) {
       let obj = objs[i];
       let flt_txt = getFltText(obj.flts, obj.flts_ret, 'bg_yellow', 'grey');
-      text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td></tr>', obj.currency, obj.sell_spot, flt_txt);
+      text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>', obj.currency, obj.buy_spot, obj.sell_spot, flt_txt);
     }
     text += '</table>';
   }

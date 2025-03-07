@@ -244,6 +244,12 @@ def parse_info(info):
     if info.z == 0:
         info.z = info.y
 
+    if info.l and info.z < info.l:
+        info.z = info.l
+
+    if info.h and info.z > info.h:
+        info.z = info.h
+
     for i, f in enumerate(info.flts):
         try:
             m = re.search(r'(\w+)', f)

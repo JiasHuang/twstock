@@ -39,14 +39,6 @@ function getFltText(flts, flts_ret, class_name, class_name_false = '') {
   return vec.join('，')
 }
 
-function getNoteText(notes, class_name = '') {
-  var text = '';
-  for (var i=0; i<notes.length; i++) {
-      text += String.format('<div><span class="{0}">{1}</span></div>', class_name, notes[i]);
-  }
-  return text;
-}
-
 function getStockTableText(s) {
   var c;
   var chg, ratio;
@@ -95,11 +87,10 @@ function getStockTableText(s) {
   }
 
   text += '</td>';
-
   text += '<td>';
+
   text += getFltText(s.flts, s.flts_ret, 'bg_yellow');
   text += getStrategyText(s.code, s.z, 'bg_yellow margin_left');
-  text += getNoteText(s.notes, 'note');
 
   if (s.nav)
   {

@@ -82,12 +82,11 @@ class eps_info:
         return {'Y':self.Y, 'Q':self.Q, 'rev':self.rev, 'profit':self.profit, 'nor':self.nor, 'ni':self.ni, 'eps':self.eps}
 
 class stock_info:
-    def __init__(self, code, flts = None, tags = None, notes = None):
+    def __init__(self, code, flts = None, tags = None):
         self.code = code
         self.flts = flts or []
         self.flts_ret = [0] * len(self.flts)
         self.tags = tags or []
-        self.notes = notes or []
         self.msg = None
         self.z = 0
         self.y = 0
@@ -97,7 +96,6 @@ class stock_info:
         self.l = 0
         self.avg = {}
         self.nav = 0
-        self.nav_mtime = None
 
 class stock_report:
     def __init__(self, code):
@@ -184,7 +182,7 @@ def get_stock_infos(data):
     for msg in twse_data['msgArray']:
         for s in data['stocks']:
             if s['code'] == msg['c']:
-                info = stock_info(s['code'], s.get('flts'), s.get('tags'), s.get('notes'))
+                info = stock_info(s['code'], s.get('flts'), s.get('tags'))
                 info.msg = msg
                 parse_info(info)
                 infos.append(info)
@@ -208,8 +206,11 @@ def update_etf_nav(infos):
         if info.msg['c'].startswith('00'):
             msg = get_etf_msg_by_code(twse_data, info.msg['c'])
             if msg:
-                info.nav = float(msg['f'])
-                info.nav_mtime = msg['i'] + ' ' + msg['j']
+                nav = msg['f']
+                if isinstance(nav, float):
+                    info.nav = nav
+                elif isinstance(nav, str) and not nav.startswith('-'):
+                    info.nav = float(nav)
     return True
 
 def update_stock_stats(infos, cacheOnly):
@@ -293,9 +294,6 @@ def show_stock_info(info):
     if info.l > 0:
         chg, ratio, txt = chg_ratio_txt(info.l, info.y)
         print('\t\tLo %s' %(txt))
-
-    if len(info.notes):
-        print('\t\t%s' %('|'.join(info.notes)))
 
     return
 

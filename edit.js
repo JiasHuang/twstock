@@ -61,13 +61,6 @@ function getFltsText(s) {
   return '';
 }
 
-function getNotesText(s) {
-  if ('notes' in s && s.notes.length) {
-    return s.notes.join('\n');
-  }
-  return '';
-}
-
 function filterTag() {
   if (selected_tag) {
     $('tr').filter('.stockinfo').hide();
@@ -89,7 +82,7 @@ function updateResult() {
   }
 
   text += '<table id="stocks">';
-  text += '<tr><th>code</th><th>name</th><th>tags</th><th>flts</th><th>notes</th></tr>';
+  text += '<tr><th>code</th><th>name</th><th>tags</th><th>flts</th></tr>';
 
   for (var i=0; i<stocks.length; i++) {
     let s = stocks[i];
@@ -98,13 +91,12 @@ function updateResult() {
     text += String.format('<td contenteditable=true>{0}</td>', s.name);
     text += String.format('<td contenteditable=true>{0}</td>', getTagsText(s));
     text += String.format('<td contenteditable=true>{0}</td>', getFltsText(s));
-    text += String.format('<td contenteditable=true>{0}</td>', getNotesText(s));
     text += '</tr>';
   }
 
   for (var i=0; i<3; i++) {
     text += '<tr>';
-    text += '<td contenteditable=true></td>'.repeat(5);
+    text += '<td contenteditable=true></td>'.repeat(4);
     text += '</tr>';
   }
 
@@ -140,14 +132,12 @@ function onSave() {
     let name = row.cells[1].textContent;
     let tags = row.cells[2].textContent;
     let flts = row.cells[3].textContent;
-    let notes = row.cells[4].textContent;
     if (code.length) {
       let obj = {
         code: code,
         name: name,
         tags: (tags.length)? tags.split(/[ ,]+/) : [],
         flts: (flts.length)? flts.split(/[ ,]+/) : [],
-        notes: (notes.length)? notes.split('\n') : [],
       };
       jsons.push(JSON.stringify(obj));
     }

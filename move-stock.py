@@ -23,19 +23,23 @@ class Result:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s', '--sell')
-    parser.add_argument('-b', '--buy')
-    parser.add_argument('-a', '--amount')    
+    parser.add_argument('-s', '--sell',type=float, default=10)
+    parser.add_argument('-b', '--buy', type=float, default=10)
+    parser.add_argument('-a', '--amount', type=float, default=500000)
     args, unparsed = parser.parse_known_args()
 
-    if len(unparsed) == 3:
-        args.sell = unparsed[0]
-        args.buy = unparsed[1]
-        args.amount = unparsed[2]
+    if len(unparsed) > 0:
+        args.sell = float(unparsed[0])
 
-    s_unit = float(args.sell) * 1000
-    b_unit = float(args.buy) * 1000
-    max_amount = float(args.amount)
+    if len(unparsed) > 1:
+        args.buy = float(unparsed[1])
+
+    if len(unparsed) > 2:
+        args.amount = float(unparsed[2])
+
+    s_unit = args.sell * 1000
+    b_unit = args.buy * 1000
+    max_amount = args.amount
     objs = []
 
     s_cnt = 1
@@ -43,7 +47,7 @@ def main():
         obj = Result(s_unit, b_unit)
         obj.evaluate(s_cnt)
         objs.append(obj.__dict__)
-        if obj.s_amount >= max_amount:
+        if max(obj.s_amount, obj.b_amount) >= max_amount:
             break
         s_cnt += 1
 

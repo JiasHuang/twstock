@@ -21,25 +21,34 @@ class Result:
         self.b_amount =  self.b_unit * self.b_cnt
         self.diff = self.s_amount - self.b_amount
 
+def parse_number(s):
+    if s[-1].isdigit():
+        return float(s)
+    if s.endswith('w') or s.endswith('W'):
+        return float(s[:-1]) * 10000
+    if s.endswith('k') or s.endswith('K'):
+        return float(s[:-1]) * 1000
+    assert False, 'ERROR: {}'.format(s)
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s', '--sell',type=float, default=10)
-    parser.add_argument('-b', '--buy', type=float, default=10)
-    parser.add_argument('-a', '--amount', type=float, default=500000)
+    parser.add_argument('-s', '--sell', default='10')
+    parser.add_argument('-b', '--buy', default='10')
+    parser.add_argument('-a', '--amount', default='50w')
     args, unparsed = parser.parse_known_args()
 
     if len(unparsed) > 0:
-        args.sell = float(unparsed[0])
+        args.sell = unparsed[0]
 
     if len(unparsed) > 1:
-        args.buy = float(unparsed[1])
+        args.buy = unparsed[1]
 
     if len(unparsed) > 2:
-        args.amount = float(unparsed[2])
+        args.amount = unparsed[2]
 
-    s_unit = args.sell * 1000
-    b_unit = args.buy * 1000
-    max_amount = args.amount
+    s_unit = parse_number(args.sell) * 1000
+    b_unit = parse_number(args.buy) * 1000
+    max_amount = parse_number(args.amount)
     objs = []
 
     s_cnt = 1

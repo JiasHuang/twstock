@@ -6,16 +6,32 @@ import re
 import json
 import xurl
 
+def from_common_era(x):
+    v = int(x) - 1911
+    return v
+
+def to_common_era(x):
+    v = int(x)
+    if v < 1911:
+        v += 1911
+    return v
+
 def convert_date(s):
     return re.sub('(\d+)/(\d+)/(\d+)', lambda y: str(int(y.group(1)) + 1911) + y.group(2) + y.group(3), s)
 
 def get_ex_ch_by_code(code):
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tse-code-list.txt')
+    with open(local) as fd:
+        for line in fd.readlines():
+            if line.rstrip() == code:
+                return 'tse_%s.tw' %(code)
     local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'otc-code-list.txt')
     with open(local) as fd:
         for line in fd.readlines():
             if line.rstrip() == code:
                 return 'otc_%s.tw' %(code)
-    return 'tse_%s.tw' %(code)
+    return None
+
 
 def get_close(code, date):
     url = 'http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date={}&stockNo={}'.format(date, code)

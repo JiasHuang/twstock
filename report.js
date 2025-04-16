@@ -123,7 +123,7 @@ function getWAPHTMLText(wap, z) {
   return text;
 }
 
-function getLinkDict(code, nf) {
+function getLinkDict(code) {
   var dict = [];
   dict.push({key:'基本', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zca/zca_{0}.djhtm', code)});
   dict.push({key:'獲利', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zce/zce_{0}.djhtm', code)});
@@ -141,7 +141,7 @@ function getLinkDict(code, nf) {
 
 function updateInfo(obj) {
   var text = '';
-  var dict = getLinkDict(obj.code, obj.nf);
+  var dict = getLinkDict(obj.code);
 
   text += String.format('<span class="title">{0} {1} (${2})</span><br>', obj.code, obj.n, obj.z);
 
@@ -662,7 +662,7 @@ function parseJSON(obj) {
 
 function showLoading(code) {
   var text = '';
-  var dict = getLinkDict(code, '');
+  var dict = getLinkDict(code);
 
   text += String.format('<span class="title">Loading ...</span><br>');
 

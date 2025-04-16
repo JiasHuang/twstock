@@ -7,6 +7,7 @@ import json
 import time
 import datetime
 
+import twse
 import xurl
 
 from optparse import OptionParser
@@ -39,7 +40,7 @@ class exchange_rate_info:
 class wap_info:
     # # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
     def __init__(self, Y, M, h, l, a, A, B):
-        self.Y = Y
+        self.Y = twse.to_common_era(Y)
         self.M = M
         self.h = h
         self.l = l
@@ -55,7 +56,7 @@ class wap_info:
 
 class revenue_info:
     def __init__(self, Y, M, rev=0):
-        self.Y = Y
+        self.Y = twse.to_common_era(Y)
         self.M = M
         self.rev = rev
 
@@ -67,7 +68,7 @@ class revenue_info:
 
 class eps_info:
     def __init__(self, Y, Q, rev='-', profit='-', nor='-', ni='-', eps='-'):
-        self.Y = Y
+        self.Y = twse.to_common_era(Y)
         self.Q = Q
         self.rev = rev  # 營業收入
         self.profit = profit # 營業毛利
@@ -102,8 +103,7 @@ class stock_report:
         self.code = code
         self.z = 0
         self.n = None
-        self.nf = None
-        self.ex = None
+        self.ex_ch = None
         self.wap = []
         self.eps = []
         self.revenue = []
@@ -163,17 +163,9 @@ def get_stat_vol(code, cacheOnly):
         obj['30d_vol'] = total_v / 30
     return obj
 
-def get_ex_ch_by_code(code):
-    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'otc-code-list.txt')
-    with open(local) as fd:
-        for line in fd.readlines():
-            if line.rstrip() == code:
-                return 'otc_%s.tw' %(code)
-    return 'tse_%s.tw' %(code)
-
 def get_stock_infos(data):
     infos = []
-    ex_ch = '|'.join([get_ex_ch_by_code(s['code']) for s in data['stocks']])
+    ex_ch = '|'.join([twse.get_ex_ch_by_code(s['code']) for s in data['stocks']])
     url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
     txt = xurl.load(url, cache=False)
     twse_data = json.loads(txt)
@@ -391,7 +383,7 @@ def update_stock_report_wap_otc(obj):
 
 def update_stock_report_eps(obj):
     now = datetime.datetime.now()
-    from_year = int(now.year) - 1911 - defs.from_year_offset
+    from_year = twse.from_common_era(now.year) - defs.from_year_offset
     url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zce/zce_%s.djhtm' %(obj.code)
     txt = xurl.load(url, encoding='big5_hkscs')
     # 季別,0營業收入,1營業成本,2營業毛利,3毛利率,4營業利益,5營益率,6業外收支,7稅前淨利,8稅後淨利,9EPS(元)
@@ -406,7 +398,7 @@ def update_stock_report_eps(obj):
 
 def update_stock_report_revenue(obj):
     now = datetime.datetime.now()
-    from_year = int(now.year) - 1911 - defs.from_year_offset
+    from_year = twse.from_common_era(now.year) - defs.from_year_offset
     url = 'https://jdata.yuanta.com.tw/z/zc/zch/zch_%s.djhtm' %(obj.code)
     txt = xurl.load(url, encoding='big5_hkscs')
     for m in re.finditer(r'<td class="t3n0">(\d+)/(\d+)</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
@@ -432,7 +424,7 @@ def update_stock_report_overall(obj):
         obj.nav = float(m.group(1).replace(',',''))
     m = re.search(r'>年度</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
     if m:
-        obj.per_year = [int(x.replace(',','')) for x in re.findall(r'>([^<]+)</td>', m.group(1))]
+        obj.per_year = [twse.to_common_era(x.replace(',','')) for x in re.findall(r'>([^<]+)</td>', m.group(1))]
     m = re.search(r'>最高本益比</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
     if m:
         obj.per_max = [float(x.replace(',','')) if x != 'N/A' else 0 for x in re.findall(r'>([^<]+)</td>', m.group(1))]
@@ -452,15 +444,15 @@ def update_stock_report_overall(obj):
 
 def get_stock_report(code):
     obj = stock_report(code)
-    info = get_stock_info_by_code(code)
-    if not info:
+    obj.ex_ch = twse.get_ex_ch_by_code(code)
+    if not obj.ex_ch:
         obj.n = 'NotFound'
         return obj
-    obj.z = info.z
-    obj.n = info.msg['n']
-    obj.nf = info.msg['nf']
-    obj.ex = info.msg['ex']
-    if obj.ex == 'otc':
+    info = get_stock_info_by_code(code)
+    if info:
+        obj.z = info.z
+        obj.n = info.msg['n']
+    if obj.ex_ch.startswith('otc'):
         update_stock_report_wap_otc(obj)
     else:
         update_stock_report_wap(obj)

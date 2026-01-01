@@ -19,29 +19,25 @@ def get_rows(exchange, code):
     return cached[path]
 
 def get_sma(exchange, code, date, days):
-    start = date - datetime.timedelta(days=days)
-    end = date
     total = 0
     cnt = 0
     rows = get_rows(exchange, code)
-    for row in rows:
+    for row in reversed(rows):
         d = datetime.datetime.strptime(row['Date'], '%Y/%m/%d').date()
-        if d >= start and d <= end:
+        if d <= date:
             total += float(row['Close'])
             cnt += 1
-        if d > end:
-            break
+            if cnt >= days:
+                break
 
     return total / cnt if cnt else 0
 
 def get_price(exchange, code, date):
     pz = None
     rows = get_rows(exchange, code)
-    for row in rows:
+    for row in reversed(rows):
         d = datetime.datetime.strptime(row['Date'], '%Y/%m/%d').date()
-        if d < date:
-            pz = float(row['Close'])
-        else:
+        if d <= date:
             pz = float(row['Close'])
             break
     return pz

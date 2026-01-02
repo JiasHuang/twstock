@@ -18,6 +18,12 @@ class bcolors:
     BLUE = '\33[34m'
     ENDC = '\x1b[0m'
 
+class Record:
+    def __init__(self, date, pz, cost):
+        self.date = date
+        self.pz = pz
+        self.cost = cost
+
 class Stock:
     def __init__(self, exchange, code):
         self.exchange = exchange
@@ -29,11 +35,13 @@ class Stock:
         self.min_return_date = None
         self.max_return = None
         self.max_return_date = None
+        self.records = []
 
-    def add_cost(self, pz, cost):
+    def add_cost(self, date, pz, cost):
         self.cost += cost
         self.qty += cost / pz
         self.avg = self.cost / self.qty
+        self.records.append(Record(date, pz, cost))
 
     def get_price(self, date):
         return google_finance_csv.get_price(self.exchange, self.code, date)
@@ -106,6 +114,14 @@ def evaluate_actions(args, stock, stock2, date):
         cost = max(cost_a, cost_b)
         actions.append(Action(date, stock, pz, sma, cost))
 
+    elif args.policy == '4':
+        cost = int(args.unit * pow(sma / pz, 2)) if (sma/pz) >= 1.1 else args.unit
+        actions.append(Action(date, stock, pz, sma, cost))
+
+    elif args.policy == '5':
+        cost = int(args.unit * max(pow(sma / pz, 2), 1))
+        actions.append(Action(date, stock, pz, sma, cost))
+
     else:
         cost = int(args.unit * sma / pz) if (sma/pz) >= 1.1 else args.unit
         actions.append(Action(date, stock, pz, sma, cost))
@@ -141,7 +157,7 @@ def exec_policy(args):
             actions = evaluate_actions(args, stock, stock2, d)
             for action in actions:
                 action.cost = min(action.cost, balance)
-                action.stock.add_cost(action.pz, action.cost)
+                action.stock.add_cost(d, action.pz, action.cost)
                 balance -= action.cost
                 if args.verbose:
                     print(action)
@@ -149,23 +165,24 @@ def exec_policy(args):
     total_cost = 0
     total_gain = 0
 
+    print('\n---')
+    print(bcolors.GREEN + 'Policy {}'.format(args.policy) + bcolors.ENDC)
+
     for s in [stock, stock2]:
         if s.cost:
             pz = s.get_price(today)
             gain, gain_percent = s.get_gain(pz)
             total_cost += s.cost
             total_gain += gain
-            print('\n---')
-            print('{}:{} cost {:,} qty {:,.2f} avg {:,.2f} gain {:,} ({:.2%})'.format(s.exchange, s.code, s.cost, s.qty, s.avg, gain, gain_percent))
-            print('min: {} {:.2%}'.format(s.min_return_date, s.min_return))
-            print('max: {} {:.2%}'.format(s.max_return_date, s.max_return))
-            print('---')
+            label = bcolors.YELLOW + s.exchange + ":" + s.code + bcolors.ENDC
+            print('{} cost {:,} qty {:,.2f} avg {:,.2f} gain {:,} ({:.2%})'.format(label, s.cost, s.qty, s.avg, gain, gain_percent))
+            print('{} min: {} {:.2%}'.format(label, s.min_return_date, s.min_return))
+            print('{} max: {} {:.2%}'.format(label, s.max_return_date, s.max_return))
+            print('{} {} ~ {} ({})'.format(label, s.records[0].date, s.records[-1].date, len(s.records)))
 
     total_return = total_gain / total_cost
     annual_return = count_annualized_return(start, today, total_return)
 
-    print('\n---')
-    print(bcolors.GREEN + 'Policy {}'.format(args.policy) + bcolors.ENDC)
     print('Total: cost {:,} gain {:,} ({:.2%}) (annual {:.2%})'.format(total_cost, total_gain, total_return, annual_return))
     print('---')
 

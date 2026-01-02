@@ -47,7 +47,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-e', '--exchange', default='TPE')
     parser.add_argument('-c', '--code', default='0050')
-    parser.add_argument('-s', '--sma', type=int, default=90)
+    parser.add_argument('-s', '--sma', type=int, default=60)
     parser.add_argument('-d', '--date', default='20200101')
     args, unparsed = parser.parse_known_args()
 

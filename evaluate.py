@@ -6,6 +6,18 @@ import argparse
 import datetime
 import google_finance_csv
 
+class bcolors:
+    BLACK_ON_RED = '\x1b[3;30;41m'
+    BLACK_ON_GREEN = '\x1b[3;30;42m'
+    BLACK_ON_YELLOW = '\x1b[3;30;43m'
+    BLACK_ON_BLUE = '\x1b[3;30;44m'
+    BLACK_ON_WHITE = '\x1b[3;30;47m'
+    RED = '\33[31m'
+    GREEN = '\33[32m'
+    YELLOW = '\33[33m'
+    BLUE = '\33[34m'
+    ENDC = '\x1b[0m'
+
 class Stock:
     def __init__(self, exchange, code):
         self.exchange = exchange
@@ -13,6 +25,10 @@ class Stock:
         self.cost = 0
         self.qty = 0
         self.avg = 0
+        self.min_return = None
+        self.min_return_date = None
+        self.max_return = None
+        self.max_return_date = None
 
     def add_cost(self, pz, cost):
         self.cost += cost
@@ -26,93 +42,165 @@ class Stock:
         return google_finance_csv.get_sma(self.exchange, self.code, date, days)
 
     def get_gain(self, pz):
-        if not self.cost:
-            return (0, 0)
-        gain = pz * self.qty - self.cost
+        gain = int(pz * self.qty - self.cost)
         gain_percent = gain / self.cost
         return (gain, gain_percent)
+
+    def check_performance(self, date):
+        if self.cost:
+            pz = self.get_price(date)
+            gain, gain_percent = self.get_gain(pz)
+            if not self.min_return or self.min_return > gain_percent:
+                self.min_return = gain_percent
+                self.min_return_date = date
+            if not self.max_return or self.max_return < gain_percent:
+                self.max_return = gain_percent
+                self.max_return_date = date
+
+class Action:
+    def __init__(self, date, stock, pz, sma, cost):
+        self.date = date
+        self.stock = stock
+        self.pz = pz
+        self.sma = sma
+        self.cost = cost
+
+    def __str__(self):
+        s = self.stock
+        gain = self.pz / self.stock.avg - 1
+        return '[{}] {}:{} pz {:,} sma {:,.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.sma, self.cost, s.qty, s.avg, gain)
 
 def count_annualized_return(start, end, total_return):
     total_years = (end - start).days / 365.25
     annualized_return = (1 + total_return)**(1 / total_years) - 1
     return annualized_return
 
+def evaluate_actions(args, stock, stock2, date):
+
+    actions = []
+
+    pz = stock.get_price(date)
+    if not pz:
+        return []
+
+    sma = stock.get_sma(date, args.sma_days)
+
+    if args.policy == '1':
+        cost = int(args.unit * pow(sma / pz, 2))
+        actions.append(Action(date, stock, pz, sma, cost))
+
+    elif args.policy == '2':
+        pz2 = stock2.get_price(date)
+        if pz2:
+            sma2 = stock2.get_sma(date, args.sma_days)
+            if (sma2/pz2) >= 1.1:
+                cost2 = int(args.unit * sma2 / pz2)
+                actions.append(Action(date, stock2, pz2, sma2, cost2))
+        if not actions:
+            cost = int(args.unit * sma / pz) if (sma/pz) >= 1.1 else args.unit
+            actions.append(Action(date, stock, pz, sma, cost))
+
+    elif args.policy == '3':
+        cost_a = int(args.unit * pow(sma / pz, 2))
+        cost_b = int(args.unit * pow(stock.avg / pz, 2))
+        cost = max(cost_a, cost_b)
+        actions.append(Action(date, stock, pz, sma, cost))
+
+    else:
+        cost = int(args.unit * sma / pz) if (sma/pz) >= 1.1 else args.unit
+        actions.append(Action(date, stock, pz, sma, cost))
+
+    return actions
+
+def exec_policy(args):
+
+    start = datetime.datetime.strptime(args.start, '%Y%m%d').date()
+    end = datetime.datetime.strptime(args.end, '%Y%m%d').date()
+    today = datetime.date.today()
+
+    stock = Stock(args.exchange, args.code)
+    stock2 = Stock(args.exchange, args.code2)
+    balance = args.limit
+
+    for y in range(start.year, today.year + 1):
+        for m in range(1, 13):
+
+            d = datetime.date(y, m, args.day)
+            if d > today:
+                continue
+
+            stock.check_performance(d)
+            stock2.check_performance(d)
+
+            if d < start or d > end:
+                continue
+
+            if balance <= 0:
+                continue
+
+            actions = evaluate_actions(args, stock, stock2, d)
+            for action in actions:
+                action.cost = min(action.cost, balance)
+                action.stock.add_cost(action.pz, action.cost)
+                balance -= action.cost
+                if args.verbose:
+                    print(action)
+
+    total_cost = 0
+    total_gain = 0
+
+    for s in [stock, stock2]:
+        if s.cost:
+            pz = s.get_price(today)
+            gain, gain_percent = s.get_gain(pz)
+            total_cost += s.cost
+            total_gain += gain
+            print('\n---')
+            print('{}:{} cost {:,} qty {:,.2f} avg {:,.2f} gain {:,} ({:.2%})'.format(s.exchange, s.code, s.cost, s.qty, s.avg, gain, gain_percent))
+            print('min: {} {:.2%}'.format(s.min_return_date, s.min_return))
+            print('max: {} {:.2%}'.format(s.max_return_date, s.max_return))
+            print('---')
+
+    total_return = total_gain / total_cost
+    annual_return = count_annualized_return(start, today, total_return)
+
+    print('\n---')
+    print(bcolors.GREEN + 'Policy {}'.format(args.policy) + bcolors.ENDC)
+    print('Total: cost {:,} gain {:,} ({:.2%}) (annual {:.2%})'.format(total_cost, total_gain, total_return, annual_return))
+    print('---')
+
+    return
+
 def main():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-E', '--exchange', default='TPE')
     parser.add_argument('-c', '--code', default='0050')
     parser.add_argument('-C', '--code2', default='00631L')
-    parser.add_argument('-s', '--start', default='20200101')
-    parser.add_argument('-e', '--end', default='')
-    parser.add_argument('-u', '--unit', type=int, default=1000)
+    parser.add_argument('-s', '--start', default='2020')
+    parser.add_argument('-e', '--end', default='2035')
+    parser.add_argument('-u', '--unit', type=int, default=50000)
+    parser.add_argument('-l', '--limit', type=int, default=3000000)
     parser.add_argument('-d', '--day', type=int, default=15)
     parser.add_argument('-S', '--sma_days', type=int, default=60)
-    parser.add_argument('-p', '--policy', type=int, default=1)
+    parser.add_argument('-p', '--policy', default='0')
+    parser.add_argument('-v', '--verbose', type=int, default=1)
     args, unparsed = parser.parse_known_args()
-
-    today = datetime.date.today()
 
     if len(args.start) == 4:
         args.start = args.start + '0101'
     elif len(args.start) == 6:
         args.start = args.start + '01'
 
-    if len(args.end) == 0:
-        args.end = today.strftime('%Y%m%d')
-    elif len(args.end) == 4:
+    if len(args.end) == 4:
         args.end = args.end + '1231'
     elif len(args.end) == 6:
         args.end = args.end + '31'
 
-    start = datetime.datetime.strptime(args.start, '%Y%m%d').date()
-    end = datetime.datetime.strptime(args.end, '%Y%m%d').date()
-
-    stock1 = Stock('TPE', args.code)
-    stock2 = Stock('TPE', args.code2)
-
-    for y in range(start.year, end.year + 1):
-        for m in range(1, 13):
-            d = datetime.date(y, m, args.day)
-            if d < start or d > end:
-                continue
-
-            pz = stock1.get_price(d)
-            if not pz:
-                continue
-
-            if args.policy in [0, 2]:
-                pz2 = stock2.get_price(d)
-                if pz2:
-                    sma2 = stock2.get_sma(d, args.sma_days)
-                    if args.policy == 2 or (args.policy == 0 and (sma2/pz2) >= 1.1):
-                        cost2 = int(args.unit * sma2 / pz2) if (sma2/pz2) >= 1.1 else args.unit
-                        stock2.add_cost(pz2, cost2)
-                        gain2 = pz2 / stock2.avg - 1
-                        print('{}: pz {} sma {:.2f} cost {} qty {:.2f} avg {:.2f} gain {:.2%} (2)'.format(d, pz2, sma2, cost2, stock2.qty, stock2.avg, gain2))
-                        continue
-
-            sma = stock1.get_sma(d, args.sma_days)
-            cost = int(args.unit * sma / pz) if (sma/pz) >= 1.1 else args.unit
-            stock1.add_cost(pz, cost)
-            gain = pz / stock1.avg - 1
-            print('{}: pz {} sma {:.2f} cost {} qty {:.2f} avg {:.2f} gain {:.2%}'.format(d, pz, sma, cost, stock1.qty, stock1.avg, gain))
-
-    pz = stock1.get_price(today)
-    gain, gain_percent = stock1.get_gain(pz)
-
-    pz2 = stock2.get_price(today)
-    gain2, gain2_percent = stock2.get_gain(pz2)
-
-    total_cost = stock1.cost + stock2.cost
-    total_gain = gain + gain2
-    total_gain_percent = total_gain / total_cost
-    ar = count_annualized_return(start, today, total_gain_percent)
-
-    print('\n---')
-    print('{}:{} cost {} qty {:.2f} avg {:.2f} gain {:.2f} ({:.2%})'.format(stock1.exchange, stock1.code, stock1.cost, stock1.qty, stock1.avg, gain, gain_percent))
-    print('{}:{} cost {} qty {:.2f} avg {:.2f} gain {:.2f} ({:.2%})'.format(stock2.exchange, stock2.code, stock2.cost, stock2.qty, stock2.avg, gain2, gain2_percent))
-    print('total gain {:.2f} ({:.2%}) (irr {:.2%})'.format(total_gain, total_gain / (stock1.cost + stock2.cost), ar))
-    print('---\n')
+    policies = args.policy.split(',')
+    for policy in policies:
+        args.policy = policy
+        exec_policy(args)
 
     return
 

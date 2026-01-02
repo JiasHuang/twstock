@@ -6,6 +6,9 @@ import argparse
 import datetime
 import google_finance_csv
 
+class defs:
+    etf_x2_map = {'0050':'00631L', '00646':'00647L'}
+
 class bcolors:
     BLACK_ON_RED = '\x1b[3;30;41m'
     BLACK_ON_GREEN = '\x1b[3;30;42m'
@@ -93,37 +96,25 @@ def evaluate_actions(args, stock, stock2, date):
 
     sma = stock.get_sma(date, args.sma_days)
 
-    if args.policy == '1':
-        cost = int(args.unit * pow(sma / pz, 2))
+    if args.policy.isdigit():
+        cost = int(args.unit * pow(max(sma/pz, stock.avg/pz, 1), int(args.policy)))
         actions.append(Action(date, stock, pz, sma, cost))
 
-    elif args.policy == '2':
+    elif args.policy == 'x2':
         pz2 = stock2.get_price(date)
         if pz2:
             sma2 = stock2.get_sma(date, args.sma_days)
             if (sma2/pz2) >= 1.1:
-                cost2 = int(args.unit * sma2 / pz2)
+                cost2 = int(args.unit * pow(2, sma2/pz2))
                 actions.append(Action(date, stock2, pz2, sma2, cost2))
         if not actions:
-            cost = int(args.unit * sma / pz) if (sma/pz) >= 1.1 else args.unit
+            cost = int(args.unit * pow(max(sma/pz, stock.avg/pz, 1), 2))
             actions.append(Action(date, stock, pz, sma, cost))
 
-    elif args.policy == '3':
-        cost_a = int(args.unit * pow(sma / pz, 2))
-        cost_b = int(args.unit * pow(stock.avg / pz, 2))
-        cost = max(cost_a, cost_b)
-        actions.append(Action(date, stock, pz, sma, cost))
-
-    elif args.policy == '4':
-        cost = int(args.unit * pow(sma / pz, 2)) if (sma/pz) >= 1.1 else args.unit
-        actions.append(Action(date, stock, pz, sma, cost))
-
-    elif args.policy == '5':
-        cost = int(args.unit * max(pow(sma / pz, 2), 1))
-        actions.append(Action(date, stock, pz, sma, cost))
-
-    else:
-        cost = int(args.unit * sma / pz) if (sma/pz) >= 1.1 else args.unit
+    elif args.policy == 'fb':
+        cost = int(args.unit * pow(max(sma/pz, stock.avg/pz, 1), 2))
+        if (stock.avg/pz) >= 1.1:
+            cost = max(cost, int(stock.qty * pz))
         actions.append(Action(date, stock, pz, sma, cost))
 
     return actions
@@ -192,14 +183,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-E', '--exchange', default='TPE')
     parser.add_argument('-c', '--code', default='0050')
-    parser.add_argument('-C', '--code2', default='00631L')
+    parser.add_argument('-C', '--code2')
     parser.add_argument('-s', '--start', default='2020')
     parser.add_argument('-e', '--end', default='')
     parser.add_argument('-u', '--unit', type=int, default=50000)
     parser.add_argument('-l', '--limit', type=int, default=3000000)
     parser.add_argument('-d', '--day', type=int, default=15)
     parser.add_argument('-S', '--sma_days', type=int, default=60)
-    parser.add_argument('-p', '--policy', default='0')
+    parser.add_argument('-p', '--policy', default='1')
     parser.add_argument('-v', '--verbose', type=int, default=1)
     args, unparsed = parser.parse_known_args()
 
@@ -216,9 +207,12 @@ def main():
         args.end = args.end + '31'
 
     codes = args.code.split(',')
+    code2 = args.code2
     policies = args.policy.split(',')
     for code in codes:
         for policy in policies:
+            if policy == 'x2' and not code2:
+                args.code2 = defs.etf_x2_map[code]
             args.code = code
             args.policy = policy
             core(args)

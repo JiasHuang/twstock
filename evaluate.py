@@ -128,21 +128,20 @@ def evaluate_actions(args, stock, stock2, date):
 
     return actions
 
-def exec_policy(args):
+def core(args):
 
     start = datetime.datetime.strptime(args.start, '%Y%m%d').date()
     end = datetime.datetime.strptime(args.end, '%Y%m%d').date()
-    today = datetime.date.today()
 
     stock = Stock(args.exchange, args.code)
     stock2 = Stock(args.exchange, args.code2)
     balance = args.limit
 
-    for y in range(start.year, today.year + 1):
+    for y in range(start.year, end.year + 1):
         for m in range(1, 13):
 
             d = datetime.date(y, m, args.day)
-            if d > today:
+            if d > end:
                 continue
 
             stock.check_performance(d)
@@ -166,11 +165,11 @@ def exec_policy(args):
     total_gain = 0
 
     print('\n---')
-    print(bcolors.GREEN + 'Policy {}'.format(args.policy) + bcolors.ENDC)
+    print(bcolors.GREEN + '[{}] ~ [{}] {}:{} Policy {}'.format(start, end, args.exchange, args.code, args.policy) + bcolors.ENDC)
 
     for s in [stock, stock2]:
         if s.cost:
-            pz = s.get_price(today)
+            pz = s.get_price(end)
             gain, gain_percent = s.get_gain(pz)
             total_cost += s.cost
             total_gain += gain
@@ -181,7 +180,7 @@ def exec_policy(args):
             print('{} {} ~ {} ({})'.format(label, s.records[0].date, s.records[-1].date, len(s.records)))
 
     total_return = total_gain / total_cost
-    annual_return = count_annualized_return(start, today, total_return)
+    annual_return = count_annualized_return(start, end, total_return)
 
     print('Total: cost {:,} gain {:,} ({:.2%}) (annual {:.2%})'.format(total_cost, total_gain, total_return, annual_return))
     print('---')
@@ -195,7 +194,7 @@ def main():
     parser.add_argument('-c', '--code', default='0050')
     parser.add_argument('-C', '--code2', default='00631L')
     parser.add_argument('-s', '--start', default='2020')
-    parser.add_argument('-e', '--end', default='2035')
+    parser.add_argument('-e', '--end', default='')
     parser.add_argument('-u', '--unit', type=int, default=50000)
     parser.add_argument('-l', '--limit', type=int, default=3000000)
     parser.add_argument('-d', '--day', type=int, default=15)
@@ -209,15 +208,20 @@ def main():
     elif len(args.start) == 6:
         args.start = args.start + '01'
 
-    if len(args.end) == 4:
+    if len(args.end) == 0:
+        args.end = datetime.date.today().strftime('%Y%m%d')
+    elif len(args.end) == 4:
         args.end = args.end + '1231'
     elif len(args.end) == 6:
         args.end = args.end + '31'
 
+    codes = args.code.split(',')
     policies = args.policy.split(',')
-    for policy in policies:
-        args.policy = policy
-        exec_policy(args)
+    for code in codes:
+        for policy in policies:
+            args.code = code
+            args.policy = policy
+            core(args)
 
     return
 

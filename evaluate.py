@@ -5,6 +5,7 @@ import os
 import argparse
 import datetime
 import google_finance_csv
+import copy
 
 class defs:
     etf_x2_map = {'0050':'00631L', '00646':'00647L'}
@@ -96,23 +97,34 @@ def evaluate_actions(args, stock, stock2, date):
 
     sma = stock.get_sma(date, args.sma_days)
 
-    if args.policy.isdigit():
-        cost = int(args.unit * pow(max(sma/pz, stock.avg/pz, 1), int(args.policy)))
+    if args.policy.startswith('pow'):
+        exp = int(args.policy[3:])
+        rate = max(sma/pz, stock.avg/pz, 1)
+        cost = int(args.unit * pow(rate, exp))
+        actions.append(Action(date, stock, pz, sma, cost))
+
+    elif args.policy.startswith('mul'):
+        mul = int(args.policy[3:])
+        rate = max(sma/pz, stock.avg/pz, 1)
+        cost = int(args.unit * (rate * mul - 1))
         actions.append(Action(date, stock, pz, sma, cost))
 
     elif args.policy == 'x2':
         pz2 = stock2.get_price(date)
         if pz2:
             sma2 = stock2.get_sma(date, args.sma_days)
-            if (sma2/pz2) >= 1.1:
-                cost2 = int(args.unit * pow(2, sma2/pz2))
+            rate2 = sma2 / pz2
+            if rate2 >= 1.1:
+                cost2 = int(args.unit * pow(rate2, 2))
                 actions.append(Action(date, stock2, pz2, sma2, cost2))
         if not actions:
-            cost = int(args.unit * pow(max(sma/pz, stock.avg/pz, 1), 2))
+            rate = max(sma/pz, stock.avg/pz, 1)
+            cost = int(args.unit * pow(rate, 2))
             actions.append(Action(date, stock, pz, sma, cost))
 
     elif args.policy == 'fb':
-        cost = int(args.unit * pow(max(sma/pz, stock.avg/pz, 1), 2))
+        rate = max(sma/pz, stock.avg/pz, 1)
+        cost = int(args.unit * pow(rate, 2))
         if (stock.avg/pz) >= 1.1:
             cost = max(cost, int(stock.qty * pz))
         actions.append(Action(date, stock, pz, sma, cost))
@@ -173,7 +185,13 @@ def core(args):
     total_return = total_gain / total_cost
     annual_return = count_annualized_return(start, end, total_return)
 
+    pz_start = stock.get_price(start)
+    pz_end = stock.get_price(end)
+    pz_return = (pz_end - pz_start) / pz_start - 1
+    pz_annual_return = count_annualized_return(start, end, pz_return)
+
     print('Total: cost {:,} gain {:,} ({:.2%}) (annual {:.2%})'.format(total_cost, total_gain, total_return, annual_return))
+    print('Price: {:.2%} (annual {:.2%})'.format(pz_return, pz_annual_return))
     print('---')
 
     return
@@ -190,7 +208,7 @@ def main():
     parser.add_argument('-l', '--limit', type=int, default=3000000)
     parser.add_argument('-d', '--day', type=int, default=15)
     parser.add_argument('-S', '--sma_days', type=int, default=60)
-    parser.add_argument('-p', '--policy', default='1')
+    parser.add_argument('-p', '--policy', default='pow2')
     parser.add_argument('-v', '--verbose', type=int, default=1)
     args, unparsed = parser.parse_known_args()
 
@@ -211,11 +229,12 @@ def main():
     policies = args.policy.split(',')
     for code in codes:
         for policy in policies:
+            new_args = copy.deepcopy(args)
             if policy == 'x2' and not code2:
-                args.code2 = defs.etf_x2_map[code]
-            args.code = code
-            args.policy = policy
-            core(args)
+                new_args.code2 = defs.etf_x2_map[code]
+            new_args.code = code
+            new_args.policy = policy
+            core(new_args)
 
     return
 

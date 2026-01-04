@@ -7,9 +7,6 @@ import datetime
 import google_finance_csv
 import copy
 
-class defs:
-    etf_x2_map = {'0050':'00631L', '00646':'00647L'}
-
 class bcolors:
     BLACK_ON_RED = '\x1b[3;30;41m'
     BLACK_ON_GREEN = '\x1b[3;30;42m'
@@ -88,22 +85,23 @@ class Action:
         return '[{}] {}:{} pz {:,} sma {:,.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.sma, self.cost, s.qty, s.avg, gain)
 
 class Result:
-    def __init__(self, policy, batch, total_gain, total_return, annual_return):
-        self.policy = policy
-        self.batch = batch
+    def __init__(self, args, stock, total_gain, total_return, annual_return):
+        self.label = '{}:{} b{}_{}'.format(args.exchange, args.code, args.batch, args.policy)
+        self.records = '[{}][{}] ({})'.format(stock.records[0].date, stock.records[-1].date, len(stock.records))
         self.total_gain = total_gain
         self.total_return = total_return
         self.annual_return = annual_return
+        self.worst_loss = stock.min_return
 
     def __str__(self):
-        return 'policy {} batch {} gain {:,.2f} ({:.2%}, annual {:.2%})'.format(self.policy, self.batch, self.total_gain, self.total_return, self.annual_return)
+        return '{} {} gain {:,.2f} ({:.2%}, annual {:.2%}) worst {:.2%}'.format(self.label, self.records, self.total_gain, self.total_return, self.annual_return, self.worst_loss)
 
 def count_annualized_return(start, end, total_return):
     total_years = (end - start).days / 365.25
     annualized_return = (1 + total_return)**(1 / total_years) - 1
     return annualized_return
 
-def evaluate_actions(args, stock, stock2, date):
+def evaluate_actions(args, stock, date):
 
     actions = []
 
@@ -124,26 +122,6 @@ def evaluate_actions(args, stock, stock2, date):
         mul = int(args.policy[3:])
         rate = max(sma/pz, stock.avg/pz, 1)
         cost = int(unit * (rate * mul - 1))
-        actions.append(Action(date, stock, pz, sma, cost))
-
-    elif args.policy == 'x2':
-        pz2 = stock2.get_price(date)
-        if pz2:
-            sma2 = stock2.get_sma(date, args.sma_days)
-            rate2 = sma2 / pz2
-            if rate2 >= 1.1:
-                cost2 = int(unit * pow(rate2, 2))
-                actions.append(Action(date, stock2, pz2, sma2, cost2))
-        if not actions:
-            rate = max(sma/pz, stock.avg/pz, 1)
-            cost = int(unit * pow(rate, 2))
-            actions.append(Action(date, stock, pz, sma, cost))
-
-    elif args.policy == 'fb':
-        rate = max(sma/pz, stock.avg/pz, 1)
-        cost = int(unit * pow(rate, 2))
-        if (stock.avg/pz) >= 1.1:
-            cost = max(cost, int(stock.qty * pz))
         actions.append(Action(date, stock, pz, sma, cost))
 
     return actions
@@ -185,7 +163,6 @@ def core(args):
     end = datetime.datetime.strptime(args.end, '%Y%m%d').date()
 
     stock = Stock(args.exchange, args.code)
-    stock2 = Stock(args.exchange, args.code2)
     balance = args.limit
 
     for y in range(start.year, end.year + 1):
@@ -196,12 +173,11 @@ def core(args):
                 continue
 
             stock.check_performance(d)
-            stock2.check_performance(d)
 
             if balance <= 0:
                 continue
 
-            actions = evaluate_actions(args, stock, stock2, d)
+            actions = evaluate_actions(args, stock, d)
             for action in actions:
                 action.cost = min(action.cost, balance)
                 action.stock.add_cost(d, action.pz, action.cost)
@@ -209,42 +185,35 @@ def core(args):
                 if args.verbose:
                     print(action)
 
-    total_cost = 0
     total_gain = 0
+    total_return = 0
+    annula_return = 0
 
     print('\n---')
-    print(bcolors.GREEN + '{}:{} Policy {} Batch {} ([{}] ~ [{}])'.format(args.exchange, args.code, args.policy, args.batch, start, end) + bcolors.ENDC)
+    print(bcolors.GREEN + '{}:{} b{}_{} [{}][{}]'.format(args.exchange, args.code, args.batch, args.policy, start, end) + bcolors.ENDC)
 
-    for s in [stock, stock2]:
-        if s.cost:
-            pz = s.get_price(end)
-            gain, gain_percent = s.get_gain(pz)
-            total_cost += s.cost
-            total_gain += gain
-            label = bcolors.YELLOW + s.exchange + ":" + s.code + bcolors.ENDC
-            print('{} cost {:,} qty {:,.2f} avg {:,.2f} gain {:,} ({:.2%})'.format(label, s.cost, s.qty, s.avg, gain, gain_percent))
-            print('{} min: {} {:.2%}'.format(label, s.min_return_date, s.min_return))
-            print('{} max: {} {:.2%}'.format(label, s.max_return_date, s.max_return))
-            print('{} inv: {} ~ {} ({})'.format(label, s.records[0].date, s.records[-1].date, len(s.records)))
+    if stock.cost:
+        pz = stock.get_price(end)
+        total_gain, total_return = stock.get_gain(pz)
+        annual_return = count_annualized_return(start, end, total_return)
+        print('min: {} {:.2%}'.format(stock.min_return_date, stock.min_return))
+        print('max: {} {:.2%}'.format(stock.max_return_date, stock.max_return))
+        print('rec: [{}][{}] ({})'.format(stock.records[0].date, stock.records[-1].date, len(stock.records)))
+        print('total: cost {:,} qty {:,.2f} avg {:,.2f} gain {:,} ({:.2%}, annual {:.2%})'.format(stock.cost, stock.qty, stock.avg, total_gain, total_return, annual_return))
 
-    total_return = total_gain / total_cost
-    annual_return = count_annualized_return(start, end, total_return)
-
-    print('Total: cost {:,} gain {:,} ({:.2%}) (annual {:.2%})'.format(total_cost, total_gain, total_return, annual_return))
     print('---')
 
-    return Result(args.policy, args.batch, total_gain, total_return, annual_return)
+    return Result(args, stock, total_gain, total_return, annual_return)
 
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-E', '--exchange', default='TPE')
     parser.add_argument('-c', '--code', default='0050')
-    parser.add_argument('-C', '--code2')
     parser.add_argument('-s', '--start', default='2020')
     parser.add_argument('-e', '--end', default='')
-    parser.add_argument('-b', '--batch', default='10')
     parser.add_argument('-l', '--limit', type=int, default=3000000)
+    parser.add_argument('-b', '--batch', default='10')
     parser.add_argument('-d', '--day', type=int, default=15)
     parser.add_argument('-S', '--sma_days', type=int, default=60)
     parser.add_argument('-p', '--policy', default='pow2')
@@ -274,17 +243,18 @@ def main():
 
     results = []
     for code in args.code.split(','):
-        for policy in args.policy.split(','):
-            for batch in args.batch.split(','):
+        for batch in args.batch.split(','):
+            for policy in args.policy.split(','):
                 new_args = copy.deepcopy(args)
-                if policy == 'x2' and not args.code2:
-                    new_args.code2 = defs.etf_x2_map[code]
                 new_args.code = code
-                new_args.policy = policy
                 new_args.batch = batch
+                new_args.policy = policy
                 results.append(core(new_args))
+                if batch == '1':
+                    break
 
     results.sort(key=lambda x: x.total_gain, reverse=True)
+
     print('\n---')
     for x in results:
         print(x)

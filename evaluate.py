@@ -58,6 +58,11 @@ class Stock:
         gain_percent = gain / self.cost
         return (gain, gain_percent)
 
+    def get_return(self, date_a, date_b):
+        date_a_pz = self.get_price(date_a)
+        date_b_pz = self.get_price(date_b)
+        return date_b_pz / date_a_pz - 1 if date_a_pz and date_b_pz else 0
+
     def check_performance(self, date):
         if self.cost:
             pz = self.get_price(date)
@@ -82,6 +87,17 @@ class Action:
         gain = self.pz / self.stock.avg - 1
         return '[{}] {}:{} pz {:,} sma {:,.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.sma, self.cost, s.qty, s.avg, gain)
 
+class Result:
+    def __init__(self, policy, batch, total_gain, total_return, annual_return):
+        self.policy = policy
+        self.batch = batch
+        self.total_gain = total_gain
+        self.total_return = total_return
+        self.annual_return = annual_return
+
+    def __str__(self):
+        return 'policy {} batch {} gain {:,.2f} ({:.2%}, annual {:.2%})'.format(self.policy, self.batch, self.total_gain, self.total_return, self.annual_return)
+
 def count_annualized_return(start, end, total_return):
     total_years = (end - start).days / 365.25
     annualized_return = (1 + total_return)**(1 / total_years) - 1
@@ -96,17 +112,18 @@ def evaluate_actions(args, stock, stock2, date):
         return []
 
     sma = stock.get_sma(date, args.sma_days)
+    unit = int(args.limit / int(args.batch))
 
     if args.policy.startswith('pow'):
         exp = int(args.policy[3:])
         rate = max(sma/pz, stock.avg/pz, 1)
-        cost = int(args.unit * pow(rate, exp))
+        cost = int(unit * pow(rate, exp))
         actions.append(Action(date, stock, pz, sma, cost))
 
     elif args.policy.startswith('mul'):
         mul = int(args.policy[3:])
         rate = max(sma/pz, stock.avg/pz, 1)
-        cost = int(args.unit * (rate * mul - 1))
+        cost = int(unit * (rate * mul - 1))
         actions.append(Action(date, stock, pz, sma, cost))
 
     elif args.policy == 'x2':
@@ -115,21 +132,52 @@ def evaluate_actions(args, stock, stock2, date):
             sma2 = stock2.get_sma(date, args.sma_days)
             rate2 = sma2 / pz2
             if rate2 >= 1.1:
-                cost2 = int(args.unit * pow(rate2, 2))
+                cost2 = int(unit * pow(rate2, 2))
                 actions.append(Action(date, stock2, pz2, sma2, cost2))
         if not actions:
             rate = max(sma/pz, stock.avg/pz, 1)
-            cost = int(args.unit * pow(rate, 2))
+            cost = int(unit * pow(rate, 2))
             actions.append(Action(date, stock, pz, sma, cost))
 
     elif args.policy == 'fb':
         rate = max(sma/pz, stock.avg/pz, 1)
-        cost = int(args.unit * pow(rate, 2))
+        cost = int(unit * pow(rate, 2))
         if (stock.avg/pz) >= 1.1:
             cost = max(cost, int(stock.qty * pz))
         actions.append(Action(date, stock, pz, sma, cost))
 
     return actions
+
+def analyze(args):
+
+    start = datetime.datetime.strptime(args.start, '%Y%m%d').date()
+    end = datetime.datetime.strptime(args.end, '%Y%m%d').date()
+
+    stock = Stock(args.exchange, args.code)
+
+    for y in range(start.year, end.year + 1):
+
+        worst_loss = 0
+        year_start = datetime.datetime.strptime(str(y) + '0101', '%Y%m%d').date()
+        year_end = datetime.datetime.strptime(str(y) + '1231', '%Y%m%d').date()
+        year_return = stock.get_return(year_start, year_end)
+
+        for m in range(1, 13):
+            for x in [4, 11, 18, 25]:
+
+                d = datetime.date(y, m, x)
+                if d < start or d > end:
+                    continue
+
+                pz = stock.get_price(d)
+                if not pz:
+                    continue
+
+                sma = stock.get_sma(d, args.sma_days)
+                loss = pz / sma - 1
+                worst_loss = min(loss, worst_loss)
+
+        print('{}: return {:.2%} worst_loss {:.2%}'.format(y, year_return, worst_loss))
 
 def core(args):
 
@@ -144,14 +192,11 @@ def core(args):
         for m in range(1, 13):
 
             d = datetime.date(y, m, args.day)
-            if d > end:
+            if d < start or d > end:
                 continue
 
             stock.check_performance(d)
             stock2.check_performance(d)
-
-            if d < start or d > end:
-                continue
 
             if balance <= 0:
                 continue
@@ -168,7 +213,7 @@ def core(args):
     total_gain = 0
 
     print('\n---')
-    print(bcolors.GREEN + '[{}] ~ [{}] {}:{} Policy {}'.format(start, end, args.exchange, args.code, args.policy) + bcolors.ENDC)
+    print(bcolors.GREEN + '{}:{} Policy {} Batch {} ([{}] ~ [{}])'.format(args.exchange, args.code, args.policy, args.batch, start, end) + bcolors.ENDC)
 
     for s in [stock, stock2]:
         if s.cost:
@@ -180,21 +225,15 @@ def core(args):
             print('{} cost {:,} qty {:,.2f} avg {:,.2f} gain {:,} ({:.2%})'.format(label, s.cost, s.qty, s.avg, gain, gain_percent))
             print('{} min: {} {:.2%}'.format(label, s.min_return_date, s.min_return))
             print('{} max: {} {:.2%}'.format(label, s.max_return_date, s.max_return))
-            print('{} {} ~ {} ({})'.format(label, s.records[0].date, s.records[-1].date, len(s.records)))
+            print('{} inv: {} ~ {} ({})'.format(label, s.records[0].date, s.records[-1].date, len(s.records)))
 
     total_return = total_gain / total_cost
     annual_return = count_annualized_return(start, end, total_return)
 
-    pz_start = stock.get_price(start)
-    pz_end = stock.get_price(end)
-    pz_return = (pz_end - pz_start) / pz_start - 1
-    pz_annual_return = count_annualized_return(start, end, pz_return)
-
     print('Total: cost {:,} gain {:,} ({:.2%}) (annual {:.2%})'.format(total_cost, total_gain, total_return, annual_return))
-    print('Price: {:.2%} (annual {:.2%})'.format(pz_return, pz_annual_return))
     print('---')
 
-    return
+    return Result(args.policy, args.batch, total_gain, total_return, annual_return)
 
 def main():
 
@@ -204,12 +243,14 @@ def main():
     parser.add_argument('-C', '--code2')
     parser.add_argument('-s', '--start', default='2020')
     parser.add_argument('-e', '--end', default='')
-    parser.add_argument('-u', '--unit', type=int, default=50000)
+    parser.add_argument('-b', '--batch', default='10')
     parser.add_argument('-l', '--limit', type=int, default=3000000)
     parser.add_argument('-d', '--day', type=int, default=15)
     parser.add_argument('-S', '--sma_days', type=int, default=60)
     parser.add_argument('-p', '--policy', default='pow2')
-    parser.add_argument('-v', '--verbose', type=int, default=1)
+    parser.add_argument('-v', '--verbose', action="store_true")
+    parser.add_argument('-a', '--analyze', action="store_true")
+
     args, unparsed = parser.parse_known_args()
 
     if len(args.start) == 4:
@@ -224,17 +265,30 @@ def main():
     elif len(args.end) == 6:
         args.end = args.end + '31'
 
-    codes = args.code.split(',')
-    code2 = args.code2
-    policies = args.policy.split(',')
-    for code in codes:
-        for policy in policies:
+    if args.analyze:
+        for code in args.code.split(','):
             new_args = copy.deepcopy(args)
-            if policy == 'x2' and not code2:
-                new_args.code2 = defs.etf_x2_map[code]
             new_args.code = code
-            new_args.policy = policy
-            core(new_args)
+            analyze(new_args)
+        return
+
+    results = []
+    for code in args.code.split(','):
+        for policy in args.policy.split(','):
+            for batch in args.batch.split(','):
+                new_args = copy.deepcopy(args)
+                if policy == 'x2' and not args.code2:
+                    new_args.code2 = defs.etf_x2_map[code]
+                new_args.code = code
+                new_args.policy = policy
+                new_args.batch = batch
+                results.append(core(new_args))
+
+    results.sort(key=lambda x: x.total_gain, reverse=True)
+    print('\n---')
+    for x in results:
+        print(x)
+    print('---')
 
     return
 

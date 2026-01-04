@@ -18,20 +18,6 @@ def get_rows(exchange, code):
                 cached[path].append(row)
     return cached[path]
 
-def get_sma(exchange, code, date, days):
-    total = 0
-    cnt = 0
-    rows = get_rows(exchange, code)
-    for row in reversed(rows):
-        d = datetime.datetime.strptime(row['Date'], '%Y/%m/%d').date()
-        if d <= date:
-            total += float(row['Close'])
-            cnt += 1
-            if cnt >= days:
-                break
-
-    return total / cnt if cnt else 0
-
 def get_prices(exchange, code, date, days):
     prices = []
     rows = get_rows(exchange, code)
@@ -41,18 +27,17 @@ def get_prices(exchange, code, date, days):
             prices.append(float(row['Close']))
             if len(prices) >= days:
                 break
-    return reversed(prices)
+    prices.reverse()
+    return prices
+
+def get_sma(exchange, code, date, days):
+    prices = get_prices(exchange, code, date, days)
+    return sum(prices) / len(prices) if prices else 0
 
 def get_price(exchange, code, date):
-    pz = None
-    rows = get_rows(exchange, code)
-    for row in reversed(rows):
-        d = datetime.datetime.strptime(row['Date'], '%Y/%m/%d').date()
-        if d <= date:
-            pz = float(row['Close'])
-            break
-    return pz
-     
+    prices = get_prices(exchange, code, date, 1)
+    return prices[0] if prices else None
+
 def main():
 
     parser = argparse.ArgumentParser()

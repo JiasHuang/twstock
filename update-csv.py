@@ -5,18 +5,17 @@ import re
 import argparse
 
 class defs:
-    codes = ['0050', '00631L', '00646', '00647L', '00752']
+    tickers = 'TPE:0050,TPE:00631L,TPE:00646,TPE:00647L,TPE:00752'
     ID = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--code')
+    parser.add_argument('-t', '--tickers', default=defs.tickers)
     args = parser.parse_args()
 
-    codes = args.code.split(',') or defs.codes
-
-    for code in codes:
-        cmd = 'curl -o TPE/{}.csv --create-dirs \"https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}\"'.format(code, defs.ID, code)
+    for ticker in args.tickers.split(','):
+        [exchange, code] = ticker.split(':')
+        cmd = 'curl -o {}/{}.csv --create-dirs \"https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}\"'.format(exchange, code, defs.ID, code)
         os.system(cmd)
 
     return

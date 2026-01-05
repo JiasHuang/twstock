@@ -5,7 +5,7 @@ import re
 import argparse
 
 class defs:
-    tickers = 'TPE:0050,TPE:00631L,TPE:00646,TPE:00647L,TPE:00752'
+    tickers = 'TPE:0050,TPE:00631L,TPE:00646,TPE:00647L,TPE:00752,TPE:00662'
     ID = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'
 
 def main():

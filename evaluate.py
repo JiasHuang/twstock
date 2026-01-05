@@ -7,6 +7,15 @@ import datetime
 import google_finance_csv
 import copy
 
+class defs:
+    exchange = 'TPE'
+    code = '00662'
+    limit = 1000000
+    batch = '10'
+    day_of_month = 15
+    sma_days = 60
+    policy = 'pow5'
+
 class bcolors:
     BLACK_ON_RED = '\x1b[3;30;41m'
     BLACK_ON_GREEN = '\x1b[3;30;42m'
@@ -81,20 +90,21 @@ class Action:
 
     def __str__(self):
         s = self.stock
-        gain = self.pz / self.stock.avg - 1
+        gain = self.pz / s.avg - 1
         return '[{}] {}:{} pz {:,} sma {:,.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.sma, self.cost, s.qty, s.avg, gain)
 
 class Result:
     def __init__(self, args, stock, total_gain, total_return, annual_return):
         self.label = '{}:{} b{}_{}'.format(args.exchange, args.code, args.batch, args.policy)
-        self.records = '[{}][{}] ({})'.format(stock.records[0].date, stock.records[-1].date, len(stock.records))
+        self.records = '[{}][{}] ({})'.format(stock.records[0].date, stock.records[-1].date, len(stock.records)) if stock.records else 'NA'
+        self.total_cost = stock.cost
         self.total_gain = total_gain
         self.total_return = total_return
         self.annual_return = annual_return
-        self.worst_loss = stock.min_return
+        self.worst_loss = stock.min_return or 0
 
     def __str__(self):
-        return '{} {} gain {:,.2f} ({:.2%}, annual {:.2%}) worst {:.2%}'.format(self.label, self.records, self.total_gain, self.total_return, self.annual_return, self.worst_loss)
+        return '{} {} return {:,.2%} (annual {:.2%}) worst {:.2%}'.format(self.label, self.records, self.total_return, self.annual_return, self.worst_loss)
 
 def count_annualized_return(start, end, total_return):
     total_years = (end - start).days / 365.25
@@ -139,6 +149,8 @@ def analyze(args):
         year_start = datetime.datetime.strptime(str(y) + '0101', '%Y%m%d').date()
         year_end = datetime.datetime.strptime(str(y) + '1231', '%Y%m%d').date()
         year_return = stock.get_return(year_start, year_end)
+        min_pz = None
+        max_pz = None
 
         for m in range(1, 13):
             for x in [4, 11, 18, 25]:
@@ -151,11 +163,56 @@ def analyze(args):
                 if not pz:
                     continue
 
+                if not min_pz or min_pz > pz:
+                    min_pz = pz
+                if not max_pz or max_pz < pz:
+                    max_pz = pz
+
                 sma = stock.get_sma(d, args.sma_days)
                 loss = pz / sma - 1
                 worst_loss = min(loss, worst_loss)
 
-        print('{}: return {:.2%} worst_loss {:.2%}'.format(y, year_return, worst_loss))
+        print('{}: pz {} ~ {} return {:.2%} worst_loss {:.2%}'.format(y, min_pz, max_pz, year_return, worst_loss))
+
+def regression(args):
+
+    ystart = int(args.regression)
+    yend = datetime.date.today().year
+    rank = {}
+
+    for y in range(ystart, yend + 1):
+        results = []
+        for code in args.code.split(','):
+            for batch in args.batch.split(','):
+                for policy in args.policy.split(','):
+                    new_args = copy.deepcopy(args)
+                    new_args.start = str(y) + '0101'
+                    new_args.code = code
+                    new_args.batch = batch
+                    new_args.policy = policy
+                    ret = core(new_args)
+                    if ret.total_cost:
+                        results.append(ret)
+                        if ret.label not in rank:
+                            rank[ret.label] = ret.total_gain
+                        else:
+                            rank[ret.label] += ret.total_gain
+                    if batch == '1':
+                        break
+
+        results.sort(key=lambda x: x.total_gain, reverse=True)
+
+        print('\n---')
+        for x in results:
+            print(x)
+        print('---')
+
+    print('\n---')
+    for k, v in sorted(rank.items(), key=lambda item: item[1], reverse=True):
+        print('{}: {:,}'.format(k, v))
+    print('---')
+
+    return
 
 def core(args):
 
@@ -165,10 +222,13 @@ def core(args):
     stock = Stock(args.exchange, args.code)
     balance = args.limit
 
+    print('\n---')
+    print(bcolors.GREEN + '{}:{} b{}_{} [{}][{}]'.format(args.exchange, args.code, args.batch, args.policy, start, end) + bcolors.ENDC)
+
     for y in range(start.year, end.year + 1):
         for m in range(1, 13):
 
-            d = datetime.date(y, m, args.day)
+            d = datetime.date(y, m, args.day_of_month)
             if d < start or d > end:
                 continue
 
@@ -187,19 +247,17 @@ def core(args):
 
     total_gain = 0
     total_return = 0
-    annula_return = 0
-
-    print('\n---')
-    print(bcolors.GREEN + '{}:{} b{}_{} [{}][{}]'.format(args.exchange, args.code, args.batch, args.policy, start, end) + bcolors.ENDC)
+    annual_return = 0
 
     if stock.cost:
+        label = '{}:{}'.format(stock.exchange, stock.code)
         pz = stock.get_price(end)
         total_gain, total_return = stock.get_gain(pz)
         annual_return = count_annualized_return(start, end, total_return)
+        print('[{}] {} pz {} cost {:,} qty {:,.2f} avg {:,.2f} return {:.2%} (annual {:.2%})'.format(end, label, pz, stock.cost, stock.qty, stock.avg, total_return, annual_return))
         print('min: {} {:.2%}'.format(stock.min_return_date, stock.min_return))
         print('max: {} {:.2%}'.format(stock.max_return_date, stock.max_return))
-        print('rec: [{}][{}] ({})'.format(stock.records[0].date, stock.records[-1].date, len(stock.records)))
-        print('total: cost {:,} qty {:,.2f} avg {:,.2f} gain {:,} ({:.2%}, annual {:.2%})'.format(stock.cost, stock.qty, stock.avg, total_gain, total_return, annual_return))
+        print('rec: {} {} records ({})'.format(stock.records[0].date, stock.records[-1].date, len(stock.records)))
 
     print('---')
 
@@ -208,21 +266,24 @@ def core(args):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-E', '--exchange', default='TPE')
-    parser.add_argument('-c', '--code', default='0050')
-    parser.add_argument('-s', '--start', default='2020')
+    parser.add_argument('-E', '--exchange', default=defs.exchange)
+    parser.add_argument('-c', '--code', default=defs.code)
+    parser.add_argument('-s', '--start', default='')
     parser.add_argument('-e', '--end', default='')
-    parser.add_argument('-l', '--limit', type=int, default=3000000)
-    parser.add_argument('-b', '--batch', default='10')
-    parser.add_argument('-d', '--day', type=int, default=15)
-    parser.add_argument('-S', '--sma_days', type=int, default=60)
-    parser.add_argument('-p', '--policy', default='pow2')
+    parser.add_argument('-l', '--limit', type=int, default=defs.limit)
+    parser.add_argument('-b', '--batch', default=defs.batch)
+    parser.add_argument('-d', '--day_of_month', type=int, default=defs.day_of_month)
+    parser.add_argument('-S', '--sma_days', type=int, default=defs.sma_days)
+    parser.add_argument('-p', '--policy', default=defs.policy)
     parser.add_argument('-v', '--verbose', action="store_true")
     parser.add_argument('-a', '--analyze', action="store_true")
+    parser.add_argument('-r', '--regression')
 
     args, unparsed = parser.parse_known_args()
 
-    if len(args.start) == 4:
+    if len(args.start) == 0:
+        args.start = str(datetime.date.today().year) + '0101'
+    elif len(args.start) == 4:
         args.start = args.start + '0101'
     elif len(args.start) == 6:
         args.start = args.start + '01'
@@ -241,6 +302,10 @@ def main():
             analyze(new_args)
         return
 
+    if args.regression:
+        regression(args)
+        return
+
     results = []
     for code in args.code.split(','):
         for batch in args.batch.split(','):
@@ -249,7 +314,9 @@ def main():
                 new_args.code = code
                 new_args.batch = batch
                 new_args.policy = policy
-                results.append(core(new_args))
+                result = core(new_args)
+                if result.total_cost:
+                    results.append(result)
                 if batch == '1':
                     break
 

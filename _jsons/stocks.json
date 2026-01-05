@@ -1,5 +1,5 @@
 {"stocks":[
-	{"code":"0050","name":"元大台灣50","tags":["etf"],"flts":["z<=40"]},
+	{"code":"0050","name":"元大台灣50","tags":["etf"],"flts":["z<=56"]},
 	{"code":"00720B","name":"元大投資級公司債","tags":["bond"],"flts":[]},
 	{"code":"00751B","name":"元大AAA至A公司債","tags":["bond"],"flts":[]},
 	{"code":"00679B","name":"元大美債20年","tags":["bond"],"flts":[]},
@@ -11,7 +11,7 @@
 	{"code":"2379","name":"瑞昱","tags":["elec"],"flts":[]},
 	{"code":"2454","name":"聯發科","tags":["elec"],"flts":[]},
 	{"code":"3034","name":"聯詠","tags":["elec"],"flts":["z<=210"]},
-	{"code":"2330","name":"台積電","tags":["elec"],"flts":[]},
+	{"code":"2330","name":"台積電","tags":["elec"],"flts":["z<=1200"]},
 	{"code":"2308","name":"台達電","tags":["elec"],"flts":["z<=245"]},
 	{"code":"2317","name":"鴻海","tags":["elec"],"flts":["z<=70"]},
 	{"code":"2382","name":"廣達","tags":["elec"],"flts":["z<=68"]},
@@ -19,10 +19,10 @@
 	{"code":"00786B","name":"元大10年IG銀行債","tags":["bond"],"flts":[]},
 	{"code":"00788B","name":"元大10年IG電能債","tags":["bond"],"flts":[]},
 	{"code":"00937B","name":"群益ESG投等債20+","tags":["bond"],"flts":[]},
-	{"code":"00662","name":"富邦NASDAQ","tags":["etf"],"flts":["z<=70"]},
+	{"code":"00662","name":"富邦NASDAQ","tags":["etf"],"flts":["z<=85"]},
 	{"code":"00955","name":"中信日本商社","tags":["etf"],"flts":["z<=10"]},
 	{"code":"00725B","name":"國泰投資級公司債","tags":["bond"],"flts":[]},
-	{"code":"00646","name":"元大S&P500","tags":["etf"],"flts":["z<=50"]},
+	{"code":"00646","name":"元大S&P500","tags":["etf"],"flts":["z<=58"]},
 	{"code":"00631L","name":"元大台灣50正2","tags":["etf"],"flts":[]},
 	{"code":"00647L","name":"元大S&P500正2","tags":["etf"],"flts":[]},
 	{"code":"2301","name":"光寶科","tags":["elec"],"flts":[]}

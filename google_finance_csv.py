@@ -30,6 +30,17 @@ def get_prices(exchange, code, date, days):
     prices.reverse()
     return prices
 
+def get_later_prices(exchange, code, date, days):
+    prices = []
+    rows = get_rows(exchange, code)
+    for row in rows:
+        d = datetime.datetime.strptime(row['Date'], '%Y/%m/%d').date()
+        if d >= date:
+            prices.append(float(row['Close']))
+            if len(prices) >= days:
+                break
+    return prices
+
 def get_sma(exchange, code, date, days):
     prices = get_prices(exchange, code, date, days)
     return sum(prices) / len(prices) if prices else 0

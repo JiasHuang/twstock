@@ -8,7 +8,6 @@ import google_finance_csv
 import copy
 
 class defs:
-    exchange = 'TPE'
     code = '00662'
     limit = 1000000
     batch = '10'
@@ -56,6 +55,9 @@ class Stock:
     def get_price(self, date):
         return google_finance_csv.get_price(self.exchange, self.code, date)
 
+    def get_prices(self, date, days):
+        return google_finance_csv.get_prices(self.exchange, self.code, date, days)
+
     def get_sma(self, date, days):
         return google_finance_csv.get_sma(self.exchange, self.code, date, days)
 
@@ -95,8 +97,8 @@ class Action:
 
 class Result:
     def __init__(self, args, stock, total_gain, total_return, annual_return):
-        self.label = '{}:{} b{}_{}'.format(args.exchange, args.code, args.batch, args.policy)
-        self.records = '[{}][{}] ({})'.format(stock.records[0].date, stock.records[-1].date, len(stock.records)) if stock.records else 'NA'
+        self.label = '{}:{} b{}_{}'.format(stock.exchange, stock.code, args.batch, args.policy)
+        self.records = stock.records
         self.total_cost = stock.cost
         self.total_gain = total_gain
         self.total_return = total_return
@@ -104,20 +106,28 @@ class Result:
         self.worst_loss = stock.min_return or 0
 
     def __str__(self):
-        return '{} {} return {:,.2%} (annual {:.2%}) worst {:.2%}'.format(self.label, self.records, self.total_return, self.annual_return, self.worst_loss)
+        return '{} freq {} return {:,.2%} (annual {:.2%}) worst {:.2%}'.format(self.label, len(self.records), self.total_return, self.annual_return, self.worst_loss)
+
+def get_exchange(code):
+    exchanges = ['TPE', 'NASDAQ', 'NYSEARCA', 'NYSE']
+    for exchange in exchanges:
+        csv = os.path.join(exchange, code + '.csv')
+        if os.path.exists(csv):
+             return exchange
+    return None
 
 def count_annualized_return(start, end, total_return):
     total_years = (end - start).days / 365.25
     annualized_return = (1 + total_return)**(1 / total_years) - 1
     return annualized_return
 
-def evaluate_actions(args, stock, date):
+def evaluate_action(args, stock, date):
 
-    actions = []
+    action = None
 
     pz = stock.get_price(date)
     if not pz:
-        return []
+        return None
 
     sma = stock.get_sma(date, args.sma_days)
     unit = int(args.limit / int(args.batch))
@@ -126,15 +136,15 @@ def evaluate_actions(args, stock, date):
         exp = int(args.policy[3:])
         rate = max(sma/pz, stock.avg/pz, 1)
         cost = int(unit * pow(rate, exp))
-        actions.append(Action(date, stock, pz, sma, cost))
+        action = Action(date, stock, pz, sma, cost)
 
     elif args.policy.startswith('mul'):
         mul = int(args.policy[3:])
         rate = max(sma/pz, stock.avg/pz, 1)
         cost = int(unit * (rate * mul - 1))
-        actions.append(Action(date, stock, pz, sma, cost))
+        action = Action(date, stock, pz, sma, cost)
 
-    return actions
+    return action
 
 def analyze(args):
 
@@ -142,18 +152,17 @@ def analyze(args):
     end = datetime.datetime.strptime(args.end, '%Y%m%d').date()
 
     stock = Stock(args.exchange, args.code)
+    label = bcolors.GREEN + '{}:{}'.format(stock.exchange, stock.code) + bcolors.ENDC
 
     for y in range(start.year, end.year + 1):
 
-        worst_loss = 0
         year_start = datetime.datetime.strptime(str(y) + '0101', '%Y%m%d').date()
         year_end = datetime.datetime.strptime(str(y) + '1231', '%Y%m%d').date()
         year_return = stock.get_return(year_start, year_end)
-        min_pz = None
-        max_pz = None
+        year_sma_rates = []
 
         for m in range(1, 13):
-            for x in [4, 11, 18, 25]:
+            for x in [1, 5, 10, 15, 20, 25]:
 
                 d = datetime.date(y, m, x)
                 if d < start or d > end:
@@ -163,16 +172,37 @@ def analyze(args):
                 if not pz:
                     continue
 
-                if not min_pz or min_pz > pz:
-                    min_pz = pz
-                if not max_pz or max_pz < pz:
-                    max_pz = pz
-
                 sma = stock.get_sma(d, args.sma_days)
-                loss = pz / sma - 1
-                worst_loss = min(loss, worst_loss)
+                year_sma_rates.append(pz / sma - 1)
 
-        print('{}: pz {} ~ {} return {:.2%} worst_loss {:.2%}'.format(y, min_pz, max_pz, year_return, worst_loss))
+        year_sma_rate_min = min(year_sma_rates)
+        year_sma_rate_avg = sum(year_sma_rates) / len(year_sma_rates)
+        print('{} {} ~ {} return {:.2%} sma_rate (min {:.2%} avg {:.2%})'.format(label, year_start, year_end, year_return, year_sma_rate_min, year_sma_rate_avg))
+
+    pz = stock.get_price(end)
+    pz_s = stock.get_price(start)
+    total_return = pz / pz_s - 1
+    annual_return = count_annualized_return(start, end, total_return)
+    print('{} {} ~ {} return {:.2%} (annual {:.2%})'.format(label, start, end, total_return, annual_return))
+
+    vals = {}
+    vals['*** pz ***'] = pz
+    vals['sma5'] = stock.get_sma(end, 5)
+    vals['sma10'] = stock.get_sma(end, 10)
+    vals['sma20'] = stock.get_sma(end, 20)
+    vals['sma60'] = stock.get_sma(end, 60)
+    vals['sma120'] = stock.get_sma(end, 120)
+    vals['sma240'] = stock.get_sma(end, 240)
+
+    for days in [60, 120, 240]:
+        pzs = stock.get_prices(end, days)
+        vals['low' + str(days)] = min(pzs)
+
+    print('---')
+    for k, v in sorted(vals.items(), key=lambda item: item[1], reverse=True):
+        print('{} {} {:.2f} ({:.2%})'.format(label, k, v, v/pz-1))
+
+    return
 
 def regression(args):
 
@@ -223,7 +253,7 @@ def core(args):
     balance = args.limit
 
     print('\n---')
-    print(bcolors.GREEN + '{}:{} b{}_{} [{}][{}]'.format(args.exchange, args.code, args.batch, args.policy, start, end) + bcolors.ENDC)
+    print(bcolors.GREEN + '{}:{} b{}_{} [{} ~ {}]'.format(args.exchange, args.code, args.batch, args.policy, start, end) + bcolors.ENDC)
 
     for y in range(start.year, end.year + 1):
         for m in range(1, 13):
@@ -235,13 +265,15 @@ def core(args):
             stock.check_performance(d)
 
             if balance <= 0:
+                stock.check_performance(d)
                 continue
 
-            actions = evaluate_actions(args, stock, d)
-            for action in actions:
+            action = evaluate_action(args, stock, d)
+            if action:
                 action.cost = min(action.cost, balance)
                 action.stock.add_cost(d, action.pz, action.cost)
                 balance -= action.cost
+                stock.check_performance(d)
                 if args.verbose:
                     print(action)
 
@@ -250,14 +282,12 @@ def core(args):
     annual_return = 0
 
     if stock.cost:
-        label = '{}:{}'.format(stock.exchange, stock.code)
+        label = bcolors.GREEN + '[{}] {}:{}'.format(end, stock.exchange, stock.code) + bcolors.ENDC
         pz = stock.get_price(end)
         total_gain, total_return = stock.get_gain(pz)
         annual_return = count_annualized_return(start, end, total_return)
-        print('[{}] {} pz {} cost {:,} qty {:,.2f} avg {:,.2f} return {:.2%} (annual {:.2%})'.format(end, label, pz, stock.cost, stock.qty, stock.avg, total_return, annual_return))
-        print('min: {} {:.2%}'.format(stock.min_return_date, stock.min_return))
-        print('max: {} {:.2%}'.format(stock.max_return_date, stock.max_return))
-        print('rec: {} {} records ({})'.format(stock.records[0].date, stock.records[-1].date, len(stock.records)))
+        print('{} pz {} cost {:,} qty {:,.2f} avg {:,.2f} return {:.2%} (annual {:.2%})'.format(label, pz, stock.cost, stock.qty, stock.avg, total_return, annual_return))
+        print('{} min {:.2%} max {:.2%}'.format(label, stock.min_return, stock.max_return))
 
     print('---')
 
@@ -266,7 +296,7 @@ def core(args):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-E', '--exchange', default=defs.exchange)
+    parser.add_argument('-E', '--exchange')
     parser.add_argument('-c', '--code', default=defs.code)
     parser.add_argument('-s', '--start', default='')
     parser.add_argument('-e', '--end', default='')
@@ -299,6 +329,7 @@ def main():
         for code in args.code.split(','):
             new_args = copy.deepcopy(args)
             new_args.code = code
+            new_args.exchange = args.exchange or get_exchange(code)
             analyze(new_args)
         return
 
@@ -314,6 +345,7 @@ def main():
                 new_args.code = code
                 new_args.batch = batch
                 new_args.policy = policy
+                new_args.exchange = args.exchange or get_exchange(code)
                 result = core(new_args)
                 if result.total_cost:
                     results.append(result)

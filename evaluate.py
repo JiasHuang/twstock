@@ -6,13 +6,15 @@ import argparse
 import datetime
 import google_finance_csv
 import copy
+import numpy as np
 
 class defs:
     code = '00662'
     limit = 1000000
     batch = '10'
     day_of_month = 15
-    sma_days = 60
+    ma_days = 60
+    mv_days = 60
     policy = 'pow5'
 
 class bcolors:
@@ -52,14 +54,17 @@ class Stock:
         self.avg = self.cost / self.qty
         self.records.append(Record(date, pz, cost))
 
+    def get_infos(self, start, end, ma_list, mv_list, interval_list):
+        return google_finance_csv.get_infos(self.exchange, self.code, start, end, ma_list, mv_list, interval_list)
+
     def get_price(self, date):
-        return google_finance_csv.get_price(self.exchange, self.code, date)
+        return google_finance_csv.get_attr(self.exchange, self.code, 'Close', date)
 
     def get_prices(self, date, days):
-        return google_finance_csv.get_prices(self.exchange, self.code, date, days)
+        return google_finance_csv.get_attrs(self.exchange, self.code, 'Close', date, days)
 
-    def get_sma(self, date, days):
-        return google_finance_csv.get_sma(self.exchange, self.code, date, days)
+    def get_ma(self, date, days):
+        return google_finance_csv.get_ma(self.exchange, self.code, date, days)
 
     def get_gain(self, pz):
         gain = int(pz * self.qty - self.cost)
@@ -83,17 +88,17 @@ class Stock:
                 self.max_return_date = date
 
 class Action:
-    def __init__(self, date, stock, pz, sma, cost):
+    def __init__(self, date, stock, pz, ma, cost):
         self.date = date
         self.stock = stock
         self.pz = pz
-        self.sma = sma
+        self.ma = ma
         self.cost = cost
 
     def __str__(self):
         s = self.stock
         gain = self.pz / s.avg - 1
-        return '[{}] {}:{} pz {:,} sma {:,.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.sma, self.cost, s.qty, s.avg, gain)
+        return '[{}] {}:{} pz {:,} ma {:,.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.ma, self.cost, s.qty, s.avg, gain)
 
 class Result:
     def __init__(self, args, stock, total_gain, total_return, annual_return):
@@ -129,20 +134,20 @@ def evaluate_action(args, stock, date):
     if not pz:
         return None
 
-    sma = stock.get_sma(date, args.sma_days)
+    ma = stock.get_ma(date, args.ma_days)
     unit = int(args.limit / int(args.batch))
 
     if args.policy.startswith('pow'):
         exp = int(args.policy[3:])
-        rate = max(sma/pz, stock.avg/pz, 1)
+        rate = max(ma/pz, stock.avg/pz, 1)
         cost = int(unit * pow(rate, exp))
-        action = Action(date, stock, pz, sma, cost)
+        action = Action(date, stock, pz, ma, cost)
 
     elif args.policy.startswith('mul'):
         mul = int(args.policy[3:])
-        rate = max(sma/pz, stock.avg/pz, 1)
+        rate = max(ma/pz, stock.avg/pz, 1)
         cost = int(unit * (rate * mul - 1))
-        action = Action(date, stock, pz, sma, cost)
+        action = Action(date, stock, pz, ma, cost)
 
     return action
 
@@ -154,45 +159,59 @@ def analyze(args):
     stock = Stock(args.exchange, args.code)
     label = bcolors.GREEN + '{}:{}'.format(stock.exchange, stock.code) + bcolors.ENDC
 
-    for y in range(start.year, end.year + 1):
+    print('\n---')
 
-        year_start = datetime.datetime.strptime(str(y) + '0101', '%Y%m%d').date()
-        year_end = datetime.datetime.strptime(str(y) + '1231', '%Y%m%d').date()
-        year_return = stock.get_return(year_start, year_end)
-        year_sma_rates = []
+    ma_list = [20, 60]
+    mv_list = []
+    interval_list = [20]
+    infos = stock.get_infos(start, end, ma_list, mv_list, interval_list)
+    for x in infos:
+        if x.close == x.int20.low or x.close == x.int20.high:
+            desc = []
+            for ma in ma_list:
+                rate = x.close / getattr(x, 'ma'+str(ma)) - 1
+                desc.append('ma{} {:+.2%}'.format(ma, rate))
+            desc.append('*** low ***' if x.close == x.int20.low else '')
+            print('{} {} {:.2f} {}'.format(label, x.date, x.close, ' '.join(desc)))
 
-        for m in range(1, 13):
-            for x in [1, 5, 10, 15, 20, 25]:
+    print('---')
+    last = None
+    week = None
+    idx = max(0, len(infos) - 120)
+    avg_vol = np.mean([y.volume for y in infos])
+    for x in infos[idx:]:
+        if not week:
+            last = [x]
+            week = [x]
+        else:
+            week_num = week[0].date.isocalendar()[1]
+            if x.date.isocalendar()[1] == week_num:
+                week.append(x)
+            else:
+                wk_return = week[-1].close / last[-1].close - 1
+                wk_vol = np.mean([y.volume for y in week]) / avg_vol
+                wk_low = min([y.low for y in week])
+                print('{} {} ~ {} (w{}) {:.2f} return {:.2%} vol {:.2%} low {:.2f}'.format(label, week[0].date, week[-1].date, week_num, week[-1].close, wk_return, wk_vol, wk_low))
+                last = week
+                week = [x]
 
-                d = datetime.date(y, m, x)
-                if d < start or d > end:
-                    continue
+    pz = infos[-1].close
 
-                pz = stock.get_price(d)
-                if not pz:
-                    continue
-
-                sma = stock.get_sma(d, args.sma_days)
-                year_sma_rates.append(pz / sma - 1)
-
-        year_sma_rate_min = min(year_sma_rates)
-        year_sma_rate_avg = sum(year_sma_rates) / len(year_sma_rates)
-        print('{} {} ~ {} return {:.2%} sma_rate (min {:.2%} avg {:.2%})'.format(label, year_start, year_end, year_return, year_sma_rate_min, year_sma_rate_avg))
-
-    pz = stock.get_price(end)
-    pz_s = stock.get_price(start)
-    total_return = pz / pz_s - 1
-    annual_return = count_annualized_return(start, end, total_return)
-    print('{} {} ~ {} return {:.2%} (annual {:.2%})'.format(label, start, end, total_return, annual_return))
+    print('---')
+    idxs = [0, len(infos) - 240, len(infos) - 120, len(infos) - 60, len(infos) - 20]
+    for idx in idxs:
+        if idx < 0:
+            continue
+        pz_s = infos[idx].close
+        total_return = pz / pz_s - 1
+        annual_return = count_annualized_return(infos[idx].date, end, total_return)
+        mon_diff = (end - infos[idx].date).days / 30
+        print('{} {} ~ {} ({:.2f}m) return {:.2%} (annual {:.2%})'.format(label, infos[idx].date, end, mon_diff, total_return, annual_return))
 
     vals = {}
     vals['*** pz ***'] = pz
-    vals['sma5'] = stock.get_sma(end, 5)
-    vals['sma10'] = stock.get_sma(end, 10)
-    vals['sma20'] = stock.get_sma(end, 20)
-    vals['sma60'] = stock.get_sma(end, 60)
-    vals['sma120'] = stock.get_sma(end, 120)
-    vals['sma240'] = stock.get_sma(end, 240)
+    for ma in [5, 10, 20, 60, 120, 240]:
+        vals['ma'+str(ma)] = stock.get_ma(end, ma)
 
     for days in [60, 120, 240]:
         pzs = stock.get_prices(end, days)
@@ -200,7 +219,7 @@ def analyze(args):
 
     print('---')
     for k, v in sorted(vals.items(), key=lambda item: item[1], reverse=True):
-        print('{} {} {:.2f} ({:.2%})'.format(label, k, v, v/pz-1))
+        print('{} {} {:.2f} ({:+.2%})'.format(label, k, v, pz/v-1))
 
     return
 
@@ -303,7 +322,8 @@ def main():
     parser.add_argument('-l', '--limit', type=int, default=defs.limit)
     parser.add_argument('-b', '--batch', default=defs.batch)
     parser.add_argument('-d', '--day_of_month', type=int, default=defs.day_of_month)
-    parser.add_argument('-S', '--sma_days', type=int, default=defs.sma_days)
+    parser.add_argument('-A', '--ma_days', type=int, default=defs.ma_days)
+    parser.add_argument('-V', '--mv_days', type=int, default=defs.mv_days)
     parser.add_argument('-p', '--policy', default=defs.policy)
     parser.add_argument('-v', '--verbose', action="store_true")
     parser.add_argument('-a', '--analyze', action="store_true")
@@ -312,7 +332,10 @@ def main():
     args, unparsed = parser.parse_known_args()
 
     if len(args.start) == 0:
-        args.start = str(datetime.date.today().year) + '0101'
+        if args.analyze:
+            args.start = (datetime.date.today() - datetime.timedelta(days=365)).strftime('%Y%m%d')
+        else:
+            args.start = str(datetime.date.today().year) + '0101'
     elif len(args.start) == 4:
         args.start = args.start + '0101'
     elif len(args.start) == 6:

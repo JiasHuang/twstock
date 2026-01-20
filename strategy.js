@@ -83,21 +83,22 @@ function updateResult() {
 
     text += '<tr>';
     text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
-    text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.name);
-    text += String.format('<td class="edit grey" contenteditable=true>{0}</td>', s.ref_pz);
-    text += String.format('<td><a href="report.html?c={0}">', s.code);
-    text += String.format('<span class="curpz">{0}</span>', z.toFixed(2));
-    text += String.format('</a></td>');
+    text += String.format('<td><a href="report.html?c={0}">{1}</a></td>', s.code, info_stock.msg.n);
+    text += String.format('<td class="edit" contenteditable=true><span class="grey">{0}</span></td>', s.ref_pz);
+    text += String.format('<td><span class="curpz">{0}</span></td>', z.toFixed(2));
     text += String.format('<td><span class="{0}">{1}%</span></td>', z_ratio < 0 ? 'green':'grey', z_ratio);
-    text += String.format('<td><span class="{0}">{1}%</span></td>', yield > 5 ? '':'grey', yield);
+    text += String.format('<td><span class="{0}">{1}%</span></td>', yield > 0 ? '':'grey', yield);
     text += String.format('<td class="note" contenteditable=true>{0}</td>', s.note);
     text += '</tr>';
   }
 
   for (var i=0; i<3; i++) {
     text += '<tr>';
-    text += '<td contenteditable=true></td>'.repeat(4);
+    text += '<td contenteditable=true></td>';
+    text += td_na;
+    text += '<td contenteditable=true></td>';
     text += td_na.repeat(3);
+    text += '<td contenteditable=true></td>';
     text += '</tr>';
   }
 
@@ -150,13 +151,11 @@ function onSave() {
 
   for (var i = 1, row; row = table.rows[i]; i++) {
     let code = row.cells[0].textContent;
-    let name = row.cells[1].textContent;
     let ref_pz = row.cells[2].textContent;
     let note = row.cells[6].textContent;
     if (code.length) {
       let obj = {};
       obj.code = code;
-      obj.name = name;
       obj.ref_pz = ref_pz;
       obj.note = note;
       if (code.indexOf('>') != -1) {

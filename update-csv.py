@@ -5,13 +5,22 @@ import re
 import argparse
 
 class defs:
-    tickers = 'TPE:0050,TPE:00631L,TPE:00646,TPE:00647L,TPE:00752,TPE:00662,TPE:2330,NYSEARCA:SPY,NYSEARCA:VOO,NASDAQ:QQQ,NYSE:TSM'
+    TPE = ['0050', '00631L', '00657L', '00646', '00662', '2330']
+    NYSEARCA = ['SPY', 'QQQ', 'LQD']
+    NASDAQ = ['QQQ', 'TLT']
+    NYSE = ['TSM']
     ID = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--tickers', default=defs.tickers)
+    parser.add_argument('-t', '--tickers')
     args = parser.parse_args()
+
+    if not args.tickers:
+        tickers = []
+        for attr in ['TPE', 'NYSEARCA', 'NASDAQ', 'NYSE']:
+            tickers.extend([attr + ':' + x for x in getattr(defs, attr)])
+        args.tickers = ','.join(tickers)
 
     for ticker in args.tickers.split(','):
         [exchange, code] = ticker.split(':')

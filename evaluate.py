@@ -54,14 +54,14 @@ class Stock:
         self.avg = self.cost / self.qty
         self.records.append(Record(date, pz, cost))
 
-    def get_infos(self, start, end, ma_list, mv_list, interval_list):
-        return google_finance_csv.get_infos(self.exchange, self.code, start, end, ma_list, mv_list, interval_list)
+    def get_infos(self, start, end, ma_list):
+        return google_finance_csv.get_infos(self.exchange, self.code, start, end, ma_list)
 
     def get_price(self, date):
-        return google_finance_csv.get_attr(self.exchange, self.code, 'Close', date)
+        return google_finance_csv.get_attr(self.exchange, self.code, 'close', date)
 
     def get_prices(self, date, days):
-        return google_finance_csv.get_attrs(self.exchange, self.code, 'Close', date, days)
+        return google_finance_csv.get_attrs(self.exchange, self.code, 'close', date, days)
 
     def get_ma(self, date, days):
         return google_finance_csv.get_ma(self.exchange, self.code, date, days)
@@ -161,24 +161,31 @@ def analyze(args):
 
     print('\n---')
 
-    ma_list = [20, 60]
-    mv_list = []
-    interval_list = [20]
-    infos = stock.get_infos(start, end, ma_list, mv_list, interval_list)
-    for x in infos:
-        if x.close == x.int20.low or x.close == x.int20.high:
-            desc = []
+    ma_list = [60]
+    interval = 20
+    infos = stock.get_infos(start, end, ma_list)
+    avg_vol = np.mean([x.volume for x in infos])
+    for idx, x in enumerate(infos):
+        if idx > interval and idx + interval < len(infos):
+            vals = [y.close for y in infos[idx - interval:idx + interval]]
+            if infos[idx].close == max(vals):
+                infos[idx].desc.append('high')
+            if infos[idx].close == min(vals):
+                infos[idx].desc.append('low')
+
+    for idx, x in enumerate(infos):
+        if x.desc or idx > len(infos) - 5:
+            basic = []
             for ma in ma_list:
                 rate = x.close / getattr(x, 'ma'+str(ma)) - 1
-                desc.append('ma{} {:+.2%}'.format(ma, rate))
-            desc.append('*** low ***' if x.close == x.int20.low else '')
-            print('{} {} {:.2f} {}'.format(label, x.date, x.close, ' '.join(desc)))
+                basic.append('ma{} {:+.2%}'.format(ma, rate))
+            basic.append('vol {:+.2%}'.format(x.volume / avg_vol - 1))
+            print('{} {} {:.2f} {} {}'.format(label, x.date, x.close, ' '.join(basic), ' '.join(x.desc)))
 
     print('---')
     last = None
     week = None
     idx = max(0, len(infos) - 120)
-    avg_vol = np.mean([y.volume for y in infos])
     for x in infos[idx:]:
         if not week:
             last = [x]
@@ -189,24 +196,24 @@ def analyze(args):
                 week.append(x)
             else:
                 wk_return = week[-1].close / last[-1].close - 1
-                wk_vol = np.mean([y.volume for y in week]) / avg_vol
+                wk_vol = np.mean([y.volume for y in week]) / avg_vol - 1
                 wk_low = min([y.low for y in week])
-                print('{} {} ~ {} (w{}) {:.2f} return {:.2%} vol {:.2%} low {:.2f}'.format(label, week[0].date, week[-1].date, week_num, week[-1].close, wk_return, wk_vol, wk_low))
+                print('{} {} ~ {} (w{}) {:.2f} return {:.2%} vol {:+.2%} low {:.2f}'.format(label, week[0].date, week[-1].date, week_num, week[-1].close, wk_return, wk_vol, wk_low))
                 last = week
                 week = [x]
 
     pz = infos[-1].close
 
     print('---')
-    idxs = [0, len(infos) - 240, len(infos) - 120, len(infos) - 60, len(infos) - 20]
+    idxs = [0, len(infos) - 120, len(infos) - 60, len(infos) - 20]
     for idx in idxs:
         if idx < 0:
             continue
         pz_s = infos[idx].close
         total_return = pz / pz_s - 1
         annual_return = count_annualized_return(infos[idx].date, end, total_return)
-        mon_diff = (end - infos[idx].date).days / 30
-        print('{} {} ~ {} ({:.2f}m) return {:.2%} (annual {:.2%})'.format(label, infos[idx].date, end, mon_diff, total_return, annual_return))
+        diff_in_month = round((end - infos[idx].date).days / 30, 1)
+        print('{} {} ~ {} ({}m) return {:.2%} (annual {:.2%})'.format(label, infos[idx].date, end, diff_in_month, total_return, annual_return))
 
     vals = {}
     vals['*** pz ***'] = pz

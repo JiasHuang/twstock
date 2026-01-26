@@ -113,14 +113,6 @@ class Result:
     def __str__(self):
         return '{} freq {} return {:,.2%} (annual {:.2%}) worst {:.2%}'.format(self.label, len(self.records), self.total_return, self.annual_return, self.worst_loss)
 
-def get_exchange(code):
-    exchanges = ['TPE', 'NASDAQ', 'NYSEARCA', 'NYSE']
-    for exchange in exchanges:
-        csv = os.path.join(exchange, code + '.csv')
-        if os.path.exists(csv):
-             return exchange
-    return None
-
 def count_annualized_return(start, end, total_return):
     total_years = (end - start).days / 365.25
     annualized_return = (1 + total_return)**(1 / total_years) - 1
@@ -359,7 +351,7 @@ def main():
         for code in args.code.split(','):
             new_args = copy.deepcopy(args)
             new_args.code = code
-            new_args.exchange = args.exchange or get_exchange(code)
+            new_args.exchange = args.exchange or google_finance_csv.get_exchange(code)
             analyze(new_args)
         return
 
@@ -375,7 +367,7 @@ def main():
                 new_args.code = code
                 new_args.batch = batch
                 new_args.policy = policy
-                new_args.exchange = args.exchange or get_exchange(code)
+                new_args.exchange = args.exchange or google_finance_csv.get_exchange(code)
                 result = core(new_args)
                 if result.total_cost:
                     results.append(result)

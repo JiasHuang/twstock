@@ -67,20 +67,21 @@ class revenue_info:
         return {'Y':self.Y, 'M':self.M, 'rev':self.rev}
 
 class eps_info:
-    def __init__(self, Y, Q, rev='-', profit='-', nor='-', ni='-', eps='-'):
+    def __init__(self, Y, Q, rev='-', gross='', profit='-', nor='-', ni='-', eps='-'):
         self.Y = twse.to_common_era(Y)
         self.Q = Q
         self.rev = rev  # 營業收入
-        self.profit = profit # 營業毛利
-        self.nor = nor #Total Non-operating Revenue 業外收支
-        self.ni = ni #Net Income 稅後淨利
+        self.gross = gross # 營業毛利
+        self.profit = profit # 營業利益
+        self.nor = nor # Total Non-operating Revenue 業外收支
+        self.ni = ni # Net Income 稅後淨利
         self.eps = eps
 
     def __str__(self):
         return 'Y {} Q {} rev {} profit {} nor {} ni {} eps {}'.format(self.Y, self.Q, self.rev, self.profit, self.nor, self.ni, self.eps)
 
     def __jsonencode__(self):
-        return {'Y':self.Y, 'Q':self.Q, 'rev':self.rev, 'profit':self.profit, 'nor':self.nor, 'ni':self.ni, 'eps':self.eps}
+        return {'Y':self.Y, 'Q':self.Q, 'rev':self.rev, 'gross':self.gross, 'profit':self.profit, 'nor':self.nor, 'ni':self.ni, 'eps':self.eps}
 
 class stock_info:
     def __init__(self, code, flts = None, tags = None):
@@ -393,7 +394,7 @@ def update_stock_report_eps(obj):
             break
         m2 = re.findall(r'>([^\n<]*)<', m.group(3))
         if len(m2) == 10:
-            obj.eps.insert(0, eps_info(Y, Q, rev=m2[0], profit=m2[4], nor=m2[6], ni=m2[8], eps=m2[9]))
+            obj.eps.insert(0, eps_info(Y, Q, rev=m2[0], gross=m2[2], profit=m2[4], nor=m2[6], ni=m2[8], eps=m2[9]))
     return
 
 def update_stock_report_revenue(obj):

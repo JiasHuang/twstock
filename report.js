@@ -132,7 +132,7 @@ function getLinkDict(code) {
   dict.push({key:'損益', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcq/zcq_{0}.djhtm', code)});
   dict.push({key:'營收', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm', code)});
   dict.push({key:'新聞', val:String.format('https://tw.stock.yahoo.com/q/h?s={0}', code)});
-  dict.push({key:'Ｋ線', val:String.format('https://tw.stock.yahoo.com/quote/{0}.TWO/technical-analysis', code)});
+  dict.push({key:'Ｋ線', val:String.format('https://goodinfo.tw/tw/ShowK_Chart.asp?STOCK_ID={0}&SCROLL2Y=384', code)});
   dict.push({key:'股利', val:String.format('https://www.wantgoo.com/stock/etf/{0}/dividend-policy/ex-dividend', code)});
   dict.push({key:'CMoney', val:String.format('https://www.cmoney.tw/forum/stock/{0}', code)});
   dict.push({key:'整合資訊', val:String.format('https://www.twse.com.tw/pdf/ch/{0}_ch.pdf', code)});
@@ -256,23 +256,6 @@ function getEPSsByYear(eps, Y, cumulative) {
   return ret;
 }
 
-function getProfitMarginByYear(eps, Y) {
-  var ret = [];
-
-  for (var i=0; i<eps.length; i++) {
-    if (eps[i].Y != Y) {
-      continue;
-    }
-    let x = 'Q' + eps[i].Q;
-    let rev = parseFloat(eps[i].rev.replaceAll(',', ''));
-    let net_profit = parseFloat(eps[i].profit.replaceAll(',', ''));
-    let profit_margin = net_profit / rev * 100;
-    ret.push({x: x, y: profit_margin.toFixed(2)});
-  }
-
-  return ret;
-}
-
 function updateEPSChart(eps, cumulative) {
   var ctx = document.getElementById(cumulative ? 'chart_cumulative_EPS' : 'chart_EPS').getContext('2d');
   var datasets = [];
@@ -299,77 +282,6 @@ function updateEPSChart(eps, cumulative) {
     options: {
       title: {
         text: cumulative ? '年度累季EPS' : '年度單季EPS',
-      }
-    },
-    data: {
-      labels:labels,
-      datasets: datasets,
-    }
-  });
-}
-
-function updateProfitMarginChart(eps) {
-  var ctx = document.getElementById('chart_profit_margin').getContext('2d');
-  var datasets = [];
-  var data = [];
-  var labels = [];
-
-  for (var i=0; i<eps.length; i++) {
-    let rev = parseFloat(eps[i].rev.replaceAll(',', ''));
-    let net_profit = parseFloat(eps[i].profit.replaceAll(',', ''));
-    let profit_margin = net_profit / rev * 100;
-    data.push(profit_margin.toFixed(2));
-    labels.push(eps[i].Y + 'Q' + eps[i].Q);
-  }
-
-  datasets.push({
-    label: 'ProfitMargin',
-    data: data,
-    borderColor: def_color,
-    backgroundColor: def_color,
-    fill: false,
-  });
-
-  var lineChart = new Chart(ctx, {
-    type: 'line',
-    options: {
-      title: {
-        text: '營益率',
-      }
-    },
-    data: {
-      labels:labels,
-      datasets: datasets,
-    }
-  });
-}
-
-function updateProfitMarginChartByYear(eps) {
-  var ctx = document.getElementById('chart_profit_margin_by_year').getContext('2d');
-  var datasets = [];
-  var labels = ['Q1','Q2','Q3','Q4'];
-  var colors_idx = init_colors_idx(eps);
-  var Y = null;
-
-  for (var i=0; i<eps.length; i++) {
-    if (Y != eps[i].Y) {
-      Y = eps[i].Y;
-      datasets.push({
-        label: Y,
-        data: getProfitMarginByYear(eps, Y),
-        borderColor: colors[colors_idx],
-        backgroundColor: colors[colors_idx],
-        fill: false,
-      });
-      colors_idx++;
-    }
-  }
-
-  var lineChart = new Chart(ctx, {
-    type: 'line',
-    options: {
-      title: {
-        text: '年度單季營益率',
       }
     },
     data: {
@@ -464,7 +376,8 @@ function getEPSHTMLText(obj) {
   for (var i=0; i<eps.length; i++) {
     if (Y != eps[i].Y) {
         Y = eps[i].Y;
-        text += '<tr><th>年</th><th>季</th><th>營收(億)</th><th>營利(億)</th><th>營益率(%)</th><th>業外(億)</th><th>本業(%)</th><th>稅後淨利(億)</th><th>EPS</th><th></th></tr>';
+        let cols = ['年', '季', '營收(億)', '毛利率(%)', '營益率(%)', '業外(億)', '本業(%)', '稅後淨利(億)', 'EPS', 'Note']
+        text += '<tr><th>' + cols.join('</th><th>') + '</th></tr>';
         let note = '';
         let cumulative_eps = getEPSsByYear(eps, Y, true);
         let year_eps = cumulative_eps[cumulative_eps.length - 1].y;
@@ -494,17 +407,19 @@ function getEPSHTMLText(obj) {
         }
         text += '<tr><td colspan=9></td><td rowspan=5>' + note + '</td></tr>';
         for (var q=1; q<eps[i][1]; q++) {
-          text += '<tr>' + '<td>-</td>'.repeat(9) + '</tr>';
+          text += '<tr>' + '<td>-</td>'.repeat(10) + '</tr>';
         }
     }
-    let rev = parseFloat(eps[i].rev.replaceAll(',', ''));
-    let profit = parseFloat(eps[i].profit.replaceAll(',', ''));
+    let rev = parseFloat(eps[i].rev.replaceAll(',', '')) / 10;
+    let gross = parseFloat(eps[i].gross.replaceAll(',', '')) / 10;
+    let gross_ratio = gross / rev * 100; // operating profit ratio / Operating profit Margin
+    let profit = parseFloat(eps[i].profit.replaceAll(',', '')) / 10;
     let profit_ratio = profit / rev * 100; // operating profit ratio / Operating profit Margin
-    let nor = parseFloat(eps[i].nor.replaceAll(',', '')); // Total Non-operating Revenue
+    let nor = parseFloat(eps[i].nor.replaceAll(',', '')) / 10; // Total Non-operating Revenue
     let profit_rate = (profit >= 0 && nor >=0) ? (profit / (profit + nor) * 100).toFixed(2) : '-';
-    let ni = parseFloat(eps[i].ni.replaceAll(',', '')); // Net Income
-    text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td></tr>',
-      eps[i].Y, eps[i].Q, (rev / 100).toFixed(2), (profit / 100).toFixed(2), profit_ratio.toFixed(2), (nor / 100).toFixed(2), profit_rate, (ni / 100).toFixed(2), eps[i].eps);
+    let ni = parseFloat(eps[i].ni.replaceAll(',', '')) / 10; // Net Income
+    let cols = [eps[i].Y, eps[i].Q, rev.toFixed(2), gross_ratio.toFixed(2), profit_ratio.toFixed(2), nor.toFixed(2), profit_rate, ni.toFixed(2), eps[i].eps];
+    text += '<tr><td>' + cols.join('</td><td>') + '</td></tr>';
   }
 
   for (var Q=parseInt(eps[eps.length-1].Q)+1; Q<=4; Q++) {
@@ -641,14 +556,10 @@ function parseJSON(obj) {
   if (obj.eps.length) {
     updateEPSChart(obj.eps, true);
     updateEPSChart(obj.eps, false);
-    updateProfitMarginChart(obj.eps);
-    updateProfitMarginChartByYear(obj.eps);
   }
   else {
     $('#cumulative_eps').hide();
     $('#eps').hide();
-    $('#profit_margin').hide();
-    $('#profit_margin_by_year').hide();
   }
   if (obj.revenue.length) {
     updateRevenueChart(obj.revenue, true);

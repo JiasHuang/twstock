@@ -166,7 +166,7 @@ def analyze(args):
                 infos[idx].desc.append('low')
 
     for idx, x in enumerate(infos):
-        if x.desc or idx > len(infos) - 5:
+        if x.desc or idx > len(infos) - 10:
             basic = []
             for ma in ma_list:
                 rate = x.close / getattr(x, 'ma'+str(ma)) - 1
@@ -175,24 +175,21 @@ def analyze(args):
             print('{} {} {:.2f} {} {}'.format(label, x.date, x.close, ' '.join(basic), ' '.join(x.desc)))
 
     print('---')
-    last = None
-    week = None
     idx = max(0, len(infos) - 120)
-    for x in infos[idx:]:
-        if not week:
-            last = [x]
-            week = [x]
-        else:
-            week_num = week[0].date.isocalendar()[1]
-            if x.date.isocalendar()[1] == week_num:
-                week.append(x)
-            else:
-                wk_return = week[-1].close / last[-1].close - 1
-                wk_vol = np.mean([y.volume for y in week]) / avg_vol - 1
-                wk_low = min([y.low for y in week])
-                print('{} {} ~ {} (w{}) {:.2f} return {:.2%} vol {:+.2%} low {:.2f}'.format(label, week[0].date, week[-1].date, week_num, week[-1].close, wk_return, wk_vol, wk_low))
-                last = week
-                week = [x]
+    while idx < len(infos):
+        week_num = infos[idx].date.isocalendar()[1]
+        week = [infos[idx]]
+        for idx2 in range(idx + 1, len(infos)):
+            if infos[idx2].date.isocalendar()[1] != week_num:
+                break
+            week.append(infos[idx2])
+
+        last_close = infos[max(idx - 1, 0)].close
+        wk_return = week[-1].close / last_close - 1
+        wk_vol = np.mean([y.volume for y in week]) / avg_vol - 1
+        wk_low = min([y.low for y in week])
+        print('{} {} ~ {} (w{}) {:.2f} return {:.2%} vol {:+.2%} low {:.2f}'.format(label, week[0].date, week[-1].date, week_num, week[-1].close, wk_return, wk_vol, wk_low))
+        idx = idx + len(week)
 
     pz = infos[-1].close
 

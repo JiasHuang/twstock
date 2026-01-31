@@ -376,7 +376,7 @@ function getEPSHTMLText(obj) {
   for (var i=0; i<eps.length; i++) {
     if (Y != eps[i].Y) {
         Y = eps[i].Y;
-        let cols = ['年', '季', '營收(億)', '毛利率(%)', '營益率(%)', '業外(億)', '本業(%)', '稅後淨利(億)', 'EPS', 'Note']
+        let cols = ['年', '季', '營收(億)', '毛利(%)', '營利(%)', '業外(億)', '本業(%)', '淨利(億)', 'EPS', '-']
         text += '<tr><th>' + cols.join('</th><th>') + '</th></tr>';
         let note = '';
         let cumulative_eps = getEPSsByYear(eps, Y, true);
@@ -513,7 +513,7 @@ function getOverallHTMLText(obj) {
 
   text += '<table><tr><th colspan=3>Overall</th></tr>';
 
-  text += String.format('<tr><td colspan=2></td><td rowspan=8>');
+  text += String.format('<tr><td colspan=2></td><td rowspan=9>');
   text += String.format('推估PER：{0} ~ {1}<br>', per_min.toFixed(2), per_max.toFixed(2));
   text += String.format('推估最低價：{0}<br>', pz_min.toFixed(2));
   text += String.format('推估中間價：{0}<br>', pz_mid.toFixed(2));
@@ -527,6 +527,7 @@ function getOverallHTMLText(obj) {
   text += String.format('<tr><td>股數(億)</td><td>{0}</td></tr>', (obj.capital_stock / 10).toFixed(2));
   text += String.format('<tr><td>股價淨值比	(PBR)</td><td>{0}</td></tr>', (pz / obj.nav).toFixed(2));
   text += String.format('<tr><td>股東權益報酬率 (ROE)</td><td>{0}%</td></tr>', (eps / obj.nav * 100).toFixed(2));
+  text += String.format('<tr><td>負債比例</td><td>{0}%</td></tr>', (obj.debt_ratio * 100).toFixed(2));
   text += String.format('<tr><td>本益比 (PER)</td><td>{0}</td></tr>', obj.per.toFixed(2));
   text += String.format('<tr><td>EPS</td><td>{0}</td></tr>', eps.toFixed(2));
 

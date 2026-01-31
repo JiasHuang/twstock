@@ -25,5 +25,7 @@
 	{"code":"2301","name":"光寶科","tags":["elec"],"flts":[]},
 	{"code":"00675L","name":"富邦臺灣加權正2","tags":["etf"],"flts":[]},
 	{"code":"00670L","name":"富邦NASDAQ正2","tags":["etf"],"flts":[]},
-	{"code":"00788B","name":"元大10年IG電能債","tags":["bond"],"flts":[]}
+	{"code":"00788B","name":"元大10年IG電能債","tags":["bond"],"flts":[]},
+	{"code":"00963","name":"中信全球高股息","tags":["etf"],"flts":[]},
+	{"code":"00753L","name":"中信中國50正2","tags":["etf"],"flts":[]}
 ]}

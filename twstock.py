@@ -111,6 +111,7 @@ class stock_report:
         self.pz_close = 0
         self.per = 0
         self.nav = 0
+        self.debt_ratio = 0
         self.per_year = []
         self.per_max = []
         self.per_min = []
@@ -423,6 +424,9 @@ def update_stock_report_overall(obj):
     m = re.search(r'>每股淨值\(元\)</td>\s*<td class="t3n1"><span class="t3n1">(.*?)</span></td>', txt)
     if m:
         obj.nav = float(m.group(1).replace(',',''))
+    m = re.search(r'>負債比例</td>\s*<td class="t3n1"><span class="t3n1">(.*?)%</span></td>', txt)
+    if m:
+        obj.debt_ratio = float(m.group(1)) / 100
     m = re.search(r'>年度</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL)
     if m:
         obj.per_year = [twse.to_common_era(x.replace(',','')) for x in re.findall(r'>([^<]+)</td>', m.group(1))]

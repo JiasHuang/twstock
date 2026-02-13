@@ -12,6 +12,7 @@ from talib import abstract
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.widgets import MultiCursor
+from matplotlib.widgets import Cursor
 import tse
 import otc
 
@@ -36,6 +37,7 @@ def get_exchange(code):
         return 'TSE'
     if otc.has_code(code):
         return 'OTC'
+    assert False, 'exchange not found'
     return None
 
 def update_csv(path, exchange, code):
@@ -143,7 +145,12 @@ def analyze(df):
 
     print('---')
     for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
-        print('{} {:.2f} ({:+.2%})'.format(k, v, pz/v-1))
+        print('{} {:.2f} ({:+.2%})'.format(k, v, v/pz-1))
+
+    print('---')
+    ref_rate = min(df['low'].tail(60) / df['ma60'].tail(60))
+    ref_pz = ref_rate * df['ma60'].iloc[-1]
+    print('ref_rate {:.2f} ref_pz {:.2f}'.format(ref_rate, ref_pz))
 
     return
 
@@ -158,6 +165,9 @@ def plot(df):
     x = df['date'].to_numpy()
 
     axes[0].plot(x, df['close'].to_numpy())
+    axes[0].plot(x, df['ma60'].to_numpy())
+    axes[0].plot(x, df['ma60'].to_numpy() * 0.9, color='orange', linestyle='dashed')
+    axes[0].plot(x, df['ma60'].to_numpy() * 0.8, color='orange', linestyle='dashed')
     axes[0].set_ylabel('close')
 
     if has_compare:
@@ -180,6 +190,7 @@ def plot(df):
     # Set vertOn=True to enable the vertical line, horizOn=False to disable the horizontal line
     # useblit=True provides faster drawing if supported by the backend
     cursor = MultiCursor(fig.canvas, axes, color='black', linewidth=1, vertOn=True, horizOn=False, useblit=True)
+    cursor0 = Cursor(axes[0], useblit=True, color='red', linewidth=1)
 
     date_formatter = mdates.DateFormatter('%Y-%m-%d')
     axes[0].xaxis.set_major_formatter(date_formatter)
@@ -200,6 +211,9 @@ def main():
     parser.add_argument('-d', '--date')
     parser.add_argument('--compare')
     args, unparsed = parser.parse_known_args()
+
+    if len(unparsed) > 0:
+        args.code = unparsed[0]
 
     if not args.exchange:
         args.exchange = get_exchange(args.code)

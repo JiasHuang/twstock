@@ -88,17 +88,18 @@ class Stock:
                 self.max_return_date = date
 
 class Action:
-    def __init__(self, date, stock, pz, ma, cost):
+    def __init__(self, date, stock, pz, ma, rate, cost):
         self.date = date
         self.stock = stock
         self.pz = pz
         self.ma = ma
+        self.rate = rate
         self.cost = cost
 
     def __str__(self):
         s = self.stock
         gain = self.pz / s.avg - 1
-        return '[{}] {}:{} pz {:,} ma {:,.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.ma, self.cost, s.qty, s.avg, gain)
+        return '[{}] {}:{} pz {:,} ma {:,.2f} rate {:.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.ma, self.rate, self.cost, s.qty, s.avg, gain)
 
 class Result:
     def __init__(self, args, stock, total_gain, total_return, annual_return):
@@ -131,15 +132,15 @@ def evaluate_action(args, stock, date):
 
     if args.policy.startswith('pow'):
         exp = int(args.policy[3:])
-        rate = max(ma/pz, stock.avg/pz, 1)
-        cost = int(unit * pow(rate, exp))
-        action = Action(date, stock, pz, ma, cost)
+        rate = pow(max(ma/pz, stock.avg/pz, 1), exp)
+        cost = int(unit * rate)
+        action = Action(date, stock, pz, ma, rate, cost)
 
     elif args.policy.startswith('mul'):
         mul = int(args.policy[3:])
-        rate = max(ma/pz, stock.avg/pz, 1)
-        cost = int(unit * (rate * mul - 1))
-        action = Action(date, stock, pz, ma, cost)
+        rate = max(ma/pz, stock.avg/pz, 1) * mul - 1
+        cost = int(unit * rate)
+        action = Action(date, stock, pz, ma, rate, cost)
 
     return action
 
@@ -215,7 +216,7 @@ def analyze(args):
 
     print('---')
     for k, v in sorted(vals.items(), key=lambda item: item[1], reverse=True):
-        print('{} {} {:.2f} ({:+.2%})'.format(label, k, v, pz/v-1))
+        print('{} {} {:.2f} ({:+.2%})'.format(label, k, v, v/pz-1))
 
     return
 
@@ -270,27 +271,18 @@ def core(args):
     print('\n---')
     print(bcolors.GREEN + '{}:{} b{}_{} [{} ~ {}]'.format(args.exchange, args.code, args.batch, args.policy, start, end) + bcolors.ENDC)
 
-    for y in range(start.year, end.year + 1):
-        for m in range(1, 13):
-
-            d = datetime.date(y, m, args.day_of_month)
-            if d < start or d > end:
-                continue
-
-            stock.check_performance(d)
-
-            if balance <= 0:
-                stock.check_performance(d)
-                continue
-
+    d = start
+    while d <= end:
+        if balance > 0 and d.day == args.day_of_month:
             action = evaluate_action(args, stock, d)
             if action:
                 action.cost = min(action.cost, balance)
                 action.stock.add_cost(d, action.pz, action.cost)
                 balance -= action.cost
-                stock.check_performance(d)
-                if args.verbose:
-                    print(action)
+                print(action)
+
+        stock.check_performance(d)
+        d += datetime.timedelta(days=1)
 
     total_gain = 0
     total_return = 0
@@ -302,7 +294,7 @@ def core(args):
         total_gain, total_return = stock.get_gain(pz)
         annual_return = count_annualized_return(start, end, total_return)
         print('{} pz {} cost {:,} qty {:,.2f} avg {:,.2f} return {:.2%} (annual {:.2%})'.format(label, pz, stock.cost, stock.qty, stock.avg, total_return, annual_return))
-        print('{} min {:.2%} max {:.2%}'.format(label, stock.min_return, stock.max_return))
+        print('{} min {} {:.2%} max {} {:.2%}'.format(label, stock.min_return_date, stock.min_return, stock.max_return_date, stock.max_return))
 
     print('---')
 
@@ -326,6 +318,9 @@ def main():
     parser.add_argument('-r', '--regression')
 
     args, unparsed = parser.parse_known_args()
+
+    if len(unparsed) > 0:
+        args.code = unparsed[0]
 
     if len(args.start) == 0:
         if args.analyze:

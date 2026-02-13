@@ -6,7 +6,7 @@ import argparse
 
 class defs:
     TPE = ['0050', '00631L', '00657L', '00670L', '00646', '00662', '2330']
-    NYSEARCA = ['SPY', 'QQQ', 'LQD', 'QLD']
+    NYSEARCA = ['SPY', 'VOO', 'LQD', 'QLD']
     NASDAQ = ['QQQ', 'TLT']
     NYSE = ['TSM']
     ID = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'

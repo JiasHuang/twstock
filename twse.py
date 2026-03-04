@@ -32,20 +32,6 @@ def get_ex_ch_by_code(code):
                 return 'otc_%s.tw' %(code)
     return None
 
-
-def get_close(code, date):
-    url = 'http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date={}&stockNo={}'.format(date, code)
-    json_txt = xurl.load(url)
-    json_obj = json.loads(json_txt)
-    close = 0
-    # fields":["日期","成交股數","成交金額","開盤價","最高價","最低價","收盤價","漲跌價差","成交筆數"]
-    for d in json_obj['data']:
-        d0 = convert_date(d[0])
-        if d0 == date:
-            close = float(d[6])
-            break
-    return close
-
 def get_stock_info(code):
     ex_ch = get_ex_ch_by_code(code)
     url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch={}&json=1&delay=0'.format(ex_ch)

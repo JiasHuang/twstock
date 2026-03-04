@@ -18,14 +18,43 @@ import otc
 
 cached = {}
 
+class bcolors:
+    BLACK_ON_RED = '\x1b[3;30;41m'
+    BLACK_ON_GREEN = '\x1b[3;30;42m'
+    BLACK_ON_YELLOW = '\x1b[3;30;43m'
+    BLACK_ON_BLUE = '\x1b[3;30;44m'
+    BLACK_ON_WHITE = '\x1b[3;30;47m'
+    RED = '\33[31m'
+    GREEN = '\33[32m'
+    YELLOW = '\33[33m'
+    BLUE = '\33[34m'
+    ENDC = '\x1b[0m'
+
 class StockInfo:
     def __init__(self, row, ma_list):
         self.date = row['date'].date()
-        attrs = ['open', 'high', 'low', 'close', 'volume', 'desc']
+        attrs = ['open', 'high', 'low', 'close', 'volume']
         for ma in ma_list:
             attrs.append('ma'+str(ma))
         for attr in attrs:
             setattr(self, attr, getattr(row, attr))
+
+def get_tick(pz):
+    if pz < 10:
+        return 0.01
+    if pz < 50:
+        return 0.05
+    if pz < 100:
+        return 0.1
+    if pz < 500:
+        return 0.5
+    if pz < 1000:
+        return 1
+    return 5
+
+def round_tick(pz):
+    tick = get_tick(pz)
+    return round(pz / tick) * tick
 
 def get_exchange(code):
     exchanges = ['TPE', 'NASDAQ', 'NYSEARCA', 'NYSE', 'TSE', 'OTC']
@@ -42,7 +71,8 @@ def get_exchange(code):
 
 def update_csv(path, exchange, code):
     if exchange in ['TSE', 'OTC']:
-        data = tse.get_data(code) if exchange == 'TSE' else otc.get_data(code)
+        start = '20250101'
+        data = tse.get_data(code, start) if exchange == 'TSE' else otc.get_data(code, start)
         df = pd.DataFrame(data)
         if not os.path.exists(exchange):
             os.makedirs(exchange, exist_ok=True)
@@ -75,7 +105,7 @@ def get_data(exchange, code, start=None, end=None):
 
 def get_attrs(exchange, code, attr, date, days):
     df = get_data(exchange, code, end=date)
-    return df[attr].tail(days).to_list()
+    return df[attr].tail(days).to_numpy()
 
 def get_attr(exchange, code, attr, date):
     vals = get_attrs(exchange, code, attr, date, 1)
@@ -83,107 +113,95 @@ def get_attr(exchange, code, attr, date):
 
 def get_ma(exchange, code, date, days):
     vals = get_attrs(exchange, code, "close", date, days)
-    return np.mean(vals)
+    return vals.mean()
 
 def get_infos(exchange, code, start, end, ma_list):
     df = get_dataframe(exchange, code, start, end, ma_list)
     infos = [StockInfo(row, ma_list) for idx, row in df.iterrows()]
     return infos
 
-def get_dataframe(exchange, code, start, end, ma_list, compare=None):
+def get_dataframe(exchange, code, start, end, ma_list):
     df = get_data(exchange, code, start, end)
 
     for ma in ma_list:
         df['ma'+str(ma)] = abstract.SMA(df, ma)
 
-    desc = [[] for _ in range(len(df))]
-    names = ['HAMMER', 'MORNINGSTAR', 'ENGULFING', 'DOJI', 'SHOOTINGSTAR', 'EVENINGSTAR']
-    for name in names:
-        fun = getattr(abstract, 'CDL' + name)
-        vals = fun(df)
-        for idx, val in enumerate(vals):
-            if val != 0:
-                desc[idx].append(name + '(' + str(val) + ')')
-    df['desc'] = desc
-
-    df['rsi'] = abstract.RSI(df)
-    df['obv'] = abstract.OBV(df).divide(1000)
-    df['obv_ma10'] = talib.SMA(df['obv'], 10)
-
-    kd = abstract.STOCH(df)
-    df['k'] = kd['slowk']
-    df['d'] = kd['slowd']
-
-    macd = abstract.MACD(df)
-    df['macd'] = macd['macd']
-    df['macd_signal'] = macd['macdsignal']
-    df['macd_hist'] = macd['macdhist']
-
-    df.dropna(inplace=True)
-
-    if compare:
-        ex2 = get_exchange(compare)
-        df2 = get_data(ex2, compare, df['date'].iloc[0], end)
-        df['compare'] = df2['close']
+    #df.dropna(inplace=True)
 
     return df
 
-def analyze(df):
+def analyze(df, ma_list, label):
 
     pz = df['close'].iloc[-1]
 
     data = {}
-    data['*** pz ***'] = pz
-    for ma in [5, 10, 20, 60, 120, 240]:
-        vals = df['close'].tail(ma).to_list()
-        data['ma'+str(ma)] = np.mean(vals)
+    data['pz'] = pz
+    for ma in [20, 60, 120, 240]:
+        vals = df['close'].tail(ma).to_numpy()
+        data['ma'+str(ma)] = vals.mean()
 
     for days in [60, 120, 240]:
-        vals = df['close'].tail(days).to_list()
-        data['lo' + str(days)] = min(vals)
-        data['hi' + str(days)] = max(vals)
+        vals = df['close'].tail(days).to_numpy()
+        data['lo' + str(days)] = np.min(vals)
+        data['hi' + str(days)] = np.max(vals)
 
     print('---')
     for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
-        print('{} {:.2f} ({:+.2%})'.format(k, v, v/pz-1))
+        if k == 'pz':
+            k = bcolors.YELLOW + 'pz' + bcolors.ENDC
+        print('{} {} {:.2f} ({:+.2%})'.format(label, k, v, v/pz-1))
 
     print('---')
-    ref_rate = min(df['low'].tail(60) / df['ma60'].tail(60))
-    ref_pz = ref_rate * df['ma60'].iloc[-1]
-    print('ref_rate {:.2f} ref_pz {:.2f}'.format(ref_rate, ref_pz))
+    for ma in ma_list:
+        low_vals = df['low'].to_numpy()
+        ma_vals = df['ma'+str(ma)].to_numpy()
+        rates = low_vals / ma_vals
+        ref_ma = ma_vals[-1]
+        ref_rate = min(rates[~np.isnan(rates)])
+        for rate in [ref_rate, 0.95, 0.9, 0.85, 0.8]:
+            x = ref_ma * rate
+            print('{} ref_ma{} {:.2f} x {:.2f} = {:.2f} ({:.2f})'.format(label, ma, ref_ma, rate, x, round_tick(x)))
 
     return
 
+def print_rates(df, label):
+
+    pz = df['close'].iloc[-1]
+
+    print('---')
+    for rate in np.arange(1.01, 1.1, 0.01):
+        x = pz * rate
+        print('{} pz {:.2f} x {:.2f} = {:.2f} ({:.2f})'.format(label, pz, rate, x, round_tick(x)))
+
+    return
+
+def get_percent_color(pct):
+    if pct == 0:
+        return 'black'
+    if pct in [-10, 10]:
+        return 'orange'
+    if pct in [-20, 20]:
+        return 'red'
+    return 'grey'
+
 def plot(df):
 
-    has_compare = True if 'compare' in df else False
-    nrows = 4 if has_compare else 3
-    height_ratios = [4, 1, 1, 1] if has_compare else [4, 1, 1]
-    fig, axes = plt.subplots(nrows=nrows, ncols=1, figsize=(20, 10), gridspec_kw={'height_ratios': height_ratios}, sharex=True)
+    height_ratios = [4, 1]
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(20, 10), gridspec_kw={'height_ratios': height_ratios}, sharex=True)
     axes = axes.flatten()
 
     x = df['date'].to_numpy()
 
-    axes[0].plot(x, df['close'].to_numpy())
-    axes[0].plot(x, df['ma60'].to_numpy())
-    axes[0].plot(x, df['ma60'].to_numpy() * 0.9, color='orange', linestyle='dashed')
-    axes[0].plot(x, df['ma60'].to_numpy() * 0.8, color='orange', linestyle='dashed')
+    axes[0].plot(x, df['close'].to_numpy(), zorder=10)
+    for pct in np.arange(-20, 25, 5):
+        axes[0].plot(x, df['ma60'].to_numpy() * (100 + pct) / 100, color=get_percent_color(pct), linestyle='dashed', linewidth=0.5, zorder=0)
     axes[0].set_ylabel('close')
 
-    if has_compare:
-        pz2 = df['compare'].to_numpy()
-        rate = df['close'].to_numpy() / pz2
-        axes[0].plot(x, pz2, color='orange')
-        axes[3].plot(x, rate)
-        axes[3].set_ylabel('rate')
-
-    axes[1].plot(x, df['macd_hist'].to_numpy(), zorder=10)
-    axes[1].axhline(y=0, color='black', linestyle='--', linewidth=1.5, zorder=0)
-    axes[1].set_ylabel('macd_hist')
-
-    axes[2].plot(x, df['obv'].to_numpy(), zorder=10)
-    axes[2].plot(x, df['obv_ma10'].to_numpy(), color='orange', zorder=0)
-    axes[2].set_ylabel('obv')
+    ma60_ratio = df['close'] / df['ma60'] - 1
+    axes[1].plot(x, ma60_ratio.to_numpy(), zorder=10)
+    for pct in np.arange(-20, 25, 5):
+        axes[1].axhline(y=(pct/100), color=get_percent_color(pct), linestyle='dashed', linewidth=0.5, zorder=0)
+    axes[1].set_ylabel('ma60_ratio')
 
     # Create the MultiCursor object
     # Pass the figure's canvas and a list of axes to the MultiCursor
@@ -206,27 +224,32 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-e', '--exchange')
-    parser.add_argument('-c', '--code', default='2330')
-    parser.add_argument('-a', '--ma', type=int, default=60)
-    parser.add_argument('-d', '--date')
-    parser.add_argument('--compare')
+    parser.add_argument('-c', '--code', nargs='+', default='2330')
+    parser.add_argument('--ma', nargs='+', type=int, default=[60])
+    parser.add_argument('-p', '--plot', action="store_true")
+    parser.add_argument('-r', '--rates', action="store_true")
     args, unparsed = parser.parse_known_args()
 
     if len(unparsed) > 0:
-        args.code = unparsed[0]
+        args.code = unparsed
 
-    if not args.exchange:
-        args.exchange = get_exchange(args.code)
+    for code in args.code:
 
-    if not args.date:
-        args.date = datetime.date.today().strftime('%Y%m%d')
+        exchange = args.exchange or get_exchange(code)
+        label = bcolors.GREEN + '{}:{}'.format(exchange, code) + bcolors.ENDC
 
-    date = datetime.datetime.strptime(args.date, '%Y%m%d').date()
-    start = date - datetime.timedelta(days=365)
-    df = get_dataframe(args.exchange, args.code, start, date, [args.ma], args.compare)
-    print(df.round(2))
-    analyze(df)
-    plot(df)
+        end = datetime.date.today()
+        start = end - datetime.timedelta(days=540)
+        df = get_dataframe(exchange, code, start, end, args.ma)
+        print('---')
+        print(df.tail(20).round(2))
+        analyze(df, args.ma, label)
+
+        if args.rates:
+            print_rates(df, label)
+
+        if args.plot:
+            plot(df)
 
     return
 

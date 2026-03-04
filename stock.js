@@ -3,7 +3,6 @@ var is_StockInfo_loaded = false;
 var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
-var strategy = null;
 var cur_stock_json = null;
 var sort_by = null;
 
@@ -14,21 +13,6 @@ String.format = function() {
     s = s.replace(reg, arguments[i + 1]);
   }
   return s;
-}
-
-function getStrategyText(code, pz, cls_name) {
-  var text = '';
-  if (strategy) {
-    for (var i=0; i<strategy.stocks.length; i++) {
-      let s = strategy.stocks[i];
-      if (s.code == code) {
-        let ratio = Math.round((pz - s.ref_pz) / s.ref_pz * 100);
-        if (ratio <= -10)
-          text += String.format('<span class="{0}" title="參考價 {1}">批{2}%</span>', cls_name, s.ref_pz, ratio);
-      }
-    }
-  }
-  return text;
 }
 
 function getFltText(flts, flts_ret, class_name, class_name_false = '') {
@@ -62,8 +46,8 @@ function getStockTableText(s) {
   text += '</td>';
 
   text += '<td>';
-  ratio = s.v / s.avg['30d_vol'] * 100;
-  text += String.format('#{0} ({1}%)', s.v.toLocaleString(), ratio.toFixed(2));
+  ratio = Math.round(s.v / s.mv * 100);
+  text += String.format('#{0} ({1}%)', s.v.toLocaleString(), ratio);
   if (s.v >= 1000 && ratio >= 120)
     text += '<span class=bg_hv>★ </span>';
   text += '</td>';
@@ -83,20 +67,32 @@ function getStockTableText(s) {
   if (s.l) {
     chg = s.l - s.y
     ratio = chg / s.y * 100;
-    text += String.format('<br> Lo {0} ({1}, {2}%)', s.l.toFixed(2), chg.toFixed(2), ratio.toFixed(2));
+    text += String.format('<br>Lo {0} ({1}, {2}%)', s.l.toFixed(2), chg.toFixed(2), ratio.toFixed(2));
   }
 
   text += '</td>';
   text += '<td>';
 
   text += getFltText(s.flts, s.flts_ret, 'bg_yellow');
-  text += getStrategyText(s.code, s.z, 'bg_yellow margin_left');
+
+  if (s.ma) {
+    chg = s.z - s.ma
+    ratio = chg / s.ma * 100;
+    cls = (ratio <= -10) ? 'bg_yellow' : '';
+    text += text.length ? '<br>' : '';
+    text += String.format('MA {0} ({1}, <span class={2}>{3}%</span>)', s.ma, chg.toFixed(2), cls, ratio.toFixed(2));
+  }
 
   if (s.nav)
   {
     let diff = s.nav - s.z;
     let diff_ratio = diff / s.z * 100;
-    text += String.format('<br>淨值 {0} ({1}%)', s.nav.toFixed(2), diff_ratio.toFixed(2));
+    let nav_date = String(s.nav_date)
+    let month = nav_date.substring(4, 6)
+    let day = nav_date.substring(6, 8)
+    text += text.length ? '<br>' : '';
+    text += String.format('淨值 {0} ({1}%)', s.nav.toFixed(2), diff_ratio.toFixed(2));
+    text += String.format('<br><span class=nav_time>{0}/{1} {2}</span>', month, day, s.nav_time);
   }
 
   text += '</td>';
@@ -163,8 +159,8 @@ function getExchangeRateTableText(objs) {
 }
 
 function sort_by_vol_ratio(a, b) {
-  let a_ratio = a.v / a.avg['30d_vol'] * 100;
-  let b_ratio = b.v / b.avg['30d_vol'] * 100;
+  let a_ratio = a.v / a.mv * 100;
+  let b_ratio = b.v / b.mv * 100;
   if (a_ratio < b_ratio) {
     return 1;
   }
@@ -188,6 +184,22 @@ function sort_by_inc_ratio(a, b) {
 
 function sort_by_dec_ratio(a, b) {
   return sort_by_inc_ratio(b, a);
+}
+
+function sort_by_inc_ma_ratio(a, b) {
+  let a_ratio = (a.z - a.ma) / a.ma * 100;
+  let b_ratio = (b.z - b.ma) / b.ma * 100;
+  if (a_ratio < b_ratio) {
+    return 1;
+  }
+  if (a_ratio > b_ratio) {
+    return -1;
+  }
+  return 0;
+}
+
+function sort_by_dec_ma_ratio(a, b) {
+  return sort_by_inc_ma_ratio(b, a);
 }
 
 function filterTag() {
@@ -224,6 +236,8 @@ function updateResult() {
     stocks = stocks.slice(0).sort(sort_by_inc_ratio);
   } else if (sort_by == 'dec') {
     stocks = stocks.slice(0).sort(sort_by_dec_ratio);
+  } else if (sort_by == 'dec_ma') {
+    stocks = stocks.slice(0).sort(sort_by_dec_ma_ratio);
   }
 
   for (var i=0; i<stocks.length; i++) {
@@ -261,8 +275,6 @@ function updateStockInfo() {
 function initStockInfo() {
   var api_url = 'stock.py' + window.location.search;
 
-  api_url += (window.location.search != '') ? '&s=1' : '?s=1';
-
   showLoading();
   $.ajax({
     url: api_url,
@@ -282,35 +294,14 @@ function updateExchangeRateInfo() {
 }
 
 function updateInfoIfNeeded() {
-  var date = new Date;
-  var h = date.getHours();
-  var m = date.getMinutes();
-  var hhmm = h * 100 + m;
-  if (hhmm >= 0900 && hhmm <= 1330) {
-    if (is_StockInfo_loaded) {
-      updateStockInfo();
-    }
+  if (is_StockInfo_loaded) {
+    updateStockInfo();
   }
-  if (hhmm >= 0900 && hhmm <= 1530) {
-    updateExchangeRateInfo();
-  }
-}
-
-function parseStrategyJSON(obj) {
-  strategy = obj;
-}
-
-function loadStrategyJSON() {
-  $.ajax({
-    url: 'jsons/strategy.json',
-    dataType: 'json',
-    success: parseStrategyJSON,
-  });
+  updateExchangeRateInfo();
 }
 
 function onDocumentReady() {
   loadTopMenu();
-  loadStrategyJSON();
   initStockInfo();
   updateExchangeRateInfo();
   setInterval(updateInfoIfNeeded, 30000); // 30s

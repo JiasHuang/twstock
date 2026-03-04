@@ -19,18 +19,18 @@ def has_code(code):
 def convert_date(s):
     return re.sub('(\d+)/(\d+)/(\d+)', lambda y: str(int(y.group(1)) + 1911) + y.group(2) + y.group(3), s)
 
-def get_data(code, start='20250101'):
+def get_data(code, start, verbose=False):
     today = datetime.today().date()
-    date = datetime.strptime(start, '%Y%m%d').date()
+    date = datetime.strptime(start, '%Y%m%d').date() if isinstance(start, str) else start
     data = []
     while date <= today:
         url = 'https://www.tpex.org.tw/www/zh-tw/afterTrading/tradingStock?code={}&date={}%2F{:02d}%2F{:02d}&id=&response=json'.format(code, date.year, date.month, date.day)
-        json_txt = xurl.load(url)
+        json_txt = xurl.load(url, verbose=verbose)
         json_obj = json.loads(json_txt)
         # fields":["日期","成交張數","成交仟元","開盤","最高","最低","收盤","筆數"]
         if 'tables' in json_obj and 'data' in json_obj['tables'][0]:
             for d in json_obj['tables'][0]['data']:
-                if d[1] != '0':
+                if d[1] != '0' and d[6] != '--':
                     d = [x.replace(',', '') for x in d]
                     data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':d[1]+'000'})
         date = date + relativedelta(months=+1)

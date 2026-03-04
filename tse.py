@@ -19,18 +19,18 @@ def has_code(code):
 def convert_date(s):
     return re.sub('(\d+)/(\d+)/(\d+)', lambda y: str(int(y.group(1)) + 1911) + y.group(2) + y.group(3), s)
 
-def get_data(code, start='20250101'):
+def get_data(code, start, verbose=False):
     today = datetime.today().date()
-    date = datetime.strptime(start, '%Y%m%d').date()
+    date = datetime.strptime(start, '%Y%m%d').date() if isinstance(start, str) else start
     data = []
     while date <= today:
         url = 'http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date={}&stockNo={}'.format(date.strftime('%Y%m%d'), code)
-        json_txt = xurl.load(url)
+        json_txt = xurl.load(url, verbose=verbose)
         json_obj = json.loads(json_txt)
         # fields":["日期","成交股數","成交金額","開盤價","最高價","最低價","收盤價","漲跌價差","成交筆數"]
         if 'data' in json_obj:
             for d in json_obj['data']:
-                if d[1] != '0':
+                if d[1] != '0' and d[6] != '--':
                     d = [x.replace(',', '') for x in d]
                     data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':d[1]})
         date = date + relativedelta(months=+1)

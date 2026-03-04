@@ -33,7 +33,6 @@ def stock(q):
     d = parse_qs(q)
     path = d['i'][0] if 'i' in d else None
     code = d['c'][0] if 'c' in d else None
-    stat = d['s'][0] if 's' in d else None
     infos = []
     if code:
         data = twstock.get_stock_json_by_codes(code)
@@ -45,7 +44,7 @@ def stock(q):
         defpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
         data = twstock.get_json_from_file(defpath)
         infos = twstock.get_stock_infos(data)
-    twstock.update_stock_stats(infos, not stat)
+    twstock.update_stock_stats(infos)
     json_list = [json.dumps(info.__dict__) for info in infos]
     return '{"stocks":[%s]}' %(','.join(json_list))
 

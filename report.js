@@ -135,6 +135,8 @@ function getLinkDict(code) {
   dict.push({key:'Ｋ線', val:String.format('https://goodinfo.tw/tw/ShowK_Chart.asp?STOCK_ID={0}&SCROLL2Y=384', code)});
   dict.push({key:'股利', val:String.format('https://www.wantgoo.com/stock/etf/{0}/dividend-policy/ex-dividend', code)});
   dict.push({key:'CMoney', val:String.format('https://www.cmoney.tw/forum/stock/{0}', code)});
+  dict.push({key:'玩股網', val:String.format('https://www.wantgoo.com/stock/{0}', code)});
+  dict.push({key:'鉅亨網', val:String.format('https://www.cnyes.com/twstock/{0}', code)});
   dict.push({key:'整合資訊', val:String.format('https://www.twse.com.tw/pdf/ch/{0}_ch.pdf', code)});
   return dict;
 }

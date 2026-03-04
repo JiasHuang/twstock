@@ -6,7 +6,11 @@ import re
 import json
 import time
 import datetime
+import pandas as pd
+import numpy as np
 
+import tse
+import otc
 import twse
 import xurl
 
@@ -96,8 +100,11 @@ class stock_info:
         self.v_ratio = 0
         self.h = 0
         self.l = 0
-        self.avg = {}
+        self.ma = 0
+        self.mv = 0
         self.nav = 0
+        self.nav_date = None
+        self.nav_time = None
 
 class stock_report:
     def __init__(self, code):
@@ -151,19 +158,21 @@ def to_float(num):
     except:
         return 0.0
 
-def get_stat_vol(code, cacheOnly):
-    obj = {}
-    url = 'https://jdata.yuanta.com.tw/z/zc/zcw/zcwg_%s.djhtm' %(code)
-    txt = xurl.load(url, cacheOnly=cacheOnly, expiration=432000, encoding='big5_hkscs')
-    m = re.search(r'GetBcdData\(\'([^ ]*) ([^\']*)\'', txt)
-    if m:
-        vols = m.group(2).split(',')
-        total_v = 0
-        for i in range(len(vols)):
-            v = int(vols[i])
-            total_v = total_v + v
-        obj['30d_vol'] = total_v / 30
-    return obj
+def get_ma(code, days):
+    end = datetime.date.today()
+    start = end - datetime.timedelta(days=60)
+    data = tse.get_data(code, start) if tse.has_code(code) else otc.get_data(code, start)
+    df = pd.DataFrame(data)
+    vals = df['close'].astype('float64').to_numpy()
+    return np.round(vals.mean(), 2)
+
+def get_mv(code, days):
+    end = datetime.date.today()
+    start = end - datetime.timedelta(days=days)
+    data = tse.get_data(code, start) if tse.has_code(code) else otc.get_data(code, start)
+    df = pd.DataFrame(data)
+    vals = df['volume'].astype('int64').to_numpy()
+    return np.round((vals.mean() / 1000))
 
 def get_stock_infos(data):
     infos = []
@@ -205,11 +214,14 @@ def update_etf_nav(infos):
                     info.nav = nav
                 elif isinstance(nav, str) and not nav.startswith('-'):
                     info.nav = float(nav)
+                info.nav_date = msg['i']
+                info.nav_time = msg['j']
     return True
 
-def update_stock_stats(infos, cacheOnly):
+def update_stock_stats(infos):
     for info in infos:
-        info.avg.update(get_stat_vol(info.code, cacheOnly))
+        info.ma = get_ma(info.code, 60)
+        info.mv = get_mv(info.code, 30)
     update_etf_nav(infos)
     return
 
@@ -280,8 +292,8 @@ def show_stock_info(info):
 
     print('\t\t%s | %s' %(txt, ', '.join(cflts)))
 
-    if '30d_vol' in info.avg:
-        ratio = info.v / info.avg['30d_vol'] * 100
+    if info.mv:
+        ratio = info.v / info.mv * 100
         txt = '#%.0f (%.2f%%)' %(info.v, ratio)
         if ratio > 100:
             txt = bcolors.YELLOW + txt + bcolors.ENDC
@@ -345,7 +357,7 @@ def show_exr_info(info):
 def get_stock_info_by_code(code):
     data = get_stock_json_by_codes(code)
     infos = get_stock_infos(data)
-    update_stock_stats(infos, False)
+    update_stock_stats(infos)
     return infos[0] if len(infos) > 0 else None
 
 def update_stock_report_wap(obj):
@@ -495,7 +507,7 @@ def main():
     if options.input:
         data = get_json_from_file(options.input)
         stock_infos.extend(get_stock_infos(data))
-    update_stock_stats(stock_infos, not options.stat)
+    update_stock_stats(stock_infos)
     for info in stock_infos:
         show_stock_info(info)
     if options.exr:

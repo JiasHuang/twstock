@@ -88,7 +88,7 @@ function updateResult() {
     let s = stocks[i];
     text += String.format('<tr class="stockinfo {0}">', s.tags.join(' '));
     text += String.format('<td contenteditable=true>{0}</td>', s.code);
-    text += String.format('<td contenteditable=true>{0}</td>', s.name);
+    text += String.format('<td>{0}</td>', s.msg.n);
     text += String.format('<td contenteditable=true>{0}</td>', getTagsText(s));
     text += String.format('<td contenteditable=true>{0}</td>', getFltsText(s));
     text += '</tr>';
@@ -96,7 +96,9 @@ function updateResult() {
 
   for (var i=0; i<3; i++) {
     text += '<tr>';
-    text += '<td contenteditable=true></td>'.repeat(4);
+    text += '<td contenteditable=true></td>';
+    text += '<td>-</td>';
+    text += '<td contenteditable=true></td>'.repeat(2);
     text += '</tr>';
   }
 
@@ -112,9 +114,11 @@ function parseStockJSON(obj) {
   updateResult();
 }
 
-function loadStockJSON() {
+function initStockInfo() {
+  var api_url = 'stock.py' + window.location.search;
+
   $.ajax({
-    url: 'jsons/stocks.json',
+    url: api_url,
     dataType: 'json',
     success: parseStockJSON,
   });
@@ -129,13 +133,11 @@ function onSave() {
   var jsons = [];
   for (var i = 1, row; row = table.rows[i]; i++) {
     let code = row.cells[0].textContent;
-    let name = row.cells[1].textContent;
     let tags = row.cells[2].textContent;
     let flts = row.cells[3].textContent;
     if (code.length) {
       let obj = {
         code: code,
-        name: name,
         tags: (tags.length)? tags.split(/[ ,]+/) : [],
         flts: (flts.length)? flts.split(/[ ,]+/) : [],
       };
@@ -154,6 +156,6 @@ function onSave() {
 
 function onDocumentReady() {
   loadTopMenu();
-  loadStockJSON();
+  initStockInfo();
 }
 

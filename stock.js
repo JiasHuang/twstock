@@ -27,6 +27,7 @@ function getStockTableText(s) {
   var c;
   var chg, ratio;
   var text = '';
+  var note = [];
 
   text += String.format('<table class="stockinfo {0}">', s.tags.join(' '));
 
@@ -73,28 +74,26 @@ function getStockTableText(s) {
   text += '</td>';
   text += '<td>';
 
-  text += getFltText(s.flts, s.flts_ret, 'bg_yellow');
+  if (s.flts.length)
+    note.push(getFltText(s.flts, s.flts_ret, 'flt bg_yellow', 'flt'));
 
   if (s.ma) {
     chg = s.z - s.ma
     ratio = chg / s.ma * 100;
     cls = (ratio <= -10) ? 'bg_yellow' : '';
-    text += text.length ? '<br>' : '';
-    text += String.format('MA {0} ({1}, <span class={2}>{3}%</span>)', s.ma, chg.toFixed(2), cls, ratio.toFixed(2));
+    note.push(String.format('<span class=MA>MA {0} ({1}, <span class={2}>{3}%</span></span>)', s.ma, chg.toFixed(2), cls, ratio.toFixed(2)));
   }
 
   if (s.nav)
   {
     let diff = s.nav - s.z;
     let diff_ratio = diff / s.z * 100;
-    let nav_date = String(s.nav_date)
-    let month = nav_date.substring(4, 6)
-    let day = nav_date.substring(6, 8)
-    text += text.length ? '<br>' : '';
-    text += String.format('淨值 {0} ({1}%)', s.nav.toFixed(2), diff_ratio.toFixed(2));
-    text += String.format('<br><span class=nav_time>{0}/{1} {2}</span>', month, day, s.nav_time);
+    let date = String(s.nav_date).substring(4, 8);
+    let time = s.nav_time.substring(0, 5);
+    note.push(String.format('<span class=nav>淨值 {0} ({1}%) </span><span class=nav_time>{2} {3}</span>', s.nav.toFixed(2), diff_ratio.toFixed(2), date, time));
   }
 
+  text += note.join('<br>');
   text += '</td>';
 
   text += '</tr>';

@@ -9,8 +9,6 @@ import datetime
 import pandas as pd
 import numpy as np
 
-import tse
-import otc
 import twse
 import xurl
 
@@ -159,19 +157,15 @@ def to_float(num):
         return 0.0
 
 def get_ma(code, days):
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days=60)
-    data = tse.get_data(code, start) if tse.has_code(code) else otc.get_data(code, start)
+    data = twse.get_data_by_days(code, days)
     df = pd.DataFrame(data)
-    vals = df['close'].astype('float64').to_numpy()
+    vals = df['close'].tail(days).astype('float64').to_numpy()
     return np.round(vals.mean(), 2)
 
 def get_mv(code, days):
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days=days)
-    data = tse.get_data(code, start) if tse.has_code(code) else otc.get_data(code, start)
+    data = twse.get_data_by_days(code, days)
     df = pd.DataFrame(data)
-    vals = df['volume'].astype('int64').to_numpy()
+    vals = df['volume'].tail(days).astype('int64').to_numpy()
     return np.round((vals.mean() / 1000))
 
 def get_stock_infos(data):

@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.widgets import MultiCursor
 from matplotlib.widgets import Cursor
-import tse
-import otc
+
+import twse
 
 cached = {}
 
@@ -62,25 +62,19 @@ def get_exchange(code):
         path = os.path.join(exchange, code + '.csv')
         if os.path.exists(path):
              return exchange
-    if tse.has_code(code):
-        return 'TSE'
-    if otc.has_code(code):
-        return 'OTC'
-    assert False, 'exchange not found'
-    return None
+    return 'OTC' if twse.is_otc(code) else 'TSE'
 
-def update_csv(path, exchange, code):
+def update_csv(path, exchange, code, start, end):
     if exchange in ['TSE', 'OTC']:
-        start = '20250101'
-        data = tse.get_data(code, start) if exchange == 'TSE' else otc.get_data(code, start)
+        data = twse.get_data(code, start, end)
         df = pd.DataFrame(data)
         if not os.path.exists(exchange):
             os.makedirs(exchange, exist_ok=True)
         df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
 
-def get_data(exchange, code, start=None, end=None):
+def get_data(exchange, code, start, end):
     path = os.path.join(exchange, code) + '.csv'
-    update_csv(path, exchange, code)
+    update_csv(path, exchange, code, start, end)
 
     if path not in cached:
         new_names = ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -88,32 +82,28 @@ def get_data(exchange, code, start=None, end=None):
 
     df = cached[path]
 
-    if start and end:
-        start_64 = np.datetime64(start)
-        end_64 = np.datetime64(end)
-        return df[(df['date'] >= start_64) & (df['date'] <= end_64)].copy()
+    start_64 = np.datetime64(start)
+    end_64 = np.datetime64(end)
+    return df[(df['date'] >= start_64) & (df['date'] <= end_64)].copy()
 
-    elif start:
-        start_64 = np.datetime64(start)
-        return df[df['date'] >= start_64].copy()
-
-    elif end:
-        end_64 = np.datetime64(end)
-        return df[df['date'] <= end_64].copy()
-
-    return df
-
-def get_attrs(exchange, code, attr, date, days):
-    df = get_data(exchange, code, end=date)
+def get_attrs(exchange, code, attr, end, days):
+    start = end - datetime.timedelta(days=int(days * 1.5))
+    df = get_data(exchange, code, start, end)
     return df[attr].tail(days).to_numpy()
 
 def get_attr(exchange, code, attr, date):
-    vals = get_attrs(exchange, code, attr, date, 1)
-    return vals[0] if vals else None
+    vals = get_attrs(exchange, code, attr, date, 30)
+    return vals[0] if len(vals) else None
 
-def get_ma(exchange, code, date, days):
-    vals = get_attrs(exchange, code, "close", date, days)
+def get_ma(exchange, code, end, days):
+    vals = get_attrs(exchange, code, "close", end, days)
     return vals.mean()
+
+def get_ma_ratio(df, ma):
+    low_vals = df['low'].to_numpy()
+    ma_vals = df['ma'+str(ma)].to_numpy()
+    ratios = low_vals / ma_vals
+    return ratios[~np.isnan(ratios)]
 
 def get_infos(exchange, code, start, end, ma_list):
     df = get_dataframe(exchange, code, start, end, ma_list)
@@ -147,20 +137,35 @@ def analyze(df, ma_list, label):
 
     print('---')
     for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
+        msg = '{} {:.2f} ({:+.2%})'.format(k, v, v/pz - 1)
         if k == 'pz':
-            k = bcolors.YELLOW + 'pz' + bcolors.ENDC
-        print('{} {} {:.2f} ({:+.2%})'.format(label, k, v, v/pz-1))
+            msg = bcolors.YELLOW + msg + bcolors.ENDC
+        print('{} {}'.format(label, msg))
 
     print('---')
     for ma in ma_list:
-        low_vals = df['low'].to_numpy()
-        ma_vals = df['ma'+str(ma)].to_numpy()
-        rates = low_vals / ma_vals
-        ref_ma = ma_vals[-1]
-        ref_rate = min(rates[~np.isnan(rates)])
-        for rate in [ref_rate, 0.95, 0.9, 0.85, 0.8]:
-            x = ref_ma * rate
-            print('{} ref_ma{} {:.2f} x {:.2f} = {:.2f} ({:.2f})'.format(label, ma, ref_ma, rate, x, round_tick(x)))
+        ma_val = df['ma'+str(ma)].iloc[-1]
+        ma_ratio = get_ma_ratio(df, ma)
+        if np.isnan(ma_val) or len(ma_ratio) == 0:
+            continue
+        max_ratio = max(ma_ratio)
+        min_ratio = min(ma_ratio)
+        max_pct = ((max_ratio - 1) * 100)
+        min_pct = ((min_ratio - 1) * 100)
+        data = {}
+        data['pz'] = pz
+        data['ma {:+.2f}%'.format(max_pct)] = ma_val * (1 + max_pct / 100)
+        data['ma {:+.2f}%'.format(min_pct)] = ma_val * (1 + min_pct / 100)
+        for pct in np.arange(-30, 30 + 2.5, 2.5):
+            if pct < min_pct or pct > max_pct:
+                continue
+            data['ma {:+.2f}%'.format(pct)] = ma_val * (1 + pct / 100)
+        for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
+            msg = '{} {:.2f}'.format(k, v)
+            if k == 'pz':
+                pct = (v / ma_val - 1) * 100
+                msg = bcolors.YELLOW + 'pz {:+.2f}% {:.2f}'.format(pct, v) + bcolors.ENDC
+            print('{} {}'.format(label, msg))
 
     return
 

@@ -4,7 +4,7 @@
 import os
 import argparse
 import datetime
-import google_finance_csv
+import quote
 import copy
 import numpy as np
 
@@ -55,16 +55,16 @@ class Stock:
         self.records.append(Record(date, pz, cost))
 
     def get_infos(self, start, end, ma_list):
-        return google_finance_csv.get_infos(self.exchange, self.code, start, end, ma_list)
+        return quote.get_infos(self.exchange, self.code, start, end, ma_list)
 
     def get_price(self, date):
-        return google_finance_csv.get_attr(self.exchange, self.code, 'close', date)
+        return quote.get_attr(self.exchange, self.code, 'close', date)
 
     def get_prices(self, date, days):
-        return google_finance_csv.get_attrs(self.exchange, self.code, 'close', date, days)
+        return quote.get_attrs(self.exchange, self.code, 'close', date, days)
 
     def get_ma(self, date, days):
-        return google_finance_csv.get_ma(self.exchange, self.code, date, days)
+        return quote.get_ma(self.exchange, self.code, date, days)
 
     def get_gain(self, pz):
         gain = int(pz * self.qty - self.cost)
@@ -343,7 +343,7 @@ def main():
         for code in args.code.split(','):
             new_args = copy.deepcopy(args)
             new_args.code = code
-            new_args.exchange = args.exchange or google_finance_csv.get_exchange(code)
+            new_args.exchange = args.exchange or quote.get_exchange(code)
             analyze(new_args)
         return
 
@@ -359,7 +359,7 @@ def main():
                 new_args.code = code
                 new_args.batch = batch
                 new_args.policy = policy
-                new_args.exchange = args.exchange or google_finance_csv.get_exchange(code)
+                new_args.exchange = args.exchange or quote.get_exchange(code)
                 result = core(new_args)
                 if result.total_cost:
                     results.append(result)

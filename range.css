@@ -38,6 +38,10 @@
   background-color: #FF8C00;
 }
 
+#result tr:hover {
+  background-color: #A2F4FD;
+}
+
 .bg_green {
   background-color: #99FF99;
 }

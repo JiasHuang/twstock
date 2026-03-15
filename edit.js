@@ -109,7 +109,6 @@ function updateResult() {
 }
 
 function parseStockJSON(obj) {
-  console.log(obj);
   cur_stock_json = obj;
   updateResult();
 }
@@ -145,7 +144,6 @@ function onSave() {
     }
   }
   let data = '{"stocks":[\n\t' + jsons.join(',\n\t') + '\n]}';
-  console.log(data);
   $.ajax({
     type: 'POST',
     url: 'upload.py?j=stocks.json',

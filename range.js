@@ -127,7 +127,6 @@ function updateResult() {
 }
 
 function parseStockJSON(obj) {
-  console.log(obj);
   cur_stock_json = obj;
   updateResult();
 }

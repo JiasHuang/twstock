@@ -77,20 +77,19 @@ function getStockTableText(s) {
   if (s.flts.length)
     note.push(getFltText(s.flts, s.flts_ret, 'flt bg_yellow', 'flt'));
 
-  if (s.ma) {
-    chg = s.z - s.ma
-    ratio = chg / s.ma * 100;
-    cls = (ratio <= -10) ? 'bg_yellow' : '';
-    note.push(String.format('<span class=MA>MA {0} ({1}, <span class={2}>{3}%</span></span>)', s.ma, chg.toFixed(2), cls, ratio.toFixed(2)));
-  }
-
   if (s.nav)
   {
     let diff = s.nav - s.z;
     let diff_ratio = diff / s.z * 100;
-    let date = String(s.nav_date).substring(4, 8);
     let time = s.nav_time.substring(0, 5);
-    note.push(String.format('<span class=nav>淨值 {0} ({1}%) </span><span class=nav_time>{2} {3}</span>', s.nav.toFixed(2), diff_ratio.toFixed(2), date, time));
+    note.push(String.format('<span class=nav>淨值 {0} ({1}, {2}%) </span><span class=nav_time>{3}</span>', s.nav.toFixed(2), diff.toFixed(2), diff_ratio.toFixed(2), time));
+  }
+
+  if (s.ma) {
+    chg = s.z - s.ma
+    ratio = chg / s.ma * 100;
+    cls = (ratio <= -10) ? 'bg_yellow' : '';
+    note.push(String.format('<span class=MA>均線 {0} ({1}, <span class={2}>{3}%</span></span>)', s.ma, chg.toFixed(2), cls, ratio.toFixed(2)));
   }
 
   text += note.join('<br>');

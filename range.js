@@ -4,15 +4,6 @@ var selected_tag = null;
 var selected_innerTag = null;
 var cur_stock_json = null;
 
-String.format = function() {
-  var s = arguments[0];
-  for (var i = 0; i < arguments.length - 1; i++) {
-    var reg = new RegExp("\\{" + i + "\\}", "gm");
-    s = s.replace(reg, arguments[i + 1]);
-  }
-  return s;
-}
-
 function percent_string(x) {
   let optionsAlways = { signDisplay: 'always', maximumFractionDigits:2 };
   return x.toLocaleString('en-US', optionsAlways)+'%';
@@ -44,7 +35,7 @@ function updateTags(stocks) {
 
   if (tags.length) {
     for (var i=0; i<tags.length; i++) {
-      text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
+      text += `<button onclick=selectTag("${tags[i]}")>${tags[i]}</button>`;
     }
     text += '<button onclick=selectInnerTag("na")>na</button>';
   }
@@ -94,7 +85,8 @@ function updateResult() {
   text += '<tr><th>code</th><th>name</th><th>Pz</th><th>MA%</th>';
 
   for (var r=r_min; r<=r_max; r+=r_step) {
-    text += String.format('<th>{0}</th>', r == 0 ? 'MA': percent_string(r));
+    let s = r == 0 ? 'MA':percent_string(r);
+    text += `<th>${s}</th>`;
   }
 
   text += '</tr>';
@@ -102,11 +94,12 @@ function updateResult() {
   for (var i=0; i<stocks.length; i++) {
     let s = stocks[i];
     let pct = (s.z / s.ma - 1) * 100;
-    text += String.format('<tr class="stockinfo {0}">', s.tags.join(' '));
-    text += String.format('<td>{0}</td>', s.code);
-    text += String.format('<td>{0}</td>', s.msg.n);
-    text += String.format('<td>{0}</td>', s.z);
-    text += String.format('<td><span class={0}>{1}</span></td>', pct < 0 ? 'bg_red':'bg_green', percent_string(pct));
+    let pct_cls = pct < 0 ? 'bg_red':'bg_green';
+    text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
+    text += `<td><a href="candlestick.html?c=${s.code}">${s.code}</a></td>`;
+    text += `<td>${s.msg.n}</td>`;
+    text += `<td>${s.z}</td>`;
+    text += `<td><span class=${pct_cls}>${percent_string(pct)}</span></td>`;
     for (var r=r_min; r<=r_max; r+=r_step) {
       let x = (s.ma * (100 + r) / 100).toFixed(2);
       let c = '';
@@ -114,7 +107,7 @@ function updateResult() {
       c = (r == 0 && s.z < x) ? 'bg_red' : c;
       c = (r > 0 && s.z >= x) ? 'bg_green' : c;
       c = (r < 0 && s.z <= x) ? 'bg_red' : c;
-      text += String.format('<td class={0}>{1}</td>', c, x);
+      text += `<td class=${c}>${x}</td>`;
     }
 
     text += '</tr>';

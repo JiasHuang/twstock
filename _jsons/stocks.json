@@ -1,7 +1,7 @@
 {"stocks":[
 	{"code":"0050","tags":["etf"],"flts":["z<=63"]},
 	{"code":"00720B","tags":["bond"],"flts":["z<=33.2","z<=31.95"]},
-	{"code":"00751B","tags":["bond"],"flts":[]},
+	{"code":"00751B","tags":["bond"],"flts":["z>=34"]},
 	{"code":"2881","tags":["fin"],"flts":["z<=52"]},
 	{"code":"2882","tags":["fin"],"flts":["z<=41"]},
 	{"code":"2884","tags":["fin"],"flts":["z<=18"]},
@@ -23,7 +23,7 @@
 	{"code":"2301","tags":["tech"],"flts":[]},
 	{"code":"00675L","tags":["etf","etf_L"],"flts":["z<=130"]},
 	{"code":"00670L","tags":["etf","etf_L"],"flts":["z<=142"]},
-	{"code":"00788B","tags":["bond"],"flts":[]},
+	{"code":"00788B","tags":["bond"],"flts":["z>=32"]},
 	{"code":"00963","tags":["etf"],"flts":["z<=11"]},
 	{"code":"00753L","tags":["etf","etf_L"],"flts":["z<=10.25","z>=12.5"]},
 	{"code":"009816","tags":["etf"],"flts":["z<=10.25"]},
@@ -31,5 +31,7 @@
 	{"code":"009805","tags":["etf"],"flts":["z<=12.5"]},
 	{"code":"00735","tags":["etf"],"flts":["z<=48"]},
 	{"code":"00663L","tags":["etf","etf_L"],"flts":["z<=43"]},
-	{"code":"009814","tags":["etf"],"flts":["z<=10"]}
+	{"code":"009814","tags":["etf"],"flts":["z<=10"]},
+	{"code":"2408","tags":["tech"],"flts":[]},
+	{"code":"3711","tags":["tech"],"flts":[]}
 ]}

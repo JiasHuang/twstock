@@ -5,13 +5,15 @@ import os
 import json
 import configparser
 import argparse
+import datetime
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http.cookies import SimpleCookie
-from urllib.parse import urlparse, parse_qs, quote, unquote, unquote_plus
+from urllib.parse import urlparse, parse_qs, unquote_plus
 
 import xurl
 import twstock
+import twse
 
 class defvals:
     hostname = ''
@@ -47,6 +49,14 @@ def stock(q):
     twstock.update_stock_stats(infos)
     json_list = [json.dumps(info.__dict__) for info in infos]
     return '{"stocks":[%s]}' %(','.join(json_list))
+
+def loadcsv(q):
+    d = parse_qs(q)
+    code = d['c'][0] if 'c' in d else None
+    end = datetime.date.today()
+    start = end - datetime.timedelta(days=540)
+    data = twse.get_data(code, start, end)
+    return json.dumps(data)
 
 def load(q):
     d = parse_qs(q)

@@ -103,6 +103,8 @@ def get_data(code, start, end, verbose=False):
         m = (idx % 12) + 1
         objs = get_objs(code, y, m, verbose)
         if len(objs) == 0:
+            if verbose:
+                print('{}{:02d} not found'.format(y, m))
             break
         data = objs + data
         idx -= 1
@@ -118,6 +120,8 @@ def get_data_by_days(code, days, verbose=False):
         m = (idx % 12) + 1
         objs = get_objs(code, y, m, verbose)
         if len(objs) == 0:
+            if verbose:
+                print('{}{:02d} not found'.format(y, m))
             break
         data = objs + data
         idx -= 1

@@ -480,7 +480,7 @@ function getOverallHTMLText(obj) {
   var per_min_total_weight = 0;
   var per_min_total_sum = 0;
 
-  for (let i in  obj.per_max) {
+  for (let i in obj.per_max) {
     if (obj.per_max[i] > 0)
     {
       let weight = Math.pow(0.67, i);

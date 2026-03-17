@@ -68,17 +68,17 @@ def get_exchange(code):
              return exchange
     return 'OTC' if twse.is_otc(code) else 'TSE'
 
-def update_csv(path, exchange, code, start, end):
+def update_csv(path, exchange, code, start, end, verbose):
     if exchange in ['TSE', 'OTC']:
-        data = twse.get_data(code, start, end)
+        data = twse.get_data(code, start, end, verbose)
         df = pd.DataFrame(data)
         if not os.path.exists(exchange):
             os.makedirs(exchange, exist_ok=True)
         df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
 
-def get_data(exchange, code, start, end):
+def get_data(exchange, code, start, end, verbose=False):
     path = os.path.join(exchange, code) + '.csv'
-    update_csv(path, exchange, code, start, end)
+    update_csv(path, exchange, code, start, end, verbose)
 
     if path not in cached:
         new_names = ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -114,8 +114,8 @@ def get_infos(exchange, code, start, end, ma_list):
     infos = [StockInfo(row, ma_list) for idx, row in df.iterrows()]
     return infos
 
-def get_dataframe(exchange, code, start, end, ma_list):
-    df = get_data(exchange, code, start, end)
+def get_dataframe(exchange, code, start, end, ma_list, verbose=False):
+    df = get_data(exchange, code, start, end, verbose)
 
     for ma in ma_list:
         df['ma'+str(ma)] = abstract.SMA(df, ma)
@@ -190,7 +190,7 @@ def print_range(df, code, label):
 
 def get_percent_color(pct):
     if pct == 0:
-        return 'black'
+        return 'green'
     if pct in [-10, 10]:
         return 'orange'
     if pct in [-20, 20]:
@@ -241,6 +241,7 @@ def main():
     parser.add_argument('--ma', nargs='+', type=int, default=[60])
     parser.add_argument('-p', '--plot', action="store_true")
     parser.add_argument('-r', '--range', action="store_true")
+    parser.add_argument('-v', '--verbose', action="store_true")
     args, unparsed = parser.parse_known_args()
 
     if len(unparsed) > 0:
@@ -253,7 +254,7 @@ def main():
 
         end = datetime.date.today()
         start = end - datetime.timedelta(days=540)
-        df = get_dataframe(exchange, code, start, end, args.ma)
+        df = get_dataframe(exchange, code, start, end, args.ma, args.verbose)
         print('---')
         print(df.tail(20).round(2))
         analyze(df, args.ma, label)

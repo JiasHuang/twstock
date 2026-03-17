@@ -98,7 +98,7 @@ def curl(url, local, opts, ref, encoding):
 def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl', verbose=False, encoding=None):
     local = local or genLocal(url, opts=opts)
     expiration = expiration or defvals.expiration
-    if cacheOnly or (cache and not checkExpire(local, expiration)):
+    if (cacheOnly and os.path.exists(local)) or (cache and not checkExpire(local, expiration)):
         if verbose:
             print('[xurl] %s -> %s (cache)' %(url, local))
         return readLocal(local, encoding)

@@ -6,51 +6,51 @@ var selected_innerTag = null;
 var cur_stock_json = null;
 var sort_by = null;
 
-String.format = function() {
-  var s = arguments[0];
-  for (var i = 0; i < arguments.length - 1; i++) {
-    var reg = new RegExp("\\{" + i + "\\}", "gm");
-    s = s.replace(reg, arguments[i + 1]);
-  }
-  return s;
+function pct_str(val, chg, pct, cls='', pct_cls='') {
+  let val_str = val.toLocaleString('en-US', {maximumFractionDigits:2});
+  let chg_str = chg.toLocaleString('en-US', {signDisplay:'always', maximumFractionDigits:2});
+  let pct_str = pct.toLocaleString('en-US', {signDisplay:'always', maximumFractionDigits:2});
+  return `<span class="${cls}">${val_str} (${chg_str}, <span class="${pct_cls}">${pct_str}%</span>)</span>`;
 }
 
 function getFltText(flts, flts_ret, class_name, class_name_false = '') {
   var vec = [];
   for (var i=0; i<flts.length; i++) {
-      vec.push(String.format('<span class="{0}">{1}</span>', flts_ret[i] ? class_name : class_name_false, flts[i]));
+      let cls = flts_ret[i] ? class_name : class_name_false;
+      vec.push(`<span class="${cls}">${flts[i]}</span>`);
   }
   return vec.join('，')
 }
 
 function getStockTableText(s) {
-  var c;
-  var chg, ratio;
+  var chg;
+  var pct;
+  var cls;
   var text = '';
   var note = [];
 
-  text += String.format('<table class="stockinfo {0}">', s.tags.join(' '));
+  text += `<table class="stockinfo ${s.tags.join(' ')}">`;
 
   text += '<tr>';
 
   text += '<th rowspan=2>';
-  text += String.format('<a href="report.html?c={0}" target="_blank">{0}<br>{1}</a>', s.code, s.msg.n);
+  text += `<a href="report.html?c=${s.code}" target="_blank">${s.code}<br>${s.msg.n}</a>`;
   text += '</th>';
 
   text += '<td>';
   chg = s.z - s.y;
-  ratio = chg / s.y * 100;
-  c = ''
-  c = (ratio > 0) ? ((ratio >= 9) ? 'bg_red' : 'red') : c;
-  c = (ratio < 0) ? ((ratio <= -9) ? 'bg_green' : 'green') : c;
-  text += String.format('<span class={0}>${1} ({2}, {3}%)</span>', c, s.z, chg.toFixed(2), ratio.toFixed(2));
+  pct = chg / s.y * 100;
+  cls = ''
+  cls = (pct > 0) ? ((pct >= 9) ? 'bg_red' : 'red') : cls;
+  cls = (pct < 0) ? ((pct <= -9) ? 'bg_green' : 'green') : cls;
+  text += pct_str(s.z, chg, pct, cls);
   text += '</td>';
 
   text += '<td>';
-  ratio = Math.round(s.v / s.mv * 100);
-  text += String.format('#{0} ({1}%)', s.v.toLocaleString(), ratio);
-  if (s.v >= 1000 && ratio >= 120)
-    text += '<span class=bg_hv>★ </span>';
+  pct = Math.round(s.v / s.mv * 100);
+  text += `#${s.v.toLocaleString()} (${pct}%)`;
+  if (s.v >= 1000 && pct >= 120)
+    text += '<span class="bg_hv">★ </span>';
   text += '</td>';
 
   text += '</tr>';
@@ -61,14 +61,14 @@ function getStockTableText(s) {
 
   if (s.h) {
     chg = s.h - s.y
-    ratio = chg / s.y * 100;
-    text += String.format('Hi {0} ({1}, {2}%)', s.h.toFixed(2), chg.toFixed(2), ratio.toFixed(2));
+    pct = chg / s.y * 100;
+    text += `Hi ${pct_str(s.h, chg, pct)}`;
   }
 
   if (s.l) {
     chg = s.l - s.y
-    ratio = chg / s.y * 100;
-    text += String.format('<br>Lo {0} ({1}, {2}%)', s.l.toFixed(2), chg.toFixed(2), ratio.toFixed(2));
+    pct = chg / s.y * 100;
+    text += `<br>Lo ${pct_str(s.l, chg, pct)}`;
   }
 
   text += '</td>';
@@ -79,17 +79,18 @@ function getStockTableText(s) {
 
   if (s.nav)
   {
-    let diff = s.nav - s.z;
-    let diff_ratio = diff / s.z * 100;
+    chg = s.nav - s.z;
+    pct = chg / s.z * 100;
     let time = s.nav_time.substring(0, 5);
-    note.push(String.format('<span class=nav>淨值 {0} ({1}, {2}%) </span><span class=nav_time>{3}</span>', s.nav.toFixed(2), diff.toFixed(2), diff_ratio.toFixed(2), time));
+    let time_str = `<span class="nav_time">${time}</span>`;
+    note.push(`<span class="nav">淨值 ${pct_str(s.nav, chg, pct)}</span> ${time_str}`);
   }
 
   if (s.ma) {
     chg = s.z - s.ma
-    ratio = chg / s.ma * 100;
-    cls = (ratio <= -10) ? 'bg_yellow' : '';
-    note.push(String.format('<span class=MA>均線 {0} ({1}, <span class={2}>{3}%</span></span>)', s.ma, chg.toFixed(2), cls, ratio.toFixed(2)));
+    pct = chg / s.ma * 100;
+    cls = (pct <= -10) ? 'bg_yellow' : '';
+    note.push(`<span class="MA">均線 ${pct_str(s.ma, chg, pct, '', cls)}</span>`);
   }
 
   text += note.join('<br>');
@@ -131,7 +132,7 @@ function getTagsText(obj) {
     text += '<button onclick=selectInnerTag("hl")>hl</button>';
     text += '<button onclick=selectInnerTag("hv")>hv</button>';
     for (var i=0; i<tags.length; i++) {
-      text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
+      text += `<button onclick=selectTag("${tags[i]}")>${tags[i]}</button>`;
     }
     text += '<button onclick=selectInnerTag("na")>na</button>';
   }
@@ -148,7 +149,7 @@ function getExchangeRateTableText(objs) {
     for (var i=0; i<objs.length; i++) {
       let obj = objs[i];
       let flt_txt = getFltText(obj.flts, obj.flts_ret, 'bg_yellow', 'grey');
-      text += String.format('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>', obj.currency, obj.buy_spot, obj.sell_spot, flt_txt);
+      text += `<tr><td>${obj.currency}</td><td>${obj.buy_spot}</td><td>${obj.sell_spot}</td><td>${flt_txt}</td></tr>`;
     }
     text += '</table>';
   }

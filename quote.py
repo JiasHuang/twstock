@@ -52,8 +52,12 @@ def get_tick(pz):
         return 1
     return 5
 
-def round_tick(pz):
-    tick = get_tick(pz)
+def get_etf_tick(pz):
+    if pz < 50:
+        return 0.01
+    return 0.05
+
+def round_tick(pz, tick):
     return round(pz / tick) * tick
 
 def get_exchange(code):
@@ -169,14 +173,18 @@ def analyze(df, ma_list, label):
 
     return
 
-def print_rates(df, label):
+def print_range(df, code, label):
 
     pz = df['close'].iloc[-1]
+    tick = get_etf_tick(pz) if code.startswith('00') else get_tick(pz)
 
     print('---')
-    for rate in np.arange(1.01, 1.1, 0.01):
-        x = pz * rate
-        print('{} pz {:.2f} x {:.2f} = {:.2f} ({:.2f})'.format(label, pz, rate, x, round_tick(x)))
+    for pct in np.arange(10, -11, -1):
+        x = pz * (1 + pct / 100)
+        msg = 'pz {:+d}% {:.2f} ({:.2f})'.format(pct, x, round_tick(x, tick))
+        if pct == 0:
+            msg = bcolors.YELLOW + msg + bcolors.ENDC
+        print('{} {}'.format(label, msg))
 
     return
 
@@ -232,7 +240,7 @@ def main():
     parser.add_argument('-c', '--code', nargs='+', default='2330')
     parser.add_argument('--ma', nargs='+', type=int, default=[60])
     parser.add_argument('-p', '--plot', action="store_true")
-    parser.add_argument('-r', '--rates', action="store_true")
+    parser.add_argument('-r', '--range', action="store_true")
     args, unparsed = parser.parse_known_args()
 
     if len(unparsed) > 0:
@@ -250,8 +258,8 @@ def main():
         print(df.tail(20).round(2))
         analyze(df, args.ma, label)
 
-        if args.rates:
-            print_rates(df, label)
+        if args.range:
+            print_range(df, code, label)
 
         if args.plot:
             plot(df)

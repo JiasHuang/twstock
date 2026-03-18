@@ -132,7 +132,7 @@ function getLinkDict(code) {
   dict.push({key:'損益', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zcq/zcq_{0}.djhtm', code)});
   dict.push({key:'營收', val:String.format('https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_{0}.djhtm', code)});
   dict.push({key:'新聞', val:String.format('https://tw.stock.yahoo.com/q/h?s={0}', code)});
-  dict.push({key:'Ｋ線', val:String.format('https://goodinfo.tw/tw/ShowK_Chart.asp?STOCK_ID={0}&SCROLL2Y=384', code)});
+  dict.push({key:'Ｋ線', val:'candlestick.html?c=' + code});
   dict.push({key:'股利', val:String.format('https://www.wantgoo.com/stock/etf/{0}/dividend-policy/ex-dividend', code)});
   dict.push({key:'CMoney', val:String.format('https://www.cmoney.tw/forum/stock/{0}', code)});
   dict.push({key:'玩股網', val:String.format('https://www.wantgoo.com/stock/{0}', code)});

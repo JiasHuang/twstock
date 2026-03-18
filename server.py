@@ -13,7 +13,7 @@ from urllib.parse import urlparse, parse_qs, unquote_plus
 
 import xurl
 import twstock
-import twse
+import quote
 
 class defvals:
     hostname = ''
@@ -55,8 +55,10 @@ def loadcsv(q):
     code = d['c'][0] if 'c' in d else None
     end = datetime.date.today()
     start = end - datetime.timedelta(days=540)
-    data = twse.get_data(code, start, end)
-    return json.dumps(data)
+    exchange = quote.get_exchange(code)
+    df = quote.get_data(exchange, code, start, end)
+    df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+    return df.to_json(orient='records', indent=4)
 
 def load(q):
     d = parse_qs(q)

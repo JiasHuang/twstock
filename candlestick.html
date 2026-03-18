@@ -41,7 +41,7 @@ window.onload = function () {
         dataPoints : dataPoints1
       }]
     },{
-      height: 200,
+      //height: 200,
       toolTip: {
         shared: true
       },
@@ -69,15 +69,14 @@ window.onload = function () {
   });
   var api_url = 'loadcsv.py' + window.location.search;
   $.getJSON(api_url, function(data) {
+
+    // dataPoints1
+    for (let d of data) {
+      dataPoints1.push({x: new Date(d.date), y: [Number(d.open), Number(d.high), Number(d.low), Number(d.close)]});
+    }
+
+    // dataPoints2
     for(var i = 0; i < data.length; i++) {
-
-      let date = data[i].date;
-      let yyyy = date.substring(0, 4);
-      let mm = date.substring(4, 6);
-      let dd = date.substring(6, 8);
-
-      dataPoints1.push({x: new Date(yyyy, mm, dd), y: [Number(data[i].open), Number(data[i].high), Number(data[i].low), Number(data[i].close)]});
-
       var pct = null;
       const count = 60;
 
@@ -89,9 +88,14 @@ window.onload = function () {
         pct = (Number(data[i].close) / (sum / count) - 1) * 100;
       }
 
-      dataPoints2.push({x: new Date(yyyy, mm, dd), y: pct});
-      dataPoints3.push({x: new Date(yyyy, mm, dd), y: Number(data[i].close)});
+      dataPoints2.push({x: new Date(data[i].date), y: pct});
     }
+
+    // dataPoints3
+    for (let d of data) {
+      dataPoints3.push({x: new Date(d.date), y: Number(d.close)});
+    }
+
     stockChart.render();
     for (let ma of [5, 20, 60]) {
       let sma = calculateSMA(dataPoints1, ma);

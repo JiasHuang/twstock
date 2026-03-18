@@ -96,7 +96,7 @@ function updateResult() {
     let pct = (s.z / s.ma - 1) * 100;
     let pct_cls = pct < 0 ? 'bg_red':'bg_green';
     text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
-    text += `<td><a href="candlestick.html?c=${s.code}">${s.code}</a></td>`;
+    text += `<td><a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a></td>`;
     text += `<td>${s.msg.n}</td>`;
     text += `<td>${s.z}</td>`;
     text += `<td><span class=${pct_cls}>${percent_string(pct)}</span></td>`;

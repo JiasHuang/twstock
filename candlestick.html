@@ -5,89 +5,121 @@
 <script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.stock.min.js"></script>
 <script type="text/javascript">
 window.onload = function () {
-  var dps1 = [], dps2= [];
+  var dataPoints1 = [], dataPoints2 = [], dataPoints3 = [];
   var stockChart = new CanvasJS.StockChart("chartContainer",{
-    title:{
-      //text:"Technical Indicators: SMA"
-    },
-    subtitles: [{
-      //text:"Simple Moving Average"
-    }],
+    exportEnabled: true,
+    theme: "light2",
     charts: [{
-      axisY: {
-        //prefix: "$"
-      },
-      legend: {
-        verticalAlign: "top",
-        cursor: "pointer",
-        itemclick: function (e) {
-          if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-            e.dataSeries.visible = false;
-          } else {
-            e.dataSeries.visible = true;
-          }
-          e.chart.render();
-        }
-      },
       toolTip: {
         shared: true
       },
+      axisX: {
+        lineThickness: 5,
+        tickLength: 0,
+        labelFormatter: function(e) {
+          return "";
+        },
+        crosshair: {
+          enabled: true,
+          snapToDataPoint: true,
+          labelFormatter: function(e) {
+            return ""
+          }
+        }
+      },
+      legend: {
+        verticalAlign: "top",
+        horizontalAlign: "left"
+      },
       data: [{
+        name: "Price",
+        yValueFormatString: "#,###.##",
+        axisYType: "secondary",
         type: "candlestick",
-        showInLegend: true,
-        name: "Stock Price",
-        yValueFormatString: "#,###.00",
-        xValueType: "dateTime",
-        dataPoints : dps1
-      }],
+        risingColor: "green",
+        fallingColor: "red",
+        dataPoints : dataPoints1
+      }]
+    },{
+      height: 200,
+      toolTip: {
+        shared: true
+      },
+      axisX: {
+        crosshair: {
+          enabled: true,
+          snapToDataPoint: true
+        }
+      },
+      legend: {
+        horizontalAlign: "left"
+      },
+      data: [{
+        yValueFormatString: "#,###.##",
+        axisYType: "secondary",
+        name: "MA%",
+        dataPoints : dataPoints2
+      }]
     }],
     navigator: {
-       data: [{
-         dataPoints: dps2
-       }],
-      slider: {
-        //minimum: new Date(2026, 01, 01),
-        //maximum: new Date(2026, 03, 01)
-      }
+      data: [{
+        dataPoints: dataPoints3
+      }],
     }
   });
   var api_url = 'loadcsv.py' + window.location.search;
   $.getJSON(api_url, function(data) {
-    for(var i = 0; i < data.length; i++){
+    for(var i = 0; i < data.length; i++) {
+
       let date = data[i].date;
       let yyyy = date.substring(0, 4);
       let mm = date.substring(4, 6);
       let dd = date.substring(6, 8);
-      dps1.push({x: new Date(yyyy, mm, dd), y: [Number(data[i].open), Number(data[i].high), Number(data[i].low), Number(data[i].close)]});
-      dps2.push({x: new Date(yyyy, mm, dd), y: Number(data[i].close)});
+
+      dataPoints1.push({x: new Date(yyyy, mm, dd), y: [Number(data[i].open), Number(data[i].high), Number(data[i].low), Number(data[i].close)]});
+
+      var pct = null;
+      const count = 60;
+
+      if (i >= count) {
+        var sum = 0;
+        for (var j = 0; j < count; j++) {
+          sum += Number(data[i-j].close);
+        }
+        pct = (Number(data[i].close) / (sum / count) - 1) * 100;
+      }
+
+      dataPoints2.push({x: new Date(yyyy, mm, dd), y: pct});
+      dataPoints3.push({x: new Date(yyyy, mm, dd), y: Number(data[i].close)});
     }
     stockChart.render();
     for (let ma of [5, 20, 60]) {
-      let sma = calculateSMA(dps1, ma);
+      let sma = calculateSMA(dataPoints1, ma);
       stockChart.charts[0].addTo("data", { type: "line", dataPoints: sma, showInLegend: true, yValueFormatString: "#,###.00", name: "SMA"+ma})
     }
   });
-  function calculateSMA(dps, count){
-    var avg = function(dps){
+  function calculateSMA(dataPoints, count){
+    var avg = function(dataPoints){
       var sum = 0, count = 0, val;
-      for (var i = 0; i < dps.length; i++) {
-        val = dps[i].y[3]; sum += val; count++;
+      for (var i = 0; i < dataPoints.length; i++) {
+        val = dataPoints[i].y[3]; sum += val; count++;
       }
       return sum / count;
     };
     var result = [], val;
     count = count || 5;
     for (var i=0; i < count; i++)
-      result.push({ x: dps[i].x , y: null});
-    for (var i=count - 1, len=dps.length; i < len; i++){
-      val = avg(dps.slice(i - count + 1, i));
+      result.push({ x: dataPoints[i].x , y: null});
+    for (var i=count - 1, len=dataPoints.length; i < len; i++){
+      val = avg(dataPoints.slice(i - count + 1, i));
       if (isNaN(val))
-        result.push({ x: dps[i].x, y: null});
+        result.push({ x: dataPoints[i].x, y: null});
       else
-        result.push({ x: dps[i].x, y: val});
+        result.push({ x: dataPoints[i].x, y: val});
     }
     return result;
   }
+
 }
 </script>
 </head>

@@ -34,7 +34,7 @@ function getStockTableText(s) {
   text += '<tr>';
 
   text += '<th rowspan=2>';
-  text += `<a href="report.html?c=${s.code}" target="_blank">${s.code}<br>${s.msg.n}</a>`;
+  text += `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}<br>${s.msg.n}</a>`;
   text += '</th>';
 
   text += '<td>';

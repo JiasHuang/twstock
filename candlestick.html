@@ -1,133 +1,28 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
+
 <head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<title>CandleStick</title>
+
+<link rel="stylesheet" href="candlestick.css">
+
 <script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.stock.min.js"></script>
+
+<script type="text/javascript" src="candlestick.js"></script>
 <script type="text/javascript">
-window.onload = function () {
-  var dataPoints1 = [], dataPoints2 = [], dataPoints3 = [];
-  var stockChart = new CanvasJS.StockChart("chartContainer",{
-    exportEnabled: true,
-    theme: "light2",
-    charts: [{
-      toolTip: {
-        shared: true
-      },
-      axisX: {
-        lineThickness: 5,
-        tickLength: 0,
-        labelFormatter: function(e) {
-          return "";
-        },
-        crosshair: {
-          enabled: true,
-          snapToDataPoint: true,
-          labelFormatter: function(e) {
-            return ""
-          }
-        }
-      },
-      legend: {
-        verticalAlign: "top",
-        horizontalAlign: "left"
-      },
-      data: [{
-        name: "Price",
-        yValueFormatString: "#,###.##",
-        axisYType: "secondary",
-        type: "candlestick",
-        risingColor: "green",
-        fallingColor: "red",
-        dataPoints : dataPoints1
-      }]
-    },{
-      //height: 200,
-      toolTip: {
-        shared: true
-      },
-      axisX: {
-        crosshair: {
-          enabled: true,
-          snapToDataPoint: true
-        }
-      },
-      legend: {
-        horizontalAlign: "left"
-      },
-      data: [{
-        yValueFormatString: "#,###.##",
-        axisYType: "secondary",
-        name: "MA%",
-        dataPoints : dataPoints2
-      }]
-    }],
-    navigator: {
-      data: [{
-        dataPoints: dataPoints3
-      }],
-    }
-  });
-  var api_url = 'loadcsv.py' + window.location.search;
-  $.getJSON(api_url, function(data) {
-
-    // dataPoints1
-    for (let d of data) {
-      dataPoints1.push({x: new Date(d.date), y: [Number(d.open), Number(d.high), Number(d.low), Number(d.close)]});
-    }
-
-    // dataPoints2
-    for(var i = 0; i < data.length; i++) {
-      var pct = null;
-      const count = 60;
-
-      if (i >= count) {
-        var sum = 0;
-        for (var j = 0; j < count; j++) {
-          sum += Number(data[i-j].close);
-        }
-        pct = (Number(data[i].close) / (sum / count) - 1) * 100;
-      }
-
-      dataPoints2.push({x: new Date(data[i].date), y: pct});
-    }
-
-    // dataPoints3
-    for (let d of data) {
-      dataPoints3.push({x: new Date(d.date), y: Number(d.close)});
-    }
-
-    stockChart.render();
-    for (let ma of [5, 20, 60]) {
-      let sma = calculateSMA(dataPoints1, ma);
-      stockChart.charts[0].addTo("data", { type: "line", dataPoints: sma, showInLegend: true, yValueFormatString: "#,###.00", name: "SMA"+ma})
-    }
-  });
-  function calculateSMA(dataPoints, count){
-    var avg = function(dataPoints){
-      var sum = 0, count = 0, val;
-      for (var i = 0; i < dataPoints.length; i++) {
-        val = dataPoints[i].y[3]; sum += val; count++;
-      }
-      return sum / count;
-    };
-    var result = [], val;
-    count = count || 5;
-    for (var i=0; i < count; i++)
-      result.push({ x: dataPoints[i].x , y: null});
-    for (var i=count - 1, len=dataPoints.length; i < len; i++){
-      val = avg(dataPoints.slice(i - count + 1, i));
-      if (isNaN(val))
-        result.push({ x: dataPoints[i].x, y: null});
-      else
-        result.push({ x: dataPoints[i].x, y: val});
-    }
-    return result;
-  }
-
-}
+  $(document).ready(onDocumentReady);
 </script>
+
 </head>
-<body>
-<div id="chartContainer" style="height: 800px; width: 100%;"></div>
+
+<body bgcolor=silver>
+
+  <div id="chartContainer" style="height: 700px; width: 100%;"></div>
+  <div id="result"></div>
 </body>
+
 </html>

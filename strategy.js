@@ -2,15 +2,6 @@
 var strategy = null;
 var info = null;
 
-String.format = function() {
-  var s = arguments[0];
-  for (var i = 0; i < arguments.length - 1; i++) {
-    var reg = new RegExp("\\{" + i + "\\}", "gm");
-    s = s.replace(reg, arguments[i + 1]);
-  }
-  return s;
-}
-
 class stat {
   constructor() {
     this.ref = [0, 0, 0];
@@ -64,8 +55,8 @@ function updateResult() {
     let s = strategy.stocks[i];
     let st = getStat(s);
     let z = info_stock ? info_stock.z : 0;
-    let z_diff = z - s.ref_pz;
-    let z_ratio = (z_diff / s.ref_pz * 100).toFixed(2);
+    let z_pct = ((z / s.ref_pz - 1) * 100).toFixed(2);
+    let z_pct_cls = z_pct < 0 ? 'green':'grey';
     let r_cls = Array(3).fill('grey');
 
     if (z < s.ref_pz) {
@@ -80,15 +71,16 @@ function updateResult() {
     var regexp = /現金股利\s*([\d|.]+)/g;
     var m = regexp.exec(s.note);
     var yield = m ? (parseFloat(m[1]) / z * 100).toFixed(2) : 0;
+    var yield_cls = yield > 0 ? '':'grey';
 
     text += '<tr>';
-    text += String.format('<td class="edit" contenteditable=true>{0}</td>', s.code);
-    text += String.format('<td><a href="report.html?c={0}">{1}</a></td>', s.code, info_stock.msg.n);
-    text += String.format('<td class="edit" contenteditable=true><span class="grey">{0}</span></td>', s.ref_pz);
-    text += String.format('<td><span class="curpz">{0}</span></td>', z.toFixed(2));
-    text += String.format('<td><span class="{0}">{1}%</span></td>', z_ratio < 0 ? 'green':'grey', z_ratio);
-    text += String.format('<td><span class="{0}">{1}%</span></td>', yield > 0 ? '':'grey', yield);
-    text += String.format('<td class="note" contenteditable=true>{0}</td>', s.note);
+    text += `<td class="edit" contenteditable=true>${s.code}</td>`;
+    text += `<td>${info_stock.msg.n}</td>`;
+    text += `<td class="edit" contenteditable=true><span class="grey">${s.ref_pz}</span></td>`;
+    text += `<td><span class="curpz">${z.toFixed(2)}</span></td>`;
+    text += `<td><span class="${z_pct_cls}">${z_pct}%</span></td>`;
+    text += `<td><span class="${yield_cls}">${yield}%</span></td>`;
+    text += `<td class="note" contenteditable=true>${s.note}</td>`;
     text += '</tr>';
   }
 
@@ -120,7 +112,7 @@ function loadStocksJSON() {
   }
 
   $.ajax({
-    url: String.format('stock.py?c={0}', codes.join(',')),
+    url: `stock.py?c=${codes.join(',')}`,
     dataType: 'json',
     success: parseStocksJSON,
   });

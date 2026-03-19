@@ -16,8 +16,6 @@ from matplotlib.widgets import Cursor
 
 import twse
 
-cached = {}
-
 class bcolors:
     BLACK_ON_RED = '\x1b[3;30;41m'
     BLACK_ON_GREEN = '\x1b[3;30;42m'
@@ -76,18 +74,22 @@ def update_csv(path, exchange, code, start, end, verbose):
             os.makedirs(exchange, exist_ok=True)
         df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
 
-def get_data(exchange, code, start, end, verbose=False):
+def get_data(exchange, code, start, end, ma_list=[], verbose=False):
     path = os.path.join(exchange, code) + '.csv'
     update_csv(path, exchange, code, start, end, verbose)
 
-    if path not in cached:
-        new_names = ['date', 'open', 'high', 'low', 'close', 'volume']
-        cached[path] = pd.read_csv(path, names=new_names, header=0, parse_dates=['date'])
+    new_names = ['date', 'open', 'high', 'low', 'close', 'volume']
+    df = pd.read_csv(path, names=new_names, header=0, parse_dates=['date'])
 
-    df = cached[path]
+    for ma in ma_list:
+        df['ma'+str(ma)] = abstract.SMA(df, ma)
 
     start_64 = np.datetime64(start)
     end_64 = np.datetime64(end)
+
+    if verbose:
+        print(df.to_string())
+
     return df[(df['date'] >= start_64) & (df['date'] <= end_64)].copy()
 
 def get_attrs(exchange, code, attr, end, days):
@@ -110,19 +112,9 @@ def get_ma_ratio(df, ma):
     return ratios[~np.isnan(ratios)]
 
 def get_infos(exchange, code, start, end, ma_list):
-    df = get_dataframe(exchange, code, start, end, ma_list)
+    df = get_data(exchange, code, start, end, ma_list)
     infos = [StockInfo(row, ma_list) for idx, row in df.iterrows()]
     return infos
-
-def get_dataframe(exchange, code, start, end, ma_list, verbose=False):
-    df = get_data(exchange, code, start, end, verbose)
-
-    for ma in ma_list:
-        df['ma'+str(ma)] = abstract.SMA(df, ma)
-
-    #df.dropna(inplace=True)
-
-    return df
 
 def analyze(df, ma_list, label):
 
@@ -254,7 +246,7 @@ def main():
 
         end = datetime.date.today()
         start = end - datetime.timedelta(days=540)
-        df = get_dataframe(exchange, code, start, end, args.ma, args.verbose)
+        df = get_data(exchange, code, start, end, args.ma, args.verbose)
         print('---')
         print(df.tail(20).round(2))
         analyze(df, args.ma, label)

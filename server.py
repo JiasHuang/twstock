@@ -13,6 +13,7 @@ from urllib.parse import urlparse, parse_qs, unquote_plus
 
 import xurl
 import twstock
+import twse
 import quote
 
 class defvals:
@@ -58,6 +59,12 @@ def loadcsv(q):
     exchange = quote.get_exchange(code)
     df = quote.get_data(exchange, code, start, end)
     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+    return df.to_json(orient='records', indent=4)
+
+def analyze(q):
+    d = parse_qs(q)
+    date = d['d'][0] if 'd' in d else datetime.date.today()
+    df = twse.analyze(date)
     return df.to_json(orient='records', indent=4)
 
 def load(q):

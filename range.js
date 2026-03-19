@@ -96,8 +96,8 @@ function updateResult() {
     let pct = (s.z / s.ma - 1) * 100;
     let pct_cls = pct < 0 ? 'bg_red':'bg_green';
     text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
-    text += `<td>${s.code}</td>`;
-    text += `<td><a href="candlestick.html?c=${s.code}" target="_blank">${s.msg.n}</a></td>`;
+    text += `<td><a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a></td>`;
+    text += `<td>${s.msg.n}</td>`;
     text += `<td>${s.z}</td>`;
     text += `<td><span class=${pct_cls}>${percent_string(pct)}</span></td>`;
     for (var r=r_min; r<=r_max; r+=r_step) {
@@ -124,11 +124,9 @@ function parseStockJSON(obj) {
   updateResult();
 }
 
-function initStockInfo() {
-  var api_url = 'stock.py' + window.location.search;
-
+function updateStockInfo() {
   $.ajax({
-    url: api_url,
+    url: 'stock.py' + window.location.search,
     dataType: 'json',
     success: parseStockJSON,
   });
@@ -136,6 +134,7 @@ function initStockInfo() {
 
 function onDocumentReady() {
   loadTopMenu();
-  initStockInfo();
+  updateStockInfo();
+  setInterval(updateStockInfo, 30000); // 30s
 }
 

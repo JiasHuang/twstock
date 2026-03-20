@@ -1,4 +1,15 @@
-#sort select {
+
+#menu {
+  float: right;
+}
+
+#menu input {
+  font-size: 18px;
+  padding: 4px 16px;
+  border: 1px solid black;
+}
+
+#menu select {
   font-size: 18px;
   padding: 4px 16px;
   border: 1px solid black;

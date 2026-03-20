@@ -35,7 +35,8 @@ class StockInfo:
         self.v = 0
         self.y = 0
         self.chg = 0
-        self.vol_pct = 0
+        self.mv_pct = 0
+        self.ma_pct = 0
         self.nav = 0
         self.nav_date = None
         self.nav_time = None
@@ -62,6 +63,7 @@ class StockInfo:
         if trading:
             self.code = trading.code
             self.name = trading.name
+            self.date = trading.date
             self.v = trading.volume
             self.o = trading.open
             self.h = trading.high
@@ -158,7 +160,8 @@ def get_tse_objs(code, year, month, verbose):
         for d in json_obj['data']:
             if d[1] != '0' and d[6] != '--':
                 d = [x.replace(',', '') for x in d]
-                data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':d[1]})
+                v = round(int(d[1]) / 1000)
+                data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':str(v)})
     return data
 
 def get_otc_objs(code, year, month, verbose):
@@ -176,7 +179,7 @@ def get_otc_objs(code, year, month, verbose):
         for d in json_obj['tables'][0]['data']:
             if d[1] != '0' and d[6] != '--':
                 d = [x.replace(',', '') for x in d]
-                data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':d[1]+'000'})
+                data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':d[1]})
     return data
 
 def get_objs(code, year, month, verbose):
@@ -222,17 +225,20 @@ def get_data_by_days(code, days, verbose=False):
 
     return data
 
-def analyze(date, days=30, verbose=False):
+def analyze(date, days=30, tail=1, verbose=False):
 
     if isinstance(date, str):
         date = datetime.datetime.strptime(date, '%Y%m%d').date()
 
-    is_realtime = date == datetime.date.today()
+    today = datetime.date.today()
+    is_today = date == today
+    today_str = today.strftime('%Y%m%d')
+    has_today_data = False
 
     trading_objs = [];
     while len(trading_objs) < (days + 1):
         url = 'https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={}&type=0099P&response=json'.format(date.strftime('%Y%m%d'))
-        json_txt = xurl.load(url, verbose=verbose, cacheOnly=not is_realtime)
+        json_txt = xurl.load(url, verbose=verbose, cacheOnly=not is_today)
         try:
             json_obj = json.loads(json_txt)
         except ValueError as e:
@@ -251,18 +257,20 @@ def analyze(date, days=30, verbose=False):
     if (len(trading_objs) < 2):
         return None
 
-    parsed = {}
-    for x in trading_objs[0]:
-        parsed[x.code] = HistoryInfo()
+    parsed = {x.code: HistoryInfo() for x in trading_objs[0]}
 
-    infos = []
-    if is_realtime:
+    if trading_objs[0][0].date == today_str:
+        has_today_data = True
+
+    infos = None
+
+    if is_today and not has_today_data:
         codes = [x.code for x in trading_objs[0]]
         msg = get_msg(codes)
-        infos = [StockInfo(msg=x) for x in msg]
-        if infos[0].date == trading_objs[0][0].date:
-            trading_objs = trading_objs[1:]
-    else:
+        if msg[0]['d'] == today_str:
+            infos = [StockInfo(msg=x) for x in msg]
+
+    if not infos:
         infos = [StockInfo(trading=x) for x in trading_objs[0]]
         trading_objs = trading_objs[1:]
 
@@ -272,12 +280,20 @@ def analyze(date, days=30, verbose=False):
                 parsed[x.code].close.append(x.close)
                 parsed[x.code].volume.append(x.volume)
 
+    if tail > 1:
+        for x in infos:
+            x.z = np.round((x.z + np.sum(parsed[x.code].close[1-tail:])) / tail, 2)
+            x.v = np.round((x.v + np.sum(parsed[x.code].volume[1-tail:])) / tail)
+
     for x in infos:
         if len(parsed[x.code].close):
             x.chg = x.z - parsed[x.code].close[0];
-        avg = np.mean(parsed[x.code].volume)
-        if avg > 0:
-            x.vol_pct = np.round(x.v / avg * 100, 2)
+        mv = np.mean(parsed[x.code].volume)
+        ma = np.mean(parsed[x.code].close)
+        if mv > 0:
+            x.mv_pct = np.round(x.v / mv * 100, 2)
+        if ma > 0:
+            x.ma_pct = np.round((x.z / ma - 1) * 100, 2)
 
     update_nav(infos)
 
@@ -292,7 +308,7 @@ def main():
     args, unparsed = parser.parse_known_args()
 
     date = unparsed[0] if len(unparsed) > 0 else datetime.date.today()
-    analyze(date, args.days, args.verbose);
+    analyze(date, args.days, 1, args.verbose);
 
     return
 

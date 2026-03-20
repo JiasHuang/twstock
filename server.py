@@ -64,7 +64,8 @@ def loadcsv(q):
 def analyze(q):
     d = parse_qs(q)
     date = d['d'][0] if 'd' in d else datetime.date.today()
-    df = twse.analyze(date)
+    tail = int(d['t'][0]) if 't' in d else 1
+    df = twse.analyze(date, tail=tail)
     return df.to_json(orient='records', indent=4)
 
 def load(q):

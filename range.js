@@ -4,9 +4,12 @@ var selected_tag = null;
 var selected_innerTag = null;
 var cur_stock_json = null;
 
-function percent_string(x) {
-  let optionsAlways = { signDisplay: 'always', maximumFractionDigits:2 };
-  return x.toLocaleString('en-US', optionsAlways)+'%';
+function pct_str(x, en_cls=false) {
+  var cls = '';
+  if (en_cls)
+    cls = x > 0 ? 'inc' : (x < 0 ? 'dec':'');
+  let str = x.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
+  return `<span class="${cls}">${str}%</span>`;
 }
 
 function selectTag(tag) {
@@ -81,25 +84,21 @@ function updateResult() {
     is_StockTags_loaded = true;
   }
 
+  var cols = ['code', 'name', 'Pz', 'MA%']
+  for (var r=r_min; r<=r_max; r+=r_step)
+    cols.push(r == 0 ? 'MA':pct_str(r));
+
   text += '<table id="stocks">';
-  text += '<tr><th>code</th><th>name</th><th>Pz</th><th>MA%</th>';
-
-  for (var r=r_min; r<=r_max; r+=r_step) {
-    let s = r == 0 ? 'MA':percent_string(r);
-    text += `<th>${s}</th>`;
-  }
-
-  text += '</tr>';
+  text += '<tr><th>' + cols.join('</th><th>') + '</th><tr>';
 
   for (var i=0; i<stocks.length; i++) {
     let s = stocks[i];
+    let link = `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a>`;
     let pct = (s.z / s.ma - 1) * 100;
-    let pct_cls = pct < 0 ? 'bg_dec':'bg_inc';
+    let vals = [link, s.name, s.z,  pct_str(pct, true)];
     text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
-    text += `<td><a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a></td>`;
-    text += `<td>${s.name}</td>`;
-    text += `<td>${s.z}</td>`;
-    text += `<td><span class=${pct_cls}>${percent_string(pct)}</span></td>`;
+    text += '<td>' + vals.join('</td><td>') + '</td>';
+
     for (var r=r_min; r<=r_max; r+=r_step) {
       let x = (s.ma * (100 + r) / 100).toFixed(2);
       let c = '';
@@ -135,6 +134,11 @@ function updateStockInfo() {
 function onDocumentReady() {
   loadTopMenu();
   updateStockInfo();
-  setInterval(updateStockInfo, 30000); // 30s
+
+  const today = new Date();
+  const isWeekend = today.getDay()%6==0;
+
+  if (!isWeekend)
+    setInterval(updateStockInfo, 30000); // 30s
 }
 

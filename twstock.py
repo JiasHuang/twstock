@@ -164,7 +164,7 @@ def get_mv(code, days):
     data = twse.get_data_by_days(code, days)
     df = pd.DataFrame(data)
     vals = df['volume'].tail(days).astype('int64').to_numpy()
-    return np.round((vals.mean() / 1000))
+    return np.round(vals.mean())
 
 def get_stock_infos(data):
     codes = [s['code'] for s in data['stocks']]

@@ -42,6 +42,14 @@
   background-color: #A2F4FD;
 }
 
+.inc {
+  color: green;
+}
+
+.dec {
+  color: red;
+}
+
 .bg_inc {
   background-color: #99FF99;
 }

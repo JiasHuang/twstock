@@ -23,25 +23,22 @@
 
 <body bgcolor=silver>
 
-    <div id="topmenu"></div>
+  <div id="topmenu"></div>
 
-    <table id="topbar"><tr>
-        <td>
-          <div id="sort">
-            <select onchange="onSelectChange.call(this)">
-              <option value="" disabled selected>Sort By</option>
-              <option value="none">None</option>
-              <option value="vol">Vol</option>
-              <option value="inc">Inc</option>
-              <option value="dec">Dec</option>
-              <option value="nav_inc">Nav_Inc</option>
-              <option value="nav_dec">Nav_Dec</option>
-            </select>
-          </div>
-        </td>
-    </tr></table>
+  <div id="menu">
+    <input id="date" type="date" onchange="onDateChange.call(this)"/><br>
+    <select id="sort" onchange="onSelectChange.call(this)">
+      <option value="" disabled selected>Sort By</option>
+      <option value="none">None</option>
+      <option value="vol">Vol</option>
+      <option value="inc">Inc</option>
+      <option value="dec">Dec</option>
+      <option value="nav_inc">Nav_Inc</option>
+      <option value="nav_dec">Nav_Dec</option>
+    </select>
+  </div>
 
-    <div id="result"></div>
+  <div id="result"></div>
 
 </body>
 

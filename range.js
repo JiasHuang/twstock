@@ -34,6 +34,7 @@ function updateTags(stocks) {
   }
 
   if (tags.length) {
+    text += '<button onclick=selectInnerTag("all")>all</button>';
     for (var i=0; i<tags.length; i++) {
       text += `<button onclick=selectTag("${tags[i]}")>${tags[i]}</button>`;
     }
@@ -61,8 +62,7 @@ function filterTag() {
   if (selected_tag) {
     $('tr').filter('.stockinfo').hide();
     $('tr').filter('.stockinfo.'+selected_tag).show();
-  }
-  else if (selected_innerTag) {
+  }  else if (selected_innerTag == 'na') {
     $('tr').filter('.stockinfo').hide();
     $('tr[class="stockinfo "]').show();
   }
@@ -94,19 +94,19 @@ function updateResult() {
   for (var i=0; i<stocks.length; i++) {
     let s = stocks[i];
     let pct = (s.z / s.ma - 1) * 100;
-    let pct_cls = pct < 0 ? 'bg_red':'bg_green';
+    let pct_cls = pct < 0 ? 'bg_dec':'bg_inc';
     text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
     text += `<td><a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a></td>`;
-    text += `<td>${s.msg.n}</td>`;
+    text += `<td>${s.name}</td>`;
     text += `<td>${s.z}</td>`;
     text += `<td><span class=${pct_cls}>${percent_string(pct)}</span></td>`;
     for (var r=r_min; r<=r_max; r+=r_step) {
       let x = (s.ma * (100 + r) / 100).toFixed(2);
       let c = '';
-      c = (r == 0 && s.z > x) ? 'bg_green' : c;
-      c = (r == 0 && s.z < x) ? 'bg_red' : c;
-      c = (r > 0 && s.z >= x) ? 'bg_green' : c;
-      c = (r < 0 && s.z <= x) ? 'bg_red' : c;
+      c = (r == 0 && s.z > x) ? 'bg_inc' : c;
+      c = (r == 0 && s.z < x) ? 'bg_dec' : c;
+      c = (r > 0 && s.z >= x) ? 'bg_inc' : c;
+      c = (r < 0 && s.z <= x) ? 'bg_dec' : c;
       text += `<td class=${c}>${x}</td>`;
     }
 

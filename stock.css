@@ -63,11 +63,11 @@
   height: 50px;
 }
 
-.green {
+.inc {
   color: green;
 }
 
-.red {
+.dec {
   color: red;
 }
 
@@ -75,19 +75,17 @@
   color: grey;
 }
 
-.bg_green {
+.bg_inc {
+  color: white;
   background-color: green;
 }
 
-.bg_red {
+.bg_dec {
+  color: white;
   background-color: red;
 }
 
-.bg_gold {
-  background-color: gold;
-}
-
-.bg_yellow {
+.bg_hl {
   background-color: yellow;
 }
 

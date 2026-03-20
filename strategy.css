@@ -66,7 +66,7 @@ button {
   font-weight: bold;
 }
 
-.bg_yellow {
+.bg_hl {
   background-color: yellow;
 }
 
@@ -74,40 +74,7 @@ button {
   color: grey;
 }
 
-.green {
-  color: black;
-  background-color: darkseagreen;
-}
-
 .curpz {
   color: black;
 }
 
-.batch_qty {
-  color: blue;
-  margin: 5px;
-}
-
-.batch_avg {
-  color: grey;
-}
-
-.batch_avg_warn {
-  color: red;
-}
-
-.batch_avg_na {
-  color: grey;
-}
-
-.avg {
-  color: black;
-}
-
-.gain_ratio {
-  color: grey;
-}
-
-.gain_ratio_warn {
-  color: red;
-}

@@ -34,24 +34,12 @@
   background-color: #A2F4FD;
 }
 
-.green {
+.inc {
   color: green;
 }
 
-.red {
+.dec {
   color: red;
-}
-
-.grey {
-  color: grey;
-}
-
-.bg_green {
-  background-color: #99FF99;
-}
-
-.bg_red {
-  background-color: #FF9999;
 }
 
 .nav_time {

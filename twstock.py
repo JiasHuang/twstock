@@ -32,7 +32,6 @@ class bcolors:
 class exchange_rate_info:
     def __init__(self, currency, buy_cash, buy_spot, sell_cash, sell_spot):
         self.flts = []
-        self.flts_ret = []
         self.currency = currency
         self.buy_cash = buy_cash
         self.buy_spot = buy_spot
@@ -88,14 +87,13 @@ class eps_info:
 class stock_info:
     def __init__(self, code, flts = None, tags = None):
         self.code = code
+        self.name = None
         self.flts = flts or []
-        self.flts_ret = [0] * len(self.flts)
         self.tags = tags or []
-        self.msg = None
+        self.o = 0
         self.z = 0
         self.y = 0
         self.v = 0
-        self.v_ratio = 0
         self.h = 0
         self.l = 0
         self.ma = 0
@@ -169,20 +167,17 @@ def get_mv(code, days):
     return np.round((vals.mean() / 1000))
 
 def get_stock_infos(data):
+    codes = [s['code'] for s in data['stocks']]
+    msg = twse.get_msg(codes)
+    parsed = {m['c']: twse.StockInfo(msg=m) for m in msg}
     infos = []
-    ex_ch = '|'.join([twse.get_ex_ch_by_code(s['code']) for s in data['stocks']])
-    url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
-    txt = xurl.load(url, cache=False)
-    twse_data = json.loads(txt)
-    if 'msgArray' not in twse_data:
-        return []
-    for msg in twse_data['msgArray']:
-        for s in data['stocks']:
-            if s['code'] == msg['c']:
-                info = stock_info(s['code'], s.get('flts'), s.get('tags'))
-                info.msg = msg
-                parse_info(info)
-                infos.append(info)
+    for s in data['stocks']:
+        info = stock_info(s['code'], s.get('flts'), s.get('tags'))
+        if info.code in parsed:
+            for attr in ['name', 'y', 'o', 'h', 'l', 'z', 'v']:
+                setattr(info, attr, getattr(parsed[info.code], attr))
+            infos.append(info)
+
     return infos
 
 def get_etf_msg_by_code(data, code):
@@ -200,8 +195,8 @@ def update_etf_nav(infos):
     txt = xurl.load(url, cache=False)
     twse_data = json.loads(txt)
     for info in infos:
-        if info.msg['c'].startswith('00'):
-            msg = get_etf_msg_by_code(twse_data, info.msg['c'])
+        if info.code.startswith('00'):
+            msg = get_etf_msg_by_code(twse_data, info.code)
             if msg:
                 nav = msg['f']
                 if isinstance(nav, float):
@@ -219,49 +214,6 @@ def update_stock_stats(infos):
     update_etf_nav(infos)
     return
 
-def parse_info(info):
-
-    msg = info.msg
-
-    # FIXME
-    if msg['z'] == '-':
-        try:
-            msg['z'] = msg['b'].split('_')[0]
-            if float(msg['z']) == 0:
-                msg['z'] = msg['b'].split('_')[1]
-        except:
-            pass
-
-    try:
-        info.y = y = float(msg['y'])
-        info.v = v = float(msg['v'])
-        info.h = h = float(msg['h'])
-        info.l = l = float(msg['l'])
-        info.z = z = float(msg['z'])
-    except:
-        pass
-
-    if info.z == 0:
-        info.z = info.y
-
-    if info.l and info.z < info.l:
-        info.z = info.l
-
-    if info.h and info.z > info.h:
-        info.z = info.h
-
-    for i, f in enumerate(info.flts):
-        try:
-            m = re.search(r'(\w+)', f)
-            vname = m.group(1)
-            val = msg[vname]
-            cmd = f.replace(vname, val)
-            info.flts_ret[i] = eval(cmd)
-        except:
-            pass
-
-    return
-
 def chg_ratio_txt(val, ref):
     chg = val - ref
     ratio = chg / ref * 100
@@ -271,20 +223,13 @@ def show_stock_info(info):
 
     print('%s %s' %(info.msg['c'], info.msg['n']))
 
-    cflts = []
-    for i, f in enumerate(info.flts):
-        if info.flts_ret[i]:
-            cflts.append(bcolors.BLACK_ON_YELLOW + f + bcolors.ENDC)
-        else:
-            cflts.append(f)
-
     chg, ratio, txt = chg_ratio_txt(info.z, info.y)
     if chg > 0:
         txt = bcolors.RED + txt + bcolors.ENDC
     elif chg < 0:
         txt = bcolors.GREEN + txt + bcolors.ENDC
 
-    print('\t\t%s | %s' %(txt, ', '.join(cflts)))
+    print('\t\t%s | %s' %(txt, ', '.join(info.flts)))
 
     if info.mv:
         ratio = info.v / info.mv * 100
@@ -326,20 +271,7 @@ def get_exchange_rate_infos(data):
         if m:
             info = exchange_rate_info(c, m.group(1), m.group(2), m.group(3), m.group(4))
             info.flts = exr['flts']
-            info.flts_ret = [0] * len(info.flts)
             infos.append(info)
-
-    # check the retured value of flts
-    for info in infos:
-        for i, f in enumerate(info.flts):
-            try:
-                m = re.search(r'(\w+)', f)
-                vname = m.group(1)
-                val = getattr(info, vname)
-                cmd = f.replace(vname, val)
-                info.flts_ret[i] = eval(cmd)
-            except:
-                pass
 
     return infos
 

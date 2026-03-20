@@ -2,11 +2,14 @@
 var cur_stock_json = null;
 var sort_by = null;
 
-function pz_fmt(z, y) {
+function pz_fmt(z, y, en_cls=false) {
   const chg = z - y;
   const chg_str = chg.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
   const pct_str = (chg / y * 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
-  return `${z} (${chg_str}, ${pct_str}%)`;
+  var cls = '';
+  if (en_cls)
+    cls = chg > 0 ? 'inc' : (chg < 0 ? 'dec':'');
+  return `${z} (${chg_str}, <span class="${cls}">${pct_str}%</span>)`;
 }
 
 function updateResult() {
@@ -31,8 +34,8 @@ function updateResult() {
   text += '<tr><th>' + cols.join('</th><th>') + '</th></tr>';
 
   for (let s of stocks) {
-    const link = `<a href="candlestick.html?c=${s.code}">${s.code}</a>`;
-    const pz_str = pz_fmt(s.z, s.z - s.chg);
+    const link = `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a>`;
+    const pz_str = pz_fmt(s.z, s.z - s.chg, true);
     const nav_str = pz_fmt(s.nav, s.z) + ` <span class="nav_time">${s.nav_time}</span>`;
     const vol_str = `${s.v.toLocaleString()} (${s.vol_pct}%)`;
     const vals = [link, s.name, pz_str, nav_str, vol_str];

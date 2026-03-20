@@ -13,11 +13,12 @@ function pct_str(val, chg, pct, cls='', pct_cls='') {
   return `<span class="${cls}">${val_str} (${chg_str}, <span class="${pct_cls}">${pct_str}%</span>)</span>`;
 }
 
-function getFltText(flts, flts_ret, class_name, class_name_false = '') {
+function getFltText(obj, flts, cls_true, cls_false) {
   var vec = [];
-  for (var i=0; i<flts.length; i++) {
-      let cls = flts_ret[i] ? class_name : class_name_false;
-      vec.push(`<span class="${cls}">${flts[i]}</span>`);
+  for (let flt of flts) {
+      let ret = eval("obj." + flt);
+      let cls = ret ? cls_true : cls_false;
+      vec.push(`<span class="${cls}">${flt}</span>`);
   }
   return vec.join('，')
 }
@@ -34,15 +35,15 @@ function getStockTableText(s) {
   text += '<tr>';
 
   text += '<th rowspan=2>';
-  text += `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}<br>${s.msg.n}</a>`;
+  text += `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}<br>${s.name}</a>`;
   text += '</th>';
 
   text += '<td>';
   chg = s.z - s.y;
   pct = chg / s.y * 100;
   cls = ''
-  cls = (pct > 0) ? ((pct >= 9) ? 'bg_red' : 'red') : cls;
-  cls = (pct < 0) ? ((pct <= -9) ? 'bg_green' : 'green') : cls;
+  cls = (pct > 0) ? ((pct >= 9) ? 'bg_inc' : 'inc') : cls;
+  cls = (pct < 0) ? ((pct <= -9) ? 'bg_dec' : 'dec') : cls;
   text += pct_str(s.z, chg, pct, cls);
   text += '</td>';
 
@@ -75,7 +76,7 @@ function getStockTableText(s) {
   text += '<td>';
 
   if (s.flts.length)
-    note.push(getFltText(s.flts, s.flts_ret, 'flt bg_yellow', 'flt'));
+    note.push(getFltText(s, s.flts, 'flt bg_hl', 'flt'));
 
   if (s.nav)
   {
@@ -89,7 +90,7 @@ function getStockTableText(s) {
   if (s.ma) {
     chg = s.z - s.ma
     pct = chg / s.ma * 100;
-    cls = (pct <= -10) ? 'bg_yellow' : '';
+    cls = (pct <= -10) ? 'bg_hl' : '';
     note.push(`<span class="MA">均線 ${pct_str(s.ma, chg, pct, '', cls)}</span>`);
   }
 
@@ -148,7 +149,7 @@ function getExchangeRateTableText(objs) {
     text += '<tr><th>幣別</th><th>買入匯率</th><th>賣出匯率</th> <th></th></tr>';
     for (var i=0; i<objs.length; i++) {
       let obj = objs[i];
-      let flt_txt = getFltText(obj.flts, obj.flts_ret, 'bg_yellow', 'grey');
+      let flt_txt = getFltText(obj, obj.flts, 'bg_hl', 'grey');
       text += `<tr><td>${obj.currency}</td><td>${obj.buy_spot}</td><td>${obj.sell_spot}</td><td>${flt_txt}</td></tr>`;
     }
     text += '</table>';
@@ -208,7 +209,7 @@ function filterTag() {
   }
   else if (selected_innerTag == 'hl') {
     $('table').filter('.stockinfo').hide();
-    $('span').filter('.bg_red, .bg_green, .bg_yellow').closest('table').show();
+    $('span').filter('.bg_inc, .bg_dec, .bg_hl').closest('table').show();
   }
   else if (selected_innerTag == 'hv') {
     $('table').filter('.stockinfo').hide();

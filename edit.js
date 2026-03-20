@@ -88,7 +88,7 @@ function updateResult() {
     let s = stocks[i];
     text += String.format('<tr class="stockinfo {0}">', s.tags.join(' '));
     text += String.format('<td contenteditable=true>{0}</td>', s.code);
-    text += String.format('<td>{0}</td>', s.msg.n);
+    text += String.format('<td>{0}</td>', s.name);
     text += String.format('<td contenteditable=true>{0}</td>', getTagsText(s));
     text += String.format('<td contenteditable=true>{0}</td>', getFltsText(s));
     text += '</tr>';

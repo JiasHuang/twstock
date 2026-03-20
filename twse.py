@@ -13,19 +13,21 @@ import xurl
 
 # ["0證券代號","1證券名稱","2成交股數","3成交筆數","4成交金額","5開盤價","6最高價","7最低價","8收盤價","9漲跌(+/-)","10漲跌價差","11最後揭示買價","12最後揭示買量","13最後揭示賣價","14最後揭示賣量","15本益比"]
 class AfterTradingInfo:
-    def __init__(self, v):
+    def __init__(self, v, date):
         self.code = v[0]
         self.name = v[1]
-        self.volume = int(v[2].replace(',',''))
+        self.date = date
+        self.volume = round(int(v[2].replace(',','')) / 1000)
         self.open = float(v[5])
         self.high = float(v[6])
         self.low = float(v[7])
         self.close = float(v[8])
 
 class StockInfo:
-    def __init__(self, code=None, name=None, trading=None):
-        self.code = code
-        self.name = name
+    def __init__(self, msg=None, trading=None):
+        self.code = None
+        self.name = None
+        self.date = None
         self.o = 0
         self.h = 0
         self.l = 0
@@ -37,6 +39,25 @@ class StockInfo:
         self.nav = 0
         self.nav_date = None
         self.nav_time = None
+
+        if msg:
+            self.code = msg['c']
+            self.name = msg['n']
+            self.date = msg['d']
+            for attr in ['v', 'o', 'h', 'l', 'z', 'y']:
+                if msg[attr] != '-':
+                    setattr(self, attr, float(msg[attr]))
+            if self.z == 0:
+                for b in msg['b'].split('_'):
+                    if b != '-' and float(b) != 0:
+                        self.z = float(b)
+                        break
+            if self.z == 0:
+                self.z = self.y
+            if self.l:
+                self.z = max(self.l, self.z)
+            if self.h:
+                self.z = min(self.h, self.z)
 
         if trading:
             self.code = trading.code
@@ -78,20 +99,20 @@ def get_ex_ch_by_code(code):
     ex = 'otc' if is_otc(code) else 'tse'
     return '{}_{}.tw'.format(ex, code)
 
-def get_stock_info(code):
-    ex_ch = get_ex_ch_by_code(code)
-    url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch={}&json=1&delay=0'.format(ex_ch)
-    json_txt = xurl.load(url)
-    json_obj = json.loads(json_txt)
-    msg = json_obj['msgArray'][0]
-    price = msg['z']
-
-    if price == '-':
-        price = msg['y']
-
-    msg['price'] = float(price)
-
-    return msg
+def get_msg(codes):
+    step = 50
+    result = []
+    idx = 0
+    while idx < len(codes):
+        count = min(len(codes) - idx, step)
+        ex_ch = '|'.join([get_ex_ch_by_code(x) for x in codes[idx:idx+count]])
+        url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
+        txt = xurl.load(url, cache=False)
+        data = json.loads(txt)
+        if 'msgArray' in data:
+            result.extend(data['msgArray'])
+        idx += count
+    return result
 
 def get_etf_msg(data, code):
     if 'a1' not in data:
@@ -121,42 +142,6 @@ def update_nav(infos):
                 x.nav = float(nav)
             x.nav_date = msg['i']
             x.nav_time = msg['j']
-
-def parse_z(x, msg):
-
-    if x.z == 0:
-        for b in msg['b'].split('_'):
-            if b != '-' and float(b) != 0:
-                x.z = float(b)
-                break
-    if x.z == 0 and x.y != 0:
-        x.z = x.y
-    if x.l and x.z < x.l:
-        x.z = x.l
-    if x.h and x.z > x.h:
-        x.z = x.h
-
-def update_realtime_info_(infos):
-    ex_ch = '|'.join([get_ex_ch_by_code(x.code) for x in infos])
-    url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
-    txt = xurl.load(url, cache=False)
-    twse_data = json.loads(txt)
-    if 'msgArray' not in twse_data:
-        return
-    for msg in twse_data['msgArray']:
-        for x in infos:
-            if x.code == msg['c']:
-                for attr in ['v', 'o', 'h', 'l', 'z', 'y']:
-                    if msg[attr] != '-':
-                        setattr(x, attr, float(msg[attr]))
-                parse_z(x, msg)
-
-def update_realtime_info(infos):
-    idx = 0
-    while idx < len(infos):
-        count = min(len(infos) - idx, 50)
-        update_realtime_info_(infos[idx:idx+count])
-        idx += count
 
 def get_tse_objs(code, year, month, verbose):
     data = []
@@ -257,7 +242,7 @@ def analyze(date, days=30, verbose=False):
                 objs = []
                 for d in json_obj['tables'][8]['data']:
                     if d[5] != '--':
-                        objs.append(AfterTradingInfo(d))
+                        objs.append(AfterTradingInfo(d, date.strftime('%Y%m%d')))
                 trading_objs.append(objs)
         except ValueError as e:
             break
@@ -272,12 +257,13 @@ def analyze(date, days=30, verbose=False):
 
     infos = []
     if is_realtime:
-        for x in trading_objs[0]:
-            infos.append(StockInfo(code=x.code, name=x.name))
-        update_realtime_info(infos)
+        codes = [x.code for x in trading_objs[0]]
+        msg = get_msg(codes)
+        infos = [StockInfo(msg=x) for x in msg]
+        if infos[0].date == trading_objs[0][0].date:
+            trading_objs = trading_objs[1:]
     else:
-        for x in trading_objs[0]:
-            infos.append(StockInfo(trading=x))
+        infos = [StockInfo(trading=x) for x in trading_objs[0]]
         trading_objs = trading_objs[1:]
 
     for trading in trading_objs:
@@ -289,8 +275,9 @@ def analyze(date, days=30, verbose=False):
     for x in infos:
         if len(parsed[x.code].close):
             x.chg = x.z - parsed[x.code].close[0];
-        if len(parsed[x.code].volume):
-            x.vol_pct = np.round(x.v / np.mean(parsed[x.code].volume) * 100, 2)
+        avg = np.mean(parsed[x.code].volume)
+        if avg > 0:
+            x.vol_pct = np.round(x.v / avg * 100, 2)
 
     update_nav(infos)
 

@@ -17,3 +17,31 @@
   border: 1px solid black;
 }
 
+.inc {
+  color: green;
+}
+
+.dec {
+  color: red;
+}
+
+.grey {
+  color: grey;
+}
+
+.bg_inc {
+  background-color: lightgreen;
+}
+
+.bg_dec {
+  background-color: LightCoral;
+}
+
+.bg_hl {
+  background-color: orange;
+}
+
+.bg_hv {
+  color: purple;
+}
+

@@ -2,6 +2,14 @@
 const mv_days = 30;
 const ma_days = 60;
 
+function pz_fmt(z, y, en_cls=false) {
+  const chg = z - y;
+  const chg_str = chg.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
+  const pct_str = (chg / y * 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
+  const cls = (en_cls && chg != 0) ? (chg > 0 ? 'inc':'dec'):'';
+  return `${z} (${chg_str}, <span class="${cls}">${pct_str}%</span>)`;
+}
+
 function calculate_sma(data, idx, count, attr='close') {
   if (idx < count - 1)
     return null;
@@ -165,11 +173,12 @@ function updateResult(data) {
   for (var i=0; i<tail; i++) {
     let idx = data.length - tail + i;
     let d = data[idx];
+    let y = idx > 0 ? data[idx-1].close:data[idx].close;
     let ma = calculate_sma(data, idx, ma_days);
     let ma_pct = (d.close / ma - 1) * 100;
     let mv = calculate_sma(data, idx, mv_days, 'volume');
     let mv_pct = d.volume / mv * 100;
-    let vals = [d.date, d.close, ma.toFixed(2), ma_pct.toFixed(2), d.volume.toLocaleString(), mv_pct.toFixed(2)];
+    let vals = [d.date, pz_fmt(d.close, y, true), ma.toFixed(2), ma_pct.toFixed(2), d.volume.toLocaleString(), mv_pct.toFixed(2)];
     text += '<tr><td>' + vals.join('</td><td>') + '</tr>';
   }
 

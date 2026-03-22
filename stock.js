@@ -28,77 +28,62 @@ function getStockTableText(s) {
   var pct;
   var cls;
   var text = '';
-  var note = [];
 
   text += `<table class="stockinfo ${s.tags.join(' ')}">`;
-
   text += '<tr>';
 
-  text += '<th rowspan=2>';
+  text += '<td class="link">';
   text += `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}<br>${s.name}</a>`;
-  text += '</th>';
+  text += '</td>';
 
-  text += '<td>';
+  var prices = [];
+
   chg = s.z - s.y;
   pct = chg / s.y * 100;
   cls = ''
   cls = (pct > 0) ? ((pct >= 9) ? 'bg_inc' : 'inc') : cls;
   cls = (pct < 0) ? ((pct <= -9) ? 'bg_dec' : 'dec') : cls;
-  text += pct_str(s.z, chg, pct, cls);
-  text += '</td>';
-
-  text += '<td>';
-  pct = Math.round(s.v / s.mv * 100);
-  text += `#${s.v.toLocaleString()} (${pct}%)`;
-  if (s.v >= 1000 && pct >= 120)
-    text += '<span class="bg_hv">★ </span>';
-  text += '</td>';
-
-  text += '</tr>';
-
-  text += '<tr>';
-
-  text += '<td>';
+  prices.push(pct_str(s.z, chg, pct, cls));
 
   if (s.h) {
     chg = s.h - s.y
     pct = chg / s.y * 100;
-    text += `Hi ${pct_str(s.h, chg, pct)}`;
+    prices.push(`Hi ${pct_str(s.h, chg, pct)}`);
   }
 
   if (s.l) {
     chg = s.l - s.y
     pct = chg / s.y * 100;
-    text += `<br>Lo ${pct_str(s.l, chg, pct)}`;
+    prices.push(`Lo ${pct_str(s.l, chg, pct)}`);
   }
 
-  text += '</td>';
-  text += '<td>';
+  text += '<td class="price">' + prices.join('<br>') +'</td>';
 
-  if (s.flts.length)
-    note.push(getFltText(s, s.flts, 'flt bg_hl', 'flt'));
+  var notes = [];
 
-  if (s.nav)
-  {
+  pct = Math.round(s.v / s.mv * 100);
+  const hv = pct >= 120 ? '<span class="bg_hv">★ </span>':'';
+  const flt = getFltText(s, s.flts, 'flt bg_hl', 'flt');
+  notes.push(`#${s.v.toLocaleString()} (${pct}%)${hv} ${flt}`);
+
+  if (s.nav) {
     chg = s.nav - s.z;
     pct = chg / s.z * 100;
     let time = s.nav_time.substring(0, 5);
     let time_str = `<span class="nav_time">${time}</span>`;
-    note.push(`<span class="nav">淨值 ${pct_str(s.nav, chg, pct)}</span> ${time_str}`);
+    notes.push(`<span class="nav">淨值 ${pct_str(s.nav, chg, pct)}</span> ${time_str}`);
   }
 
   if (s.ma) {
     chg = s.z - s.ma
     pct = chg / s.ma * 100;
     cls = (pct <= -10) ? 'bg_hl' : '';
-    note.push(`<span class="MA">均線 ${pct_str(s.ma, chg, pct, '', cls)}</span>`);
+    notes.push(`<span class="MA">均線 ${pct_str(s.ma, chg, pct, '', cls)}</span>`);
   }
 
-  text += note.join('<br>');
-  text += '</td>';
+  text += '<td class="note">' + notes.join('<br>') + '</td>';
 
   text += '</tr>';
-
   text += '</table>';
 
   return text;
@@ -284,7 +269,7 @@ function initStockInfo() {
 }
 
 function updateExchangeRateInfo() {
-  var api_url = 'exr.py?j=exr.json' + window.location.search;
+  var api_url = 'exr.py' + window.location.search;
 
   $.ajax({
     url: api_url,

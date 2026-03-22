@@ -7,9 +7,7 @@ function pz_fmt(z, y, en_cls=false) {
   const chg = z - y;
   const chg_str = chg.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
   const pct_str = (chg / y * 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
-  var cls = '';
-  if (en_cls)
-    cls = chg > 0 ? 'inc' : (chg < 0 ? 'dec':'');
+  const cls = (en_cls && chg != 0) ? (chg > 0 ? 'inc':'dec'):'';
   return `${z} (${chg_str}, <span class="${cls}">${pct_str}%</span>)`;
 }
 
@@ -29,7 +27,7 @@ function updateResult() {
     stocks = stocks.slice(0).sort((b, a) => b.nav/b.z - a.nav/a.z);
   }
 
-  const cols = ['code', 'name', 'pz', 'nav', 'ma%', 'vol'];
+  const cols = ['code', 'name', 'pz', 'nav', 'MA%', 'vol'];
 
   text += '<table id="stocks">';
   text += '<tr><th>' + cols.join('</th><th>') + '</th></tr>';

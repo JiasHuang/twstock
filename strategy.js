@@ -56,17 +56,7 @@ function updateResult() {
     let st = getStat(s);
     let z = info_stock ? info_stock.z : 0;
     let z_pct = ((z / s.ref_pz - 1) * 100).toFixed(2);
-    let z_pct_cls = z_pct < 0 ? 'bg_hl':'grey';
-    let r_cls = Array(3).fill('grey');
-
-    if (z < s.ref_pz) {
-      for (var j=2; j>=0; j--) {
-        if (z <= st.ref[j]) {
-          r_cls[j] = 'bg_hl';
-          break;
-        }
-      }
-    }
+    let z_pct_cls = z_pct < 0 ? 'dec':'grey';
 
     var regexp = /現金股利\s*([\d|.]+)/g;
     var m = regexp.exec(s.note);
@@ -77,7 +67,7 @@ function updateResult() {
     text += `<td class="edit" contenteditable=true>${s.code}</td>`;
     text += `<td>${info_stock.name}</td>`;
     text += `<td class="edit" contenteditable=true><span class="grey">${s.ref_pz}</span></td>`;
-    text += `<td><span class="curpz">${z.toFixed(2)}</span></td>`;
+    text += `<td>${z}</td>`;
     text += `<td><span class="${z_pct_cls}">${z_pct}%</span></td>`;
     text += `<td><span class="${yield_cls}">${yield}%</span></td>`;
     text += `<td class="note" contenteditable=true>${s.note}</td>`;

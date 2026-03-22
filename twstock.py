@@ -4,7 +4,7 @@
 import os
 import re
 import json
-import time
+import argparse
 import datetime
 import pandas as pd
 import numpy as np
@@ -17,26 +17,12 @@ from optparse import OptionParser
 class defs:
     from_year_offset = 5
 
-class bcolors:
-    BLACK_ON_RED = '\x1b[3;30;41m'
-    BLACK_ON_GREEN = '\x1b[3;30;42m'
-    BLACK_ON_YELLOW = '\x1b[3;30;43m'
-    BLACK_ON_BLUE = '\x1b[3;30;44m'
-    BLACK_ON_WHITE = '\x1b[3;30;47m'
-    RED = '\33[31m'
-    GREEN = '\33[32m'
-    YELLOW = '\33[33m'
-    BLUE = '\33[34m'
-    ENDC = '\x1b[0m'
-
 class exchange_rate_info:
-    def __init__(self, currency, buy_cash, buy_spot, sell_cash, sell_spot):
-        self.flts = []
+    def __init__(self, currency, buy_spot, sell_spot, flts=[]):
         self.currency = currency
-        self.buy_cash = buy_cash
         self.buy_spot = buy_spot
-        self.sell_cash = sell_cash
         self.sell_spot = sell_spot
+        self.flts = flts
 
 class wap_info:
     # # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
@@ -88,8 +74,6 @@ class stock_info:
     def __init__(self, code, flts = None, tags = None):
         self.code = code
         self.name = None
-        self.flts = flts or []
-        self.tags = tags or []
         self.o = 0
         self.z = 0
         self.y = 0
@@ -101,6 +85,8 @@ class stock_info:
         self.nav = 0
         self.nav_date = None
         self.nav_time = None
+        self.tags = tags or []
+        self.flts = flts or []
 
 class stock_report:
     def __init__(self, code):
@@ -147,12 +133,6 @@ class MyJSONEncoder(json.JSONEncoder):
         if hasattr(obj, '__jsonencode__'):
             return obj.__jsonencode__()
         return json.JSONEncoder.default(self, obj)
-
-def to_float(num):
-    try:
-        return float(num)
-    except:
-        return 0.0
 
 def get_ma(code, days):
     data = twse.get_data_by_days(code, days)
@@ -214,40 +194,6 @@ def update_stock_stats(infos):
     update_etf_nav(infos)
     return
 
-def chg_ratio_txt(val, ref):
-    chg = val - ref
-    ratio = chg / ref * 100
-    return (chg, ratio, '%.2f (%+.2f, %+.2f%%)' %(val, chg, ratio))
-
-def show_stock_info(info):
-
-    print('%s %s' %(info.msg['c'], info.msg['n']))
-
-    chg, ratio, txt = chg_ratio_txt(info.z, info.y)
-    if chg > 0:
-        txt = bcolors.RED + txt + bcolors.ENDC
-    elif chg < 0:
-        txt = bcolors.GREEN + txt + bcolors.ENDC
-
-    print('\t\t%s | %s' %(txt, ', '.join(info.flts)))
-
-    if info.mv:
-        ratio = info.v / info.mv * 100
-        txt = '#%.0f (%.2f%%)' %(info.v, ratio)
-        if ratio > 100:
-            txt = bcolors.YELLOW + txt + bcolors.ENDC
-        print('\t\t%s' %(txt))
-
-    if info.h > 0:
-        chg, ratio, txt = chg_ratio_txt(info.h, info.y)
-        print('\t\tHi %s' %(txt))
-
-    if info.l > 0:
-        chg, ratio, txt = chg_ratio_txt(info.l, info.y)
-        print('\t\tLo %s' %(txt))
-
-    return
-
 def get_json_from_file(path):
     txt = xurl.readLocal(path)
     return json.loads(txt)
@@ -269,16 +215,9 @@ def get_exchange_rate_infos(data):
         c = exr['currency']
         m = re.search(re.escape(c) + r',本行買入,([^,]*),([^,]*),.*?本行賣出,([^,]*),([^,]*),', txt)
         if m:
-            info = exchange_rate_info(c, m.group(1), m.group(2), m.group(3), m.group(4))
-            info.flts = exr['flts']
-            infos.append(info)
+            infos.append(exchange_rate_info(c, m.group(2), m.group(4), exr['flts']))
 
     return infos
-
-def show_exr_info(info):
-    print('%s: %s' %(info.currency, info.sell_spot))
-    #print(str(info.__dict__))
-    return
 
 def get_stock_info_by_code(code):
     data = get_stock_json_by_codes(code)
@@ -412,35 +351,42 @@ def init_xcurl():
     return
 
 def main():
-    parser = OptionParser()
-    parser.add_option('-i', '--input')
-    parser.add_option('-e', '--exr')
-    parser.add_option('-c', '--codes')
-    parser.add_option('-s', '--stat', action="store_true", default=False)
-    parser.add_option('-r', '--report', action="store_true", default=False)
-    (options, args) = parser.parse_args()
-    stock_infos = []
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--codes')
+    parser.add_argument('-r', '--report', action="store_true", default=False)
+    parser.add_argument('-e', '--exr', action="store_true", default=False)
+    args, unparsed = parser.parse_known_args()
+
+    infos = []
     init_xcurl()
-    if options.report:
-        if options.codes:
-            for code in options.codes.split(','):
+
+    if args.report:
+        if args.codes:
+            for code in args.codes.split(','):
                 rpt = get_stock_report(code)
                 rpt.show()
         return
-    if options.codes:
-        data = get_stock_json_by_codes(options.codes)
-        stock_infos.extend(get_stock_infos(data))
-    if options.input:
-        data = get_json_from_file(options.input)
-        stock_infos.extend(get_stock_infos(data))
-    update_stock_stats(stock_infos)
-    for info in stock_infos:
-        show_stock_info(info)
-    if options.exr:
-        data = get_json_from_file(options.exr)
+
+    if args.codes:
+        data = get_stock_json_by_codes(args.codes)
+        infos = get_stock_infos(data)
+    else:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
+        data = get_json_from_file(path)
+        infos = get_stock_infos(data)
+
+    update_stock_stats(infos)
+
+    df = pd.DataFrame([x.__dict__ for x in infos])
+    print(df)
+
+    if args.exr:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'exr.json')
+        data = get_json_from_file(path)
         exr_infos = get_exchange_rate_infos(data)
-        for info in exr_infos:
-            show_exr_info(info)
+        exr_df = pd.DataFrame([x.__dict__ for x in exr_infos])
+        print(exr_df)
+
     return
 
 if __name__ == '__main__':

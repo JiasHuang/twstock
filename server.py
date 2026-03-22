@@ -23,29 +23,22 @@ class defvals:
 
 def exr(q):
     d = parse_qs(q)
-    if 'j' in d:
-        j = d['j'][0]
-        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', j)
-        data = twstock.get_json_from_file(local)
-        exchange_rate_infos = twstock.get_exchange_rate_infos(data)
-        exchange_rate_json_list = [json.dumps(x.__dict__) for x in exchange_rate_infos]
-        return '{"ExchangeRates":[%s]}' %(','.join(exchange_rate_json_list))
-    return None
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'exr.json')
+    data = twstock.get_json_from_file(path)
+    exchange_rate_infos = twstock.get_exchange_rate_infos(data)
+    exchange_rate_json_list = [json.dumps(x.__dict__) for x in exchange_rate_infos]
+    return '{"ExchangeRates":[%s]}' %(','.join(exchange_rate_json_list))
 
 def stock(q):
     d = parse_qs(q)
-    path = d['i'][0] if 'i' in d else None
     code = d['c'][0] if 'c' in d else None
     infos = []
     if code:
         data = twstock.get_stock_json_by_codes(code)
-        infos.extend(twstock.get_stock_infos(data))
-    if path:
+        infos = twstock.get_stock_infos(data)
+    else:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
         data = twstock.get_json_from_file(path)
-        infos.extend(twstock.get_stock_infos(data))
-    if len(infos) == 0:
-        defpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
-        data = twstock.get_json_from_file(defpath)
         infos = twstock.get_stock_infos(data)
     twstock.update_stock_stats(infos)
     json_list = [json.dumps(info.__dict__) for info in infos]

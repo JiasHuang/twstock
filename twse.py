@@ -46,18 +46,18 @@ class StockInfo:
             self.name = msg['n']
             self.date = msg['d']
             for attr in ['v', 'o', 'h', 'l', 'z', 'y']:
-                if msg[attr] != '-':
+                if attr in msg and msg[attr] != '-':
                     setattr(self, attr, float(msg[attr]))
-            if self.z == 0:
+            if self.z == 0 and self.v == 0:
+                self.z = self.y
+            if self.z == 0 and 'b' in msg:
                 for b in msg['b'].split('_'):
                     if b != '-' and float(b) != 0:
                         self.z = float(b)
                         break
-            if self.z == 0:
-                self.z = self.y
-            if self.l:
+            if self.l > 0:
                 self.z = max(self.l, self.z)
-            if self.h:
+            if self.h > 0:
                 self.z = min(self.h, self.z)
 
         if trading:
@@ -102,7 +102,7 @@ def get_ex_ch_by_code(code):
     return '{}_{}.tw'.format(ex, code)
 
 def get_msg(codes):
-    step = 50
+    step = 25
     result = []
     idx = 0
     while idx < len(codes):
@@ -111,8 +111,9 @@ def get_msg(codes):
         url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
         txt = xurl.load(url, cache=False)
         data = json.loads(txt)
-        if 'msgArray' in data:
-            result.extend(data['msgArray'])
+        for msg in data.get('msgArray', []):
+            if all(key in msg for key in ['c', 'n', 'd']):
+                result.append(msg)
         idx += count
     return result
 
@@ -286,13 +287,11 @@ def analyze(date, days=30, tail=1, verbose=False):
             x.v = np.round((x.v + np.sum(parsed[x.code].volume[1-tail:])) / tail)
 
     for x in infos:
-        if len(parsed[x.code].close):
+        if len(parsed[x.code].close) and len(parsed[x.code].volume):
             x.chg = x.z - parsed[x.code].close[0];
-        mv = np.mean(parsed[x.code].volume)
-        ma = np.mean(parsed[x.code].close)
-        if mv > 0:
+            mv = np.mean(parsed[x.code].volume)
+            ma = np.mean(parsed[x.code].close)
             x.mv_pct = np.round(x.v / mv * 100, 2)
-        if ma > 0:
             x.ma_pct = np.round((x.z / ma - 1) * 100, 2)
 
     update_nav(infos)

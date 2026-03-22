@@ -31,7 +31,7 @@ function get_week_html(y, q, m, w) {
 
   if (first_w) {
     if (cur_m)
-      text += String.format('<td rowspan={0}><span id="cur_m" class="hl">M{1}</span></td>', m.weeks.length, m.M);
+      text += String.format('<td rowspan={0}><span id="cur_m" class="bg_hl">M{1}</span></td>', m.weeks.length, m.M);
     else
       text += String.format('<td rowspan={0}><span>M{1}</span></td>', m.weeks.length, m.M);
     text += String.format('<td id="M{0}" rowspan={1} class="edit" contenteditable=true>{2}</td>', m.M, m.weeks.length, m.note);
@@ -40,7 +40,7 @@ function get_week_html(y, q, m, w) {
   text += String.format('<td class="{0}">W{1}</td>', td_cls, w.W);
 
   for (var i=0; i<7; i++) {
-    let span_cls = (cur_m && today.getDate() == w.days[i]) ? 'hl':'grey';
+    let span_cls = (cur_m && today.getDate() == w.days[i]) ? 'bg_hl':'grey';
     text += String.format('<td class="{0}"><span class="{1}">{2}</span></td>', td_cls, span_cls, w.days[i]);
   }
 

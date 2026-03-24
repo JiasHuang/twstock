@@ -23,25 +23,15 @@ class defvals:
 
 def exr(q):
     d = parse_qs(q)
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'exr.json')
-    data = twstock.get_json_from_file(path)
-    exchange_rate_infos = twstock.get_exchange_rate_infos(data)
-    exchange_rate_json_list = [json.dumps(x.__dict__) for x in exchange_rate_infos]
-    return '{"ExchangeRates":[%s]}' %(','.join(exchange_rate_json_list))
+    data = twstock.get_exchange_rate_data()
+    json_list = [json.dumps(x.__dict__) for x in data]
+    return '{"ExchangeRates":[%s]}' %(','.join(json_list))
 
 def stock(q):
     d = parse_qs(q)
-    code = d['c'][0] if 'c' in d else None
-    infos = []
-    if code:
-        data = twstock.get_stock_json_by_codes(code)
-        infos = twstock.get_stock_infos(data)
-    else:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
-        data = twstock.get_json_from_file(path)
-        infos = twstock.get_stock_infos(data)
-    twstock.update_stock_stats(infos)
-    json_list = [json.dumps(info.__dict__) for info in infos]
+    codes = twstock.get_codes()
+    data = twstock.get_data(codes)
+    json_list = [json.dumps(x.__dict__) for x in data]
     return '{"stocks":[%s]}' %(','.join(json_list))
 
 def loadcsv(q):

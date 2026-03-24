@@ -11,7 +11,9 @@ import numpy as np
 
 import xurl
 
-# ["0證券代號","1證券名稱","2成交股數","3成交筆數","4成交金額","5開盤價","6最高價","7最低價","8收盤價","9漲跌(+/-)","10漲跌價差","11最後揭示買價","12最後揭示買量","13最後揭示賣價","14最後揭示賣量","15本益比"]
+# "0證券代號","1證券名稱","2成交股數","3成交筆數","4成交金額","5開盤價",
+# "6最高價","7最低價","8收盤價","9漲跌(+/-)","10漲跌價差","11最後揭示買價",
+# "12最後揭示買量","13最後揭示賣價","14最後揭示賣量","15本益比"
 class AfterTradingInfo:
     def __init__(self, v, date):
         self.code = v[0]
@@ -34,9 +36,8 @@ class StockInfo:
         self.z = 0
         self.v = 0
         self.y = 0
-        self.chg = 0
-        self.mv_pct = 0
-        self.ma_pct = 0
+        self.mv = 0
+        self.ma = 0
         self.nav = 0
         self.nav_date = None
         self.nav_time = None
@@ -97,7 +98,7 @@ def is_otc(code):
                 return True
     return False
 
-def get_ex_ch_by_code(code):
+def get_ex_code(code):
     ex = 'otc' if is_otc(code) else 'tse'
     return '{}_{}.tw'.format(ex, code)
 
@@ -107,7 +108,7 @@ def get_msg(codes):
     idx = 0
     while idx < len(codes):
         count = min(len(codes) - idx, step)
-        ex_ch = '|'.join([get_ex_ch_by_code(x) for x in codes[idx:idx+count]])
+        ex_ch = '|'.join([get_ex_code(x) for x in codes[idx:idx+count]])
         url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
         txt = xurl.load(url, cache=False)
         data = json.loads(txt)
@@ -146,12 +147,10 @@ def update_nav(infos):
             x.nav_date = msg['i']
             x.nav_time = msg['j']
 
-def get_tse_objs(code, year, month, verbose):
+def get_tse_month_data(code, year, month, cache, cacheOnly, verbose):
     data = []
-    today = datetime.date.today()
     url = 'http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date={}{:02}01&stockNo={}'.format(year, month, code)
-    cacheOnly = (year != today.year or month != today.month)
-    json_txt = xurl.load(url, verbose=verbose, cacheOnly=cacheOnly)
+    json_txt = xurl.load(url, cache=cache, cacheOnly=cacheOnly, verbose=verbose)
     try:
         json_obj = json.loads(json_txt)
     except ValueError as e:
@@ -165,12 +164,10 @@ def get_tse_objs(code, year, month, verbose):
                 data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':str(v)})
     return data
 
-def get_otc_objs(code, year, month, verbose):
+def get_otc_month_data(code, year, month, cache, cacheOnly, verbose):
     data = []
-    today = datetime.date.today()
     url = 'https://www.tpex.org.tw/www/zh-tw/afterTrading/tradingStock?code={}&date={}%2F{:02d}%2F{:02d}&id=&response=json'.format(code, year, month, 1)
-    cacheOnly = (year != today.year or month != today.month)
-    json_txt = xurl.load(url, verbose=verbose, cacheOnly=cacheOnly)
+    json_txt = xurl.load(url, cache=cache, cacheOnly=cacheOnly, verbose=verbose)
     try:
         json_obj = json.loads(json_txt)
     except ValueError as e:
@@ -183,10 +180,15 @@ def get_otc_objs(code, year, month, verbose):
                 data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':d[1]})
     return data
 
-def get_objs(code, year, month, verbose):
-    if is_otc(code):
-        return get_otc_objs(code, year, month, verbose)
-    return get_tse_objs(code, year, month, verbose)
+def get_month_data(code, year, month, verbose):
+    today = datetime.date.today()
+    cache = True
+    cacheOnly = (year != today.year or month != today.month)
+    func = get_otc_month_data if is_otc(code) else get_tse_month_data
+    data = func(code, year, month, cache, cacheOnly, verbose)
+    if len(data) == 0 and cacheOnly == False:
+        data = func(code, year, month, False, False, verbose)
+    return data
 
 def get_data(code, start, end, verbose=False):
     data = []
@@ -199,12 +201,10 @@ def get_data(code, start, end, verbose=False):
     while idx >= idx_s:
         y = int(idx / 12)
         m = (idx % 12) + 1
-        objs = get_objs(code, y, m, verbose)
-        if len(objs) == 0:
-            if verbose:
-                print('{}{:02d} not found'.format(y, m))
+        d = get_month_data(code, y, m, verbose)
+        if len(d) == 0:
             break
-        data = objs + data
+        data = d + data
         idx -= 1
 
     return data
@@ -216,12 +216,10 @@ def get_data_by_days(code, days, verbose=False):
     while len(data) < days:
         y = int(idx / 12)
         m = (idx % 12) + 1
-        objs = get_objs(code, y, m, verbose)
-        if len(objs) == 0:
-            if verbose:
-                print('{}{:02d} not found'.format(y, m))
+        d = get_month_data(code, y, m, verbose)
+        if len(d) == 0:
             break
-        data = objs + data
+        data = d + data
         idx -= 1
 
     return data
@@ -236,7 +234,7 @@ def analyze(date, days=30, tail=1, verbose=False):
     today_str = today.strftime('%Y%m%d')
     has_today_data = False
 
-    trading_objs = [];
+    trading_objs = []
     while len(trading_objs) < (days + 1):
         url = 'https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={}&type=0099P&response=json'.format(date.strftime('%Y%m%d'))
         json_txt = xurl.load(url, verbose=verbose, cacheOnly=not is_today)
@@ -268,7 +266,7 @@ def analyze(date, days=30, tail=1, verbose=False):
     if is_today and not has_today_data:
         codes = [x.code for x in trading_objs[0]]
         msg = get_msg(codes)
-        if msg[0]['d'] == today_str:
+        if len(msg) and msg[0]['d'] == today_str:
             infos = [StockInfo(msg=x) for x in msg]
 
     if not infos:
@@ -288,11 +286,9 @@ def analyze(date, days=30, tail=1, verbose=False):
 
     for x in infos:
         if len(parsed[x.code].close) and len(parsed[x.code].volume):
-            x.chg = x.z - parsed[x.code].close[0];
-            mv = np.mean(parsed[x.code].volume)
-            ma = np.mean(parsed[x.code].close)
-            x.mv_pct = np.round(x.v / mv * 100, 2)
-            x.ma_pct = np.round((x.z / ma - 1) * 100, 2)
+            x.y = parsed[x.code].close[0]
+            x.mv = np.mean(parsed[x.code].volume)
+            x.ma = np.mean(parsed[x.code].close)
 
     update_nav(infos)
 
@@ -307,7 +303,7 @@ def main():
     args, unparsed = parser.parse_known_args()
 
     date = unparsed[0] if len(unparsed) > 0 else datetime.date.today()
-    analyze(date, args.days, 1, args.verbose);
+    analyze(date, args.days, 1, args.verbose)
 
     return
 

@@ -62,9 +62,9 @@ function getStockTableText(s) {
   var notes = [];
 
   pct = Math.round(s.v / s.mv * 100);
-  const hv = pct >= 120 ? '<span class="bg_hv">★ </span>':'';
-  const flt = getFltText(s, s.flts, 'flt bg_hl', 'flt');
-  notes.push(`#${s.v.toLocaleString()} (${pct}%)${hv} ${flt}`);
+  const pct_cls = pct >= 150 ? 'bg_hv':'';
+  const flt_str = getFltText(s, s.flts, 'flt bg_hl', 'flt');
+  notes.push(`#${s.v.toLocaleString()} (<span class="${pct_cls}">${pct}%</span>) ${flt_str}`);
 
   if (s.nav) {
     chg = s.nav - s.z;
@@ -134,57 +134,13 @@ function getExchangeRateTableText(objs) {
     text += '<tr><th>幣別</th><th>買入匯率</th><th>賣出匯率</th> <th></th></tr>';
     for (var i=0; i<objs.length; i++) {
       let obj = objs[i];
-      let flt_txt = getFltText(obj, obj.flts, 'bg_hl', 'grey');
-      text += `<tr><td>${obj.currency}</td><td>${obj.buy_spot}</td><td>${obj.sell_spot}</td><td>${flt_txt}</td></tr>`;
+      let flt_str = getFltText(obj, obj.flts, 'bg_hl', 'grey');
+      text += `<tr><td>${obj.currency}</td><td>${obj.buy_spot}</td><td>${obj.sell_spot}</td><td>${flt_str}</td></tr>`;
     }
     text += '</table>';
   }
 
   return text
-}
-
-function sort_by_vol_ratio(a, b) {
-  let a_ratio = a.v / a.mv * 100;
-  let b_ratio = b.v / b.mv * 100;
-  if (a_ratio < b_ratio) {
-    return 1;
-  }
-  if (a_ratio > b_ratio) {
-    return -1;
-  }
-  return 0;
-}
-
-function sort_by_inc_ratio(a, b) {
-  let a_ratio = (a.z - a.y) / a.y * 100;
-  let b_ratio = (b.z - b.y) / b.y * 100;
-  if (a_ratio < b_ratio) {
-    return 1;
-  }
-  if (a_ratio > b_ratio) {
-    return -1;
-  }
-  return 0;
-}
-
-function sort_by_dec_ratio(a, b) {
-  return sort_by_inc_ratio(b, a);
-}
-
-function sort_by_inc_ma_ratio(a, b) {
-  let a_ratio = (a.z - a.ma) / a.ma * 100;
-  let b_ratio = (b.z - b.ma) / b.ma * 100;
-  if (a_ratio < b_ratio) {
-    return 1;
-  }
-  if (a_ratio > b_ratio) {
-    return -1;
-  }
-  return 0;
-}
-
-function sort_by_dec_ma_ratio(a, b) {
-  return sort_by_inc_ma_ratio(b, a);
 }
 
 function filterTag() {
@@ -216,13 +172,15 @@ function updateResult() {
   }
 
   if (sort_by == 'vol') {
-    stocks = stocks.slice(0).sort(sort_by_vol_ratio);
+    stocks = stocks.slice(0).sort((a, b) => b.v/b.mv - a.v/a.mv);
   } else if (sort_by == 'inc') {
-    stocks = stocks.slice(0).sort(sort_by_inc_ratio);
+    stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
   } else if (sort_by == 'dec') {
-    stocks = stocks.slice(0).sort(sort_by_dec_ratio);
-  } else if (sort_by == 'dec_ma') {
-    stocks = stocks.slice(0).sort(sort_by_dec_ma_ratio);
+    stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
+  } else if (sort_by == 'ma_inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.z/b.ma - a.z/a.ma);
+  } else if (sort_by == 'ma_dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.z/b.ma - a.z/a.ma);
   }
 
   for (var i=0; i<stocks.length; i++) {

@@ -4,6 +4,8 @@ var sort_by = null;
 var interval_id = null;
 
 function pz_fmt(z, y, en_cls=false) {
+  if (y == 0)
+    return `${z}`;
   const chg = z - y;
   const chg_str = chg.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
   const pct_str = (chg / y * 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
@@ -18,13 +20,17 @@ function updateResult() {
   if (sort_by == 'vol') {
     stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
   } else if (sort_by == 'inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.chg/(b.z-b.chg) - a.chg/(a.z-a.chg));
+    stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
   } else if (sort_by == 'dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.chg/(b.z-b.chg) - a.chg/(a.z-a.chg));
+    stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
   } else if (sort_by == 'nav_inc') {
     stocks = stocks.slice(0).sort((a, b) => b.nav/b.z - a.nav/a.z);
   } else if (sort_by == 'nav_dec') {
     stocks = stocks.slice(0).sort((b, a) => b.nav/b.z - a.nav/a.z);
+  } else if (sort_by == 'ma_inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
+  } else if (sort_by == 'ma_dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
   }
 
   const cols = ['code', 'name', 'pz', 'nav', 'MA%', 'vol'];
@@ -50,12 +56,11 @@ function updateResult() {
 
     if (!flt_ret)
       continue;
-
     const link = `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a>`;
-    const pz_str = pz_fmt(s.z, s.z - s.chg, true);
+    const pz_str = pz_fmt(s.z, s.y, true);
     const nav_str = pz_fmt(s.nav, s.z) + ` <span class="nav_time">${s.nav_time}</span>`;
-    const vol_str = `${s.v.toLocaleString()} (${s.mv_pct}%)`;
-    const vals = [link, s.name, pz_str, nav_str, s.ma_pct, vol_str];
+    const vol_str = `${s.v.toLocaleString()} (${s.mv_pct.toFixed(0)}%)`;
+    const vals = [link, s.name, pz_str, nav_str, s.ma_pct.toFixed(2), vol_str];
     text += '<tr><td>' + vals.join('</td><td>') + '</td></tr>';
   }
 
@@ -65,6 +70,13 @@ function updateResult() {
 }
 
 function parseStockJSON(obj) {
+
+  // add ma_pct and mv_pct
+  for (let s of obj) {
+    s.ma_pct = (s.z && s.ma) ? ((s.z / s.ma - 1) * 100) : 0;
+    s.mv_pct = (s.v && s.mv) ? (s.v / s.mv * 100) : 0;
+  }
+
   cur_stock_json = obj;
   updateResult();
 }

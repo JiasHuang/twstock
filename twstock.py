@@ -18,33 +18,16 @@ class defs:
     from_year_offset = 5
 
 class exchange_rate_info:
-    def __init__(self, currency, buy_spot, sell_spot, flts=[]):
+    def __init__(self, currency, buy_spot, sell_spot, flts):
         self.currency = currency
         self.buy_spot = buy_spot
         self.sell_spot = sell_spot
         self.flts = flts
 
-class wap_info:
-    # # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
-    def __init__(self, Y, M, h, l, a, A, B):
-        self.Y = twse.to_common_era(Y)
-        self.M = M
-        self.h = h
-        self.l = l
-        self.a = a
-        self.A = A
-        self.B = B
-
-    def __str__(self):
-        return 'Y {} M {} h {} l {} a {} A {} B {}'.format(self.Y, self.M, self.h, self.l, self.a, self.A, self.B)
-
-    def __jsonencode__(self):
-        return {'Y':self.Y, 'M':self.M, 'h':self.h, 'l':self.l, 'a':self.a, 'A':self.A, 'B':self.B}
-
 class revenue_info:
     def __init__(self, Y, M, rev=0):
         self.Y = twse.to_common_era(Y)
-        self.M = M
+        self.M = int(M)
         self.rev = rev
 
     def __str__(self):
@@ -56,7 +39,7 @@ class revenue_info:
 class eps_info:
     def __init__(self, Y, Q, rev='-', gross='', profit='-', nor='-', ni='-', eps='-'):
         self.Y = twse.to_common_era(Y)
-        self.Q = Q
+        self.Q = int(Q)
         self.rev = rev  # 營業收入
         self.gross = gross # 營業毛利
         self.profit = profit # 營業利益
@@ -70,31 +53,11 @@ class eps_info:
     def __jsonencode__(self):
         return {'Y':self.Y, 'Q':self.Q, 'rev':self.rev, 'gross':self.gross, 'profit':self.profit, 'nor':self.nor, 'ni':self.ni, 'eps':self.eps}
 
-class stock_info:
-    def __init__(self, code, flts = None, tags = None):
-        self.code = code
-        self.name = None
-        self.o = 0
-        self.z = 0
-        self.y = 0
-        self.v = 0
-        self.h = 0
-        self.l = 0
-        self.ma = 0
-        self.mv = 0
-        self.nav = 0
-        self.nav_date = None
-        self.nav_time = None
-        self.tags = tags or []
-        self.flts = flts or []
-
 class stock_report:
     def __init__(self, code):
         self.code = code
         self.z = 0
         self.n = None
-        self.ex_ch = None
-        self.wap = []
         self.eps = []
         self.revenue = []
         self.pz_close = 0
@@ -108,9 +71,6 @@ class stock_report:
         self.dividend_stock = []
         self.capital_stock = 0
     def show(self):
-        print('-- wap --')
-        for x in self.wap:
-            print(x)
         print('-- eps --')
         for x in self.eps:
             print(x)
@@ -136,29 +96,23 @@ class MyJSONEncoder(json.JSONEncoder):
 
 def get_ma(code, days):
     data = twse.get_data_by_days(code, days)
-    df = pd.DataFrame(data)
-    vals = df['close'].tail(days).astype('float64').to_numpy()
-    return np.round(vals.mean(), 2)
+    vals = [float(x['close']) for x in data]
+    return np.round(np.mean(vals), 2) if len(vals) else 0
 
 def get_mv(code, days):
     data = twse.get_data_by_days(code, days)
-    df = pd.DataFrame(data)
-    vals = df['volume'].tail(days).astype('int64').to_numpy()
-    return np.round(vals.mean())
+    vals = [int(x['volume']) for x in data]
+    return np.round(np.mean(vals)) if len(vals) else 0
 
-def get_stock_infos(data):
-    codes = [s['code'] for s in data['stocks']]
-    msg = twse.get_msg(codes)
-    parsed = {m['c']: twse.StockInfo(msg=m) for m in msg}
-    infos = []
-    for s in data['stocks']:
-        info = stock_info(s['code'], s.get('flts'), s.get('tags'))
-        if info.code in parsed:
-            for attr in ['name', 'y', 'o', 'h', 'l', 'z', 'v']:
-                setattr(info, attr, getattr(parsed[info.code], attr))
-            infos.append(info)
-
-    return infos
+def get_data(codes):
+    parsed = {x['code']:x for x in codes}
+    msg = twse.get_msg([x['code'] for x in codes])
+    data = [twse.StockInfo(msg=m) for m in msg]
+    for d in data:
+        d.tags = parsed[d.code].get('tags', [])
+        d.flts = parsed[d.code].get('flts', [])
+    update_stock_stats(data)
+    return data
 
 def get_etf_msg_by_code(data, code):
     if 'a1' not in data:
@@ -194,71 +148,34 @@ def update_stock_stats(infos):
     update_etf_nav(infos)
     return
 
-def get_json_from_file(path):
+def get_codes(codes=None):
+
+    if codes:
+        return [{'code':c} for c in codes.split(',')]
+
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
     txt = xurl.readLocal(path)
-    return json.loads(txt)
+    data = json.loads(txt)
+    return data['stocks']
 
-def get_stock_json_by_codes(codes):
-    json_strs = ['{"code":"%s"}' %(c) for c in codes.split(',')]
-    return json.loads('{"stocks":[%s]}' %(','.join(json_strs)))
+def get_exchange_rate_data():
 
-def get_exchange_rate_infos(data):
-
-    if 'ExchangeRates' not in data:
-        return []
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'exr.json')
+    txt = xurl.readLocal(path)
+    data = json.loads(txt)
+    result = []
 
     url = 'https://rate.bot.com.tw/xrt/flcsv/0/day'
     txt = xurl.load(url, cache=False)
-    infos = []
 
+    # Currency,Rate,Cash,Spot
     for exr in data['ExchangeRates']:
         c = exr['currency']
         m = re.search(re.escape(c) + r',本行買入,([^,]*),([^,]*),.*?本行賣出,([^,]*),([^,]*),', txt)
         if m:
-            infos.append(exchange_rate_info(c, m.group(2), m.group(4), exr['flts']))
+            result.append(exchange_rate_info(c, m.group(2), m.group(4), exr.get('flts', [])))
 
-    return infos
-
-def get_stock_info_by_code(code):
-    data = get_stock_json_by_codes(code)
-    infos = get_stock_infos(data)
-    update_stock_stats(infos)
-    return infos[0] if len(infos) > 0 else None
-
-def update_stock_report_wap(obj):
-    now = datetime.datetime.now()
-    for year in range(now.year - defs.from_year_offset, now.year + 1):
-        url = 'https://www.twse.com.tw/exchangeReport/FMSRFK?response=json&stockNo=%s&date=%4d0101' %(obj.code, year)
-        txt = xurl.load(url)
-        try:
-            data = json.loads(txt)
-        except:
-            continue
-        if 'data' not in data:
-            continue
-        # 年度,月份,最高價,最低價,加權(A/B)平均價,成交筆數,成交金額(A),成交股數(B),週轉率(%),
-        for d in data['data']:
-            Y, M = d[0], d[1]
-            h, l, a, = d[2], d[3], d[4]
-            A = d[6].replace(',','')
-            B = d[7].replace(',','')
-            obj.wap.append(wap_info(Y, M, h, l, a, A, B))
-    return
-
-def update_stock_report_wap_otc(obj):
-    now = datetime.datetime.now()
-    for year in range(now.year - defs.from_year_offset, now.year + 1):
-        url = 'https://www.tpex.org.tw/web/stock/statistics/monthly/download_st44.php?l=zh-tw'
-        txt = xurl.load(url, opts=['--data-raw \'yy=%s&stk_no=%s\'' %(year, obj.code)])
-        # 年度,月份,收市最高價,收市最低價,收市平均價,成交筆數,成交金額仟元(A),成交股數仟股(B),週轉率(%),
-        for m in re.finditer(r'"(\d+)","(\d+)","(.*?)","(.*?)","(.*?)",".*?","(.*?)","(.*?)",', txt):
-            Y, M = m.group(1), m.group(2)
-            h, l, = m.group(3), m.group(4)
-            A = m.group(6).replace(',','')
-            B = m.group(7).replace(',','')
-            a = '%.2f' %(float(A) / float(B))
-            obj.wap.append(wap_info(Y, M, h, l, a, A + '000', B + '000'))
-    return
+    return result
 
 def update_stock_report_eps(obj):
     now = datetime.datetime.now()
@@ -278,7 +195,7 @@ def update_stock_report_eps(obj):
 def update_stock_report_revenue(obj):
     now = datetime.datetime.now()
     from_year = twse.from_common_era(now.year) - defs.from_year_offset
-    url = 'https://jdata.yuanta.com.tw/z/zc/zch/zch_%s.djhtm' %(obj.code)
+    url = 'https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_%s.djhtm' %(obj.code)
     txt = xurl.load(url, encoding='big5_hkscs')
     for m in re.finditer(r'<td class="t3n0">(\d+)/(\d+)</td>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
         Y, M = m.group(1), m.group(2)
@@ -326,18 +243,14 @@ def update_stock_report_overall(obj):
 
 def get_stock_report(code):
     obj = stock_report(code)
-    obj.ex_ch = twse.get_ex_ch_by_code(code)
-    if not obj.ex_ch:
-        obj.n = 'NotFound'
+    codes = get_codes(code)
+    data = get_data(codes)
+    if len(data) == 0:
         return obj
-    info = get_stock_info_by_code(code)
+    info = data[0]
     if info:
         obj.z = info.z
-        obj.n = info.msg['n']
-    if obj.ex_ch.startswith('otc'):
-        update_stock_report_wap_otc(obj)
-    else:
-        update_stock_report_wap(obj)
+        obj.n = info.name
     update_stock_report_eps(obj)
     update_stock_report_revenue(obj)
     update_stock_report_overall(obj)
@@ -346,8 +259,6 @@ def get_stock_report(code):
 def init_xcurl():
     xurl.addDelayObj(r'fbs.com.tw', 0.5)
     xurl.addDelayObj(r'twse.com.tw', 0.5)
-    xurl.addDelayObj(r'cnyes.com', 0.5)
-    xurl.addDelayObj(r'yuanta.com.tw', 0.5)
     return
 
 def main():
@@ -357,7 +268,6 @@ def main():
     parser.add_argument('-e', '--exr', action="store_true", default=False)
     args, unparsed = parser.parse_known_args()
 
-    infos = []
     init_xcurl()
 
     if args.report:
@@ -367,24 +277,16 @@ def main():
                 rpt.show()
         return
 
-    if args.codes:
-        data = get_stock_json_by_codes(args.codes)
-        infos = get_stock_infos(data)
-    else:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
-        data = get_json_from_file(path)
-        infos = get_stock_infos(data)
+    codes = get_codes(args.codes)
+    data = get_data(codes)
+    update_stock_stats(data)
 
-    update_stock_stats(infos)
-
-    df = pd.DataFrame([x.__dict__ for x in infos])
-    print(df)
+    df = pd.DataFrame([x.__dict__ for x in data])
+    print(df.to_string())
 
     if args.exr:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'exr.json')
-        data = get_json_from_file(path)
-        exr_infos = get_exchange_rate_infos(data)
-        exr_df = pd.DataFrame([x.__dict__ for x in exr_infos])
+        exr_data = get_exchange_rate_data()
+        exr_df = pd.DataFrame([x.__dict__ for x in exr_data])
         print(exr_df)
 
     return

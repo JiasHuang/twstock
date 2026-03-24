@@ -100,13 +100,16 @@ function updateResult() {
     text += '<td>' + vals.join('</td><td>') + '</td>';
 
     for (var r=r_min; r<=r_max; r+=r_step) {
-      let x = (s.ma * (100 + r) / 100).toFixed(2);
+      let x = s.ma * (100 + r) / 100;
       let c = '';
-      c = (r == 0 && s.z > x) ? 'bg_inc' : c;
-      c = (r == 0 && s.z < x) ? 'bg_dec' : c;
-      c = (r > 0 && s.z >= x) ? 'bg_inc' : c;
-      c = (r < 0 && s.z <= x) ? 'bg_dec' : c;
-      text += `<td class=${c}>${x}</td>`;
+      if (r == 0)
+        c = (s.z >= x) ? 'bg_inc':'bg_dec';
+      else if (r > 0)
+        c = (s.z >= x) ? 'bg_inc':'';
+      else
+        c = (s.z <= x) ? 'bg_dec':'';
+      x_str = x.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
+      text += `<td class=${c}>${x_str}</td>`;
     }
 
     text += '</tr>';

@@ -175,10 +175,10 @@ function updateResult(data) {
     let d = data[idx];
     let y = idx > 0 ? data[idx-1].close:data[idx].close;
     let ma = calculate_sma(data, idx, ma_days);
-    let ma_pct = (d.close / ma - 1) * 100;
     let mv = calculate_sma(data, idx, mv_days, 'volume');
-    let mv_pct = d.volume / mv * 100;
-    let vals = [d.date, pz_fmt(d.close, y, true), ma.toFixed(2), ma_pct.toFixed(2), d.volume.toLocaleString(), mv_pct.toFixed(2)];
+    let ma_pct_str = ((d.close / ma - 1) * 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
+    let mv_pct_str = (d.volume / mv * 100).toLocaleString('en-US', {maximumFractionDigits:2});
+    let vals = [d.date, pz_fmt(d.close, y, true), ma.toFixed(2), ma_pct_str, d.volume.toLocaleString(), mv_pct_str];
     text += '<tr><td>' + vals.join('</td><td>') + '</tr>';
   }
 

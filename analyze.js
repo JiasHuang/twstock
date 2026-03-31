@@ -59,7 +59,7 @@ function updateResult() {
     const link = `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a>`;
     const pz_str = pz_fmt(s.z, s.y, true);
     const nav_str = pz_fmt(s.nav, s.z) + ` <span class="nav_time">${s.nav_time}</span>`;
-    const vol_str = `${s.v.toLocaleString()} (${s.mv_pct.toFixed(0)}%)`;
+    const vol_str = `${s.v.toLocaleString()} (${s.mv_pct}%)`;
     const vals = [link, s.name, pz_str, nav_str, s.ma_pct.toFixed(2), vol_str];
     text += '<tr><td>' + vals.join('</td><td>') + '</td></tr>';
   }
@@ -73,8 +73,8 @@ function parseStockJSON(obj) {
 
   // add ma_pct and mv_pct
   for (let s of obj) {
-    s.ma_pct = (s.z && s.ma) ? ((s.z / s.ma - 1) * 100) : 0;
-    s.mv_pct = (s.v && s.mv) ? (s.v / s.mv * 100) : 0;
+    s.ma_pct = (s.z && s.ma) ? (s.z / s.ma * 100 - 100) : 0;
+    s.mv_pct = (s.v && s.mv) ? Math.round(s.v / s.mv * 100) : 0;
   }
 
   cur_stock_json = obj;

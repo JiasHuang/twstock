@@ -7,14 +7,14 @@
 
 <title>Report</title>
 
-<link rel="stylesheet" href="utils.css?v=20260324">
-<link rel="stylesheet" href="report.css?v=20260320">
+<link rel="stylesheet" href="utils.css?v=20260331">
+<link rel="stylesheet" href="report.css?v=20260331">
 
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 <script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.stock.min.js"></script>
 
-<script type="text/javascript" src="utils.js?v=20260319"></script>
-<script type="text/javascript" src="report.js?v=20260318"></script>
+<script type="text/javascript" src="utils.js?v=20260331"></script>
+<script type="text/javascript" src="report.js?v=20260331"></script>
 
 <script type="text/javascript">
   $(document).ready(onDocumentReady);
@@ -24,13 +24,15 @@
 
 <body bgcolor=silver>
 
+  <div id="topmenu"></div>
+
   <div id="topbar">
     <input type="text" id="input_code" onchange="updateReportByInput()" placeholder="請輸入股票代碼" autofocus>
     <div id="info"></div>
   </div>
 
-  <div id="eps_chart" style="height: 400px; width: 100%;"></div>
-  <div id="revenue_chart" style="height: 400px; width: 100%;"></div>
+  <div id="EPS" style="height: 400px; width: 100%;"></div>
+  <div id="Revenue" style="height: 400px; width: 100%;"></div>
   <div id="result"></div>
 
 </body>

@@ -11,8 +11,6 @@ import talib
 from talib import abstract
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from matplotlib.widgets import MultiCursor
-from matplotlib.widgets import Cursor
 
 import twse
 
@@ -191,33 +189,21 @@ def get_percent_color(pct):
 
 def plot(df):
 
-    height_ratios = [4, 1]
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(20, 10), gridspec_kw={'height_ratios': height_ratios}, sharex=True)
-    axes = axes.flatten()
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 10))
 
     x = df['date'].to_numpy()
+    y = df['close'].to_numpy()
 
-    axes[0].plot(x, df['close'].to_numpy(), zorder=10)
+    ax.plot(x, y, zorder=10)
+
     for pct in np.arange(-20, 25, 5):
-        axes[0].plot(x, df['ma60'].to_numpy() * (100 + pct) / 100, color=get_percent_color(pct), linestyle='dashed', linewidth=0.5, zorder=0)
-    axes[0].set_ylabel('close')
+        ax.plot(x, df['ma60'].to_numpy() * (100 + pct) / 100, color=get_percent_color(pct), linestyle='dashed', linewidth=0.5, zorder=0)
 
-    ma60_ratio = df['close'] / df['ma60'] - 1
-    axes[1].plot(x, ma60_ratio.to_numpy(), zorder=10)
-    for pct in np.arange(-20, 25, 5):
-        axes[1].axhline(y=(pct/100), color=get_percent_color(pct), linestyle='dashed', linewidth=0.5, zorder=0)
-    axes[1].set_ylabel('ma60_ratio')
-
-    # Create the MultiCursor object
-    # Pass the figure's canvas and a list of axes to the MultiCursor
-    # Set vertOn=True to enable the vertical line, horizOn=False to disable the horizontal line
-    # useblit=True provides faster drawing if supported by the backend
-    cursor = MultiCursor(fig.canvas, axes, color='black', linewidth=1, vertOn=True, horizOn=False, useblit=True)
-    cursor0 = Cursor(axes[0], useblit=True, color='red', linewidth=1)
-
+    ax.set_ylabel('close')
     date_formatter = mdates.DateFormatter('%Y-%m-%d')
-    axes[0].xaxis.set_major_formatter(date_formatter)
-    # 4. Optional: improve readability by rotating labels
+    ax.xaxis.set_major_formatter(date_formatter)
+
+    # improve readability by rotating labels
     plt.xticks(rotation=45, ha='right')
 
     plt.tight_layout()

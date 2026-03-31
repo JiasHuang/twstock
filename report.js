@@ -36,11 +36,10 @@ function updateInfo(obj) {
   $('#info').html(text);
 }
 
-function updateEPSChart(obj) {
-  var dp_data = [];
-  var chart = new CanvasJS.Chart("eps_chart", {
+function updateChart(id, dp_data) {
+  var chart = new CanvasJS.Chart(id, {
     title: {
-      text: "EPS"
+      text: id
     },
     theme: "light2",
     toolTip: {
@@ -49,11 +48,19 @@ function updateEPSChart(obj) {
     },
     axisX: {
       labelFontSize: 14,
+      crosshair: {
+        enabled: true,
+        snapToDataPoint: true
+      }
     },
     axisY: {
       gridThickness: 0,
       labelFontSize: 14,
-      lineThickness: 2
+      lineThickness: 2,
+      crosshair: {
+        enabled: true,
+        snapToDataPoint: true
+      }
     },
     data: [
       {
@@ -62,48 +69,30 @@ function updateEPSChart(obj) {
       }
     ]
   });
+
+  chart.render();
+}
+
+function updateEPSChart(obj) {
+  var dp_data = [];
 
   for (let d of obj.eps) {
     let date = `${d.Y}-${d.Q * 3}-1`;
     dp_data.push({x: new Date(date), y: Number(d.eps)});
   }
 
-  chart.render();
+  updateChart('EPS', dp_data);
 }
 
 function updateRevenueChart(obj) {
   var dp_data = [];
-  var chart = new CanvasJS.Chart("revenue_chart", {
-    title: {
-      text: "Revenue"
-    },
-    theme: "light2",
-    toolTip: {
-      borderThickness: 0,
-      cornerRadius: 0
-    },
-    axisX: {
-      labelFontSize: 14,
-    },
-    axisY: {
-      gridThickness: 0,
-      labelFontSize: 14,
-      lineThickness: 2
-    },
-    data: [
-      {
-        type: "spline",
-        dataPoints: dp_data
-      }
-    ]
-  });
 
   for (let d of obj.revenue) {
     let date = `${d.Y}-${d.M}-1`;
     dp_data.push({x: new Date(date), y: Number(d.rev)});
   }
 
-  chart.render();
+  updateChart('Revenue', dp_data);
 }
 
 function getOverallHTMLText(obj) {

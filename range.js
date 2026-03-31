@@ -3,6 +3,7 @@ var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
 var cur_stock_json = null;
+var sort_by = null;
 
 function pct_str(x, en_cls=false) {
   var cls = '';
@@ -79,12 +80,22 @@ function updateResult() {
   var r_step = 2.5;
   var optionsAlways = { signDisplay: 'always' };
 
+  if (sort_by == 'inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
+  } else if (sort_by == 'dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
+  } else if (sort_by == 'ma_inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
+  } else if (sort_by == 'ma_dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
+  }
+
   if (!is_StockTags_loaded) {
     updateTags(stocks);
     is_StockTags_loaded = true;
   }
 
-  var cols = ['code', 'name', 'Pz', 'MA%']
+  var cols = ['code', 'name', 'Pz', 'Pz%', 'MA%']
   for (var r=r_min; r<=r_max; r+=r_step)
     cols.push(r == 0 ? 'MA':pct_str(r));
 
@@ -94,8 +105,8 @@ function updateResult() {
   for (var i=0; i<stocks.length; i++) {
     let s = stocks[i];
     let link = `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a>`;
-    let pct = (s.z / s.ma - 1) * 100;
-    let vals = [link, s.name, s.z,  pct_str(pct, true)];
+    let pct = (s.z / s.y - 1) * 100;
+    let vals = [link, s.name, s.z,  pct_str(pct, true), pct_str(s.ma_pct, true)];
     text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
     text += '<td>' + vals.join('</td><td>') + '</td>';
 
@@ -108,7 +119,7 @@ function updateResult() {
         c = (s.z >= x) ? 'bg_inc':'';
       else
         c = (s.z <= x) ? 'bg_dec':'';
-      x_str = x.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
+      x_str = x.toLocaleString('en-US', {maximumFractionDigits:2});
       text += `<td class=${c}>${x_str}</td>`;
     }
 
@@ -122,6 +133,12 @@ function updateResult() {
 }
 
 function parseStockJSON(obj) {
+
+  // add ma_pct
+  for (let s of obj.stocks) {
+    s.ma_pct = (s.z && s.ma) ? (s.z / s.ma * 100 - 100) : 0;
+  }
+
   cur_stock_json = obj;
   updateResult();
 }
@@ -143,5 +160,10 @@ function onDocumentReady() {
 
   if (!isWeekend)
     setInterval(updateStockInfo, 30000); // 30s
+}
+
+function onSelectChange() {
+  sort_by = $(this).val();
+  updateResult();
 }
 

@@ -33,7 +33,7 @@ function getStockTableText(s) {
   text += '<tr>';
 
   text += '<td class="link">';
-  text += `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}<br>${s.name}</a>`;
+  text += `<a href="chart.html?c=${s.code}" target="_blank">${s.code}<br>${s.name}</a>`;
   text += '</td>';
 
   var prices = [];
@@ -61,7 +61,7 @@ function getStockTableText(s) {
 
   var notes = [];
 
-  pct = Math.round(s.v / s.mv * 100);
+  pct = (s.mv) ? Math.round(s.v / s.mv * 100) : 0;
   const pct_cls = pct >= 150 ? 'bg_hv':'';
   const flt_str = getFltText(s, s.flts, 'flt bg_hl', 'flt');
   notes.push(`#${s.v.toLocaleString()} (<span class="${pct_cls}">${pct}%</span>) ${flt_str}`);
@@ -78,7 +78,8 @@ function getStockTableText(s) {
     chg = s.z - s.ma
     pct = chg / s.ma * 100;
     cls = (pct <= -10) ? 'bg_hl' : '';
-    notes.push(`<span class="MA">均線 ${pct_str(s.ma, chg, pct, '', cls)}</span>`);
+    const h_pct = Math.round((s.z - s.hi) / (s.hi - s.lo) * 100);
+    notes.push(`<span class="MA">均線 ${pct_str(s.ma, chg, pct, '', cls)}</span> <span class="h_pct">H(${h_pct})</span>`);
   }
 
   text += '<td class="note">' + notes.join('<br>') + '</td>';

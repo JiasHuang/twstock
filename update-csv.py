@@ -7,6 +7,7 @@ import argparse
 class defs:
     NYSEARCA = ['SPY', 'VOO', 'LQD', 'QLD']
     NASDAQ = ['QQQ', 'TLT']
+    NYSE = ['TSM']
     ID = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'
 
 def main():
@@ -16,7 +17,7 @@ def main():
 
     if not args.tickers:
         tickers = []
-        for attr in ['NYSEARCA', 'NASDAQ']:
+        for attr in ['NYSEARCA', 'NASDAQ', 'NYSE']:
             tickers.extend([attr + ':' + x for x in getattr(defs, attr)])
         args.tickers = ','.join(tickers)
 

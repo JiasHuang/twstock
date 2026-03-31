@@ -56,7 +56,7 @@ function updateResult() {
 
     if (!flt_ret)
       continue;
-    const link = `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a>`;
+    const link = `<a href="chart.html?c=${s.code}" target="_blank">${s.code}</a>`;
     const pz_str = pz_fmt(s.z, s.y, true);
     const nav_str = pz_fmt(s.nav, s.z) + ` <span class="nav_time">${s.nav_time}</span>`;
     const vol_str = `${s.v.toLocaleString()} (${s.mv_pct}%)`;

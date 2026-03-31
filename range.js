@@ -80,6 +80,8 @@ function updateResult() {
   var r_step = 2.5;
   var optionsAlways = { signDisplay: 'always' };
 
+  console.log('updateResult');
+
   if (sort_by == 'inc') {
     stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
   } else if (sort_by == 'dec') {
@@ -88,6 +90,10 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
   } else if (sort_by == 'ma_dec') {
     stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
+  } else if (sort_by == 'hi_inc') {
+    stocks = stocks.slice(0).sort((a, b) => ((b.z - b.hi) / (b.hi - b.lo)) - ((a.z - a.hi) / (a.hi - a.lo)));
+  } else if (sort_by == 'hi_dec') {
+    stocks = stocks.slice(0).sort((b, a) => ((b.z - b.hi) / (b.hi - b.lo)) - ((a.z - a.hi) / (a.hi - a.lo)));
   }
 
   if (!is_StockTags_loaded) {
@@ -95,7 +101,7 @@ function updateResult() {
     is_StockTags_loaded = true;
   }
 
-  var cols = ['code', 'name', 'Pz', 'Pz%', 'MA%']
+  var cols = ['code', 'name', 'Pz', 'Pz%', 'H%', 'MA%']
   for (var r=r_min; r<=r_max; r+=r_step)
     cols.push(r == 0 ? 'MA':pct_str(r));
 
@@ -104,9 +110,19 @@ function updateResult() {
 
   for (var i=0; i<stocks.length; i++) {
     let s = stocks[i];
-    let link = `<a href="candlestick.html?c=${s.code}" target="_blank">${s.code}</a>`;
+    let link = `<a href="chart.html?c=${s.code}" target="_blank">${s.code}</a>`;
     let pct = (s.z / s.y - 1) * 100;
-    let vals = [link, s.name, s.z,  pct_str(pct, true), pct_str(s.ma_pct, true)];
+    let h_pct = Math.round((s.z - s.hi) / (s.hi - s.lo) * 100);
+    let vals = [link, s.name, s.z,  pct_str(pct, true), h_pct, pct_str(s.ma_pct, true)];
+    const step = s.ma * r_step / 200;
+
+    let kv_list = [
+      ['Hi', s.hi],
+      ['Lo', s.lo],
+      ['23', s.hi - (s.hi - s.lo) * 23.6 / 100],
+      ['38', s.hi - (s.hi - s.lo) * 38.2 / 100],
+      ['61', s.hi - (s.hi - s.lo) * 61.8 / 100]];
+
     text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
     text += '<td>' + vals.join('</td><td>') + '</td>';
 
@@ -120,6 +136,13 @@ function updateResult() {
       else
         c = (s.z <= x) ? 'bg_dec':'';
       x_str = x.toLocaleString('en-US', {maximumFractionDigits:2});
+
+      for (const [k, v] of kv_list) {
+        if (Math.abs(v - x) <= step) {
+          x_str += ` <span class="flag">${k}</span>`;
+        }
+      }
+
       text += `<td class=${c}>${x_str}</td>`;
     }
 
@@ -133,6 +156,7 @@ function updateResult() {
 }
 
 function parseStockJSON(obj) {
+  console.log('parseStockInfo');
 
   // add ma_pct
   for (let s of obj.stocks) {
@@ -144,6 +168,7 @@ function parseStockJSON(obj) {
 }
 
 function updateStockInfo() {
+  console.log('updateStockInfo');
   $.ajax({
     url: 'stock.py' + window.location.search,
     dataType: 'json',

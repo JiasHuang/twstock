@@ -15,7 +15,7 @@ function updateInfo(obj) {
     '獲利':`https://fubon-ebrokerdj.fbs.com.tw/z/zc/zce/zce_${code}.djhtm`,
     '營收':`https://fubon-ebrokerdj.fbs.com.tw/z/zc/zch/zch_${code}.djhtm`,
     '新聞':`https://tw.stock.yahoo.com/q/h?s=${code}`,
-    'Ｋ線':`candlestick.html?c=${code}`,
+    'Ｋ線':`chart.html?c=${code}`,
     '股利':`https://www.wantgoo.com/stock/etf/${code}/dividend-policy/ex-dividend`,
     'CMoney':`https://www.cmoney.tw/forum/stock/${code}`,
     '玩股網':`https://www.wantgoo.com/stock/${code}`,

@@ -24,16 +24,17 @@ function mark_price(data) {
   var lo = null;
 
   for (let d of data) {
-    if (hi == null || d.y[3] > hi.y[3])
+    if (hi == null || d.y > hi.y)
       hi = d;
-    if (lo == null || d.y[3] < lo.y[3])
+    if (lo == null || d.y < lo.y)
       lo = d;
   }
 
   for (let d of [hi, lo]) {
-    d.indexLabel = `${d.y[3]}`;
+    d.indexLabel = `${d.y}`;
     d.indexLabelFontColor = "white";
     d.indexLabelBackgroundColor = "black";
+    d.indexLabelFontSize = 12;
   }
 
 }
@@ -59,15 +60,60 @@ function mark_label(data) {
 
 }
 
+function add_strip_line(data) {
+  const vals = data.map(x => x.close);
+  const pz = vals[vals.length - 1];
+  const hi = Math.max(...vals);
+  const lo = Math.min(...vals);
+  const pz_pct = (pz - hi) / (hi - lo) * 100;
+  const pcts = [-23.6, -38.2, -61.8];
+  var lines = [];
 
-function updateChart(data) {
+  for (const pct of pcts) {
+    const v = hi + (hi - lo) * pct / 100;
+    lines.push({
+      value:v,
+      color:"brown",
+      label:`${pct.toFixed(0)}% ${v.toFixed(1)}`,
+      labelPlacement:"outside",
+      labelFontColor:"brown",
+      labelFontSize:12,
+      lineDashType: "dash",
+      lineThickness: 1,
+    });
+  }
+
+  lines.push({
+    value:pz,
+    color:"red",
+    label:`${pz_pct.toFixed(0)}% ${pz}`,
+    labelPlacement:"outside",
+    labelFontColor:"red",
+    labelFontSize:12,
+    lineDashType: "dash",
+    lineThickness: 1,
+  });
+
+  return [hi, lo, lines];
+}
+
+function updateChart(obj) {
+  const data = obj.data;
   const pz = data[data.length - 1].close;
+  const [hi, lo, strip_line] = add_strip_line(data);
   var dp_price = [], dp_mv = [], dp_ma = [], dp_close = [];
   var stockChart = new CanvasJS.StockChart("chartContainer",{
     theme: "light2",
+    title: {
+      text: `${obj.code} ${obj.name}`,
+      fontSize: 20
+    },
     charts: [{
       toolTip: {
-        shared: true
+        shared: true,
+        contentFormatter: function (e) {
+          return `pz ${e.entries[0].dataPoint.y}`;
+        }
       },
       axisX: {
         lineThickness: 5,
@@ -83,16 +129,9 @@ function updateChart(data) {
           enabled: true,
           snapToDataPoint: true
         },
-			  stripLines:[
-			    {
-				    value:pz,
-				    color:"red",
-            label:pz,
-            labelAlign:"center",
-            labelFontColor:"white",
-            labelBackgroundColor:"black",
-			    }
-        ]
+        stripLines:strip_line,
+        minimum: lo,
+        maximum: hi,
       },
       legend: {
         verticalAlign: "top",
@@ -101,10 +140,9 @@ function updateChart(data) {
       data: [{
         name: "Price",
         yValueFormatString: "#,###.##",
-        type: "candlestick",
-        risingColor: "green",
-        fallingColor: "red",
-        dataPoints : dp_price
+        type: "line",
+        dataPoints : dp_price,
+        color: "DodgerBlue"
       }]
     },
     {
@@ -164,6 +202,7 @@ function updateChart(data) {
       }]
     }],
     navigator: {
+      enabled: false,
       data: [{
         dataPoints: dp_close
       }],
@@ -172,7 +211,7 @@ function updateChart(data) {
 
   // dp_price
   for (let d of data) {
-    dp_price.push({x: new Date(d.date), y: [Number(d.open), Number(d.high), Number(d.low), Number(d.close)]});
+    dp_price.push({x: new Date(d.date), y: Number(d.close)});
   }
 
   // dp_mv
@@ -203,33 +242,53 @@ function updateChart(data) {
   mark_label(dp_mv);
 
   stockChart.render();
-  const ma_list = [[5, '#F29A5F'], [20, '#E45EF3'], [60, '#5DDBF4']];
+
+  const ma_list = [[20, '#E45EF3'], [60, '#369B45']];
+  const ma_opts = {
+    type: "line",
+    showInLegend: true,
+    yValueFormatString: "#,###.00",
+  };
+
   for (const [ma, clr] of ma_list) {
     var vals = [];
     for (var i=0; i<data.length; i++)
       vals.push({x: new Date(data[i].date), y: calculate_sma(data, i, ma)});
-    stockChart.charts[0].addTo("data", { type: "line", dataPoints: vals, showInLegend: true, yValueFormatString: "#,###.00", name: "MA"+ma, color: clr})
+    stockChart.charts[0].addTo("data", Object.assign({dataPoints: vals, name: "MA"+ma, color:clr}, ma_opts))
   }
 
-  for (const rate of [1.3, 1.2, 1.1, 0.9, 0.8, 0.7]) {
+
+  const pct_list = [30, 20, 10, -10, -20, -30];
+  const pct_opts = {
+    type: "line",
+    showInLegend: true,
+    yValueFormatString: "#,###.00",
+    lineThickness:1,
+    lineDashType: "dash"
+  };
+
+  for (const pct of pct_list) {
     var vals = [];
     for (var i=0; i<data.length; i++) {
-      y = calculate_sma(data, i, 90);
-      y = (y != null) ? y * rate : null;
-      vals.push({x: new Date(data[i].date), y: y});
+      const v = calculate_sma(data, i, ma_days);
+      vals.push({x: new Date(data[i].date), y: (v ? v * (100 + pct) / 100 : null)});
     }
-    stockChart.charts[0].addTo("data", { type: "line", dataPoints: vals, showInLegend: true, yValueFormatString: "#,###.00", name: "rate"+rate, lineThickness:1, lineDashType: "dash"})
+    stockChart.charts[0].addTo("data", Object.assign({dataPoints: vals, name: `${pct}%`}, pct_opts))
   }
 
 }
 
-function updateResult(data) {
+function updateResult(obj) {
+  const data = obj.data;
+  const cols = ['date', 'close', 'MA5', 'MA20', 'MA', 'MA%', 'H%', 'volume', 'MV%'];
+  const tail = Math.min(data.length, 5);
+  const vals = data.map(x => x.close);
+  const hi = Math.max(...vals);
+  const lo = Math.min(...vals);
+
   var text = '';
-  const cols = ['date', 'close', 'MA5', 'MA20', 'MA', 'MA%', 'volume', 'MV%'];
 
   text += '<table><tr><th>' + cols.join('</th><th>'); + '</tr>';
-
-  const tail = Math.min(data.length, 5);
 
   for (var i=0; i<tail; i++) {
     let idx = data.length - tail + i;
@@ -241,7 +300,8 @@ function updateResult(data) {
     let mv = calculate_sma(data, idx, mv_days, 'volume');
     let ma_pct_str = (d.close / ma * 100 - 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
     let mv_pct = Math.round(d.volume / mv * 100);
-    let vals = [d.date, pz_fmt(d.close, y, true), ma5.toFixed(2), ma20.toFixed(2), ma.toFixed(2), ma_pct_str, d.volume.toLocaleString(), mv_pct];
+    let h_pct = Math.round((d.close - hi) / (hi - lo) * 100);
+    let vals = [d.date, pz_fmt(d.close, y, true), ma5.toFixed(2), ma20.toFixed(2), ma.toFixed(2), ma_pct_str, h_pct, d.volume.toLocaleString(), mv_pct];
     text += '<tr><td>' + vals.join('</td><td>') + '</tr>';
   }
 
@@ -249,12 +309,12 @@ function updateResult(data) {
   $('#result').html(text);
 }
 
-function parseData(data) {
-  updateChart(data);
-  updateResult(data);
+function parseJson(obj) {
+  updateChart(obj);
+  updateResult(obj);
 }
 
 function onDocumentReady() {
   var api_url = 'loadcsv.py' + window.location.search;
-  $.getJSON(api_url, parseData);
+  $.getJSON(api_url, parseJson);
 }

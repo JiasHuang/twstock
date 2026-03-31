@@ -11,6 +11,12 @@ import numpy as np
 
 import xurl
 
+split_stocks = {
+    '0050': {'date':20250618, 'rate':4},
+    '00631L': {'date':20260331, 'rate':22},
+    '00663L': {'date':20250611, 'rate':7},
+}
+
 # "0證券代號","1證券名稱","2成交股數","3成交筆數","4成交金額","5開盤價",
 # "6最高價","7最低價","8收盤價","9漲跌(+/-)","10漲跌價差","11最後揭示買價",
 # "12最後揭示買量","13最後揭示賣價","14最後揭示賣量","15本益比"
@@ -24,6 +30,8 @@ class AfterTradingInfo:
         self.high = float(v[6])
         self.low = float(v[7])
         self.close = float(v[8])
+        if self.code in split_stocks:
+            apply_split(self.code, self)
 
 class StockInfo:
     def __init__(self, msg=None, trading=None):
@@ -75,6 +83,26 @@ class HistoryInfo:
     def __init__(self):
         self.close = []
         self.volume = []
+
+def apply_split(code, data):
+    date = split_stocks[code]['date']
+    rate = split_stocks[code]['rate']
+    if isinstance(data, dict):
+        if int(data['date']) < date:
+            for attr in ['open', 'high', 'low', 'close']:
+                val = float(data[attr])
+                data[attr] = round(val / rate, 2)
+            for attr in ['volume']:
+                val = int(data[attr])
+                data[attr] = val * rate
+    else:
+        if int(data.date) < date:
+            for attr in ['open', 'high', 'low', 'close']:
+                val = float(getattr(data, attr))
+                setattr(data, attr, round(val / rate, 2))
+            for attr in ['volume']:
+                val = int(getattr(data, attr))
+                setattr(data, attr, val * rate)
 
 def from_common_era(x):
     v = int(x) - 1911
@@ -162,6 +190,8 @@ def get_tse_month_data(code, year, month, cache, cacheOnly, verbose):
                 d = [x.replace(',', '') for x in d]
                 v = round(int(d[1]) / 1000)
                 data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':str(v)})
+                if code in split_stocks:
+                    apply_split(code, data[-1])
     return data
 
 def get_otc_month_data(code, year, month, cache, cacheOnly, verbose):
@@ -192,18 +222,19 @@ def get_month_data(code, year, month, verbose):
 
 def get_data(code, start, end, verbose=False):
     data = []
+    fail = 0
     if isinstance(start, str):
         start = datetime.datetime.strptime(start, '%Y%m%d').date()
     if isinstance(end, str):
         end = datetime.datetime.strptime(end, '%Y%m%d').date()
     idx_s = start.year * 12 + start.month - 1
     idx = end.year * 12 + end.month - 1
-    while idx >= idx_s:
+    while idx >= idx_s and fail < 2:
         y = int(idx / 12)
         m = (idx % 12) + 1
         d = get_month_data(code, y, m, verbose)
         if len(d) == 0:
-            break
+            fail += 1
         data = d + data
         idx -= 1
 
@@ -211,14 +242,15 @@ def get_data(code, start, end, verbose=False):
 
 def get_data_by_days(code, days, verbose=False):
     data = []
+    fail = 0
     end = datetime.date.today()
     idx = end.year * 12 + end.month - 1
-    while len(data) < days:
+    while len(data) < days and fail < 2:
         y = int(idx / 12)
         m = (idx % 12) + 1
         d = get_month_data(code, y, m, verbose)
         if len(d) == 0:
-            break
+            fail += 1
         data = d + data
         idx -= 1
 

@@ -34,6 +34,11 @@ def stock(q):
     json_list = [json.dumps(x.__dict__) for x in data]
     return '{"stocks":[%s]}' %(','.join(json_list))
 
+def get_name(code):
+    msg = twse.get_msg([code])
+    name = msg[0].get('n', '-') if len(msg) else '-'
+    return name
+
 def loadcsv(q):
     d = parse_qs(q)
     code = d['c'][0] if 'c' in d else None
@@ -42,7 +47,8 @@ def loadcsv(q):
     exchange = quote.get_exchange(code)
     df = quote.get_data(exchange, code, start, end)
     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
-    return df.to_json(orient='records', indent=4)
+    name = get_name(code)
+    return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
 def analyze(q):
     d = parse_qs(q)

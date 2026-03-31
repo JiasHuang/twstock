@@ -147,19 +147,39 @@ def analyze(df, ma_list, label):
         max_pct = ((max_ratio - 1) * 100)
         min_pct = ((min_ratio - 1) * 100)
         data = {}
-        data['pz'] = pz
-        data['ma {:+.2f}%'.format(max_pct)] = ma_val * (1 + max_pct / 100)
-        data['ma {:+.2f}%'.format(min_pct)] = ma_val * (1 + min_pct / 100)
+
+        pct = (pz / ma_val - 1) * 100
+        data['{:+.2f}'.format(pct)] = pz
+        data['{:+.2f}'.format(max_pct)] = ma_val * (1 + max_pct / 100)
+        data['{:+.2f}'.format(min_pct)] = ma_val * (1 + min_pct / 100)
+
         for pct in np.arange(-30, 30 + 2.5, 2.5):
             if pct < min_pct or pct > max_pct:
                 continue
-            data['ma {:+.2f}%'.format(pct)] = ma_val * (1 + pct / 100)
+            data['{:+.2f}'.format(pct)] = ma_val * (1 + pct / 100)
         for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
-            msg = '{} {:.2f}'.format(k, v)
-            if k == 'pz':
-                pct = (v / ma_val - 1) * 100
-                msg = bcolors.YELLOW + 'pz {:+.2f}% {:.2f}'.format(pct, v) + bcolors.ENDC
+            msg = 'ma {}% {:.2f}'.format(k, v)
+            if v == pz:
+                msg = bcolors.YELLOW + msg + bcolors.ENDC
             print('{} {}'.format(label, msg))
+
+    print('---')
+    hi = max(df['close'])
+    lo = min(df['close'])
+    pct_list = [-23.6, -38.2, -61.8]
+    data = {}
+    pct = (pz - hi) / (hi - lo) * 100;
+    data[str(pct)] = pz
+    for pct in pct_list:
+        v = hi + (hi - lo) * pct / 100;
+        data[str(pct)] = v
+    print('{} hi {:.2f}'.format(label, hi))
+    for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
+        msg = '{}% {:.2f}'.format(k, v)
+        if v == pz:
+            msg = bcolors.YELLOW + msg + bcolors.ENDC
+        print('{} {}'.format(label, msg))
+    print('{} lo {:.2f}'.format(label, lo))
 
     return
 

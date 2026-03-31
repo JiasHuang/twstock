@@ -104,6 +104,13 @@ def get_mv(code, days):
     vals = [int(x['volume']) for x in data]
     return np.round(np.mean(vals)) if len(vals) else 0
 
+def get_hi_lo(code, days):
+    data = twse.get_data_by_days(code, days)
+    vals = [float(x['close']) for x in data]
+    hi = max(vals)
+    lo = min(vals)
+    return hi, lo
+
 def get_data(codes):
     parsed = {x['code']:x for x in codes}
     msg = twse.get_msg([x['code'] for x in codes])
@@ -145,6 +152,7 @@ def update_stock_stats(infos):
     for info in infos:
         info.ma = get_ma(info.code, 60)
         info.mv = get_mv(info.code, 30)
+        info.hi, info.lo = get_hi_lo(info.code, 360)
     update_etf_nav(infos)
     return
 

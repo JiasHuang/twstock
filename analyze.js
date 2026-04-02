@@ -31,9 +31,13 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
   } else if (sort_by == 'ma_dec') {
     stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
+  } else if (sort_by == 'h_inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.h_pct - a.h_pct);
+  } else if (sort_by == 'h_dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.h_pct - a.h_pct);
   }
 
-  const cols = ['code', 'name', 'pz', 'nav', 'MA%', 'vol'];
+  const cols = ['code', 'name', 'pz', 'nav', 'MA', 'MA%', 'high', 'low', 'H%', 'vol'];
 
   text += '<table id="stocks">';
   text += '<tr><th>' + cols.join('</th><th>') + '</th></tr>';
@@ -60,7 +64,7 @@ function updateResult() {
     const pz_str = pz_fmt(s.z, s.y, true);
     const nav_str = pz_fmt(s.nav, s.z) + ` <span class="nav_time">${s.nav_time}</span>`;
     const vol_str = `${s.v.toLocaleString()} (${s.mv_pct}%)`;
-    const vals = [link, s.name, pz_str, nav_str, s.ma_pct.toFixed(2), vol_str];
+    const vals = [link, s.name, pz_str, nav_str, s.ma.toFixed(2), s.ma_pct.toFixed(2), s.days_hi, s.days_lo, s.h_pct, vol_str];
     text += '<tr><td>' + vals.join('</td><td>') + '</td></tr>';
   }
 
@@ -73,8 +77,9 @@ function parseStockJSON(obj) {
 
   // add ma_pct and mv_pct
   for (let s of obj) {
-    s.ma_pct = (s.z && s.ma) ? (s.z / s.ma * 100 - 100) : 0;
-    s.mv_pct = (s.v && s.mv) ? Math.round(s.v / s.mv * 100) : 0;
+    s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
+    s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
+    s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
   cur_stock_json = obj;

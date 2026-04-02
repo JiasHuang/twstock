@@ -49,14 +49,19 @@ class StockInfo:
         self.nav = 0
         self.nav_date = None
         self.nav_time = None
+        self.days_hi = 0
+        self.days_lo = 0
 
         if msg:
             self.code = msg['c']
             self.name = msg['n']
             self.date = msg['d']
-            for attr in ['v', 'o', 'h', 'l', 'z', 'y']:
+            for attr in ['o', 'h', 'l', 'z', 'y']:
                 if attr in msg and msg[attr] != '-':
                     setattr(self, attr, float(msg[attr]))
+            for attr in ['v']:
+                if attr in msg and msg[attr] != '-':
+                    setattr(self, attr, int(msg[attr]))
             if self.z == 0 and self.v == 0:
                 self.z = self.y
             if self.z == 0 and 'b' in msg:
@@ -156,24 +161,24 @@ def get_etf_msg(data, code):
                     return msg
     return None
 
-def get_etf_infos():
+def update_etf_nav(infos):
     url = 'https://mis.twse.com.tw/stock/data/all_etf.txt'
     txt = xurl.load(url, cache=False)
     data = json.loads(txt)
-    return data
-
-def update_nav(infos):
-    etf_infos = get_etf_infos()
-    for x in infos:
-        msg = get_etf_msg(etf_infos, x.code)
-        if msg:
-            nav = msg['f']
-            if isinstance(nav, float):
-                x.nav = nav
-            elif isinstance(nav, str) and not nav.startswith('-'):
-                x.nav = float(nav)
-            x.nav_date = msg['i']
-            x.nav_time = msg['j']
+    parsed = {x.code:x for x in infos}
+    for a1 in data.get('a1', []):
+        for msg in a1.get('msgArray', []):
+            code = msg['a']
+            if code in parsed:
+                info = parsed[code]
+                nav = msg['f']
+                if isinstance(nav, float):
+                    info.nav = nav
+                elif isinstance(nav, str) and not nav.startswith('-'):
+                    info.nav = float(nav)
+                info.nav_date = msg['i']
+                info.nav_time = msg['j']
+    return True
 
 def get_tse_month_data(code, year, month, cache, cacheOnly, verbose):
     data = []
@@ -256,7 +261,7 @@ def get_data_by_days(code, days, verbose=False):
 
     return data
 
-def analyze(date, days=30, tail=1, verbose=False):
+def analyze(date, ma_days, mv_days, pz_days, tail=1, verbose=False):
 
     if isinstance(date, str):
         date = datetime.datetime.strptime(date, '%Y%m%d').date()
@@ -266,13 +271,12 @@ def analyze(date, days=30, tail=1, verbose=False):
     today_str = today.strftime('%Y%m%d')
     has_today_data = False
 
-    trading_objs = []
-    while len(trading_objs) < (days + 1):
+    days = max(ma_days, mv_days, pz_days)
+    records = [] # Ordering by "newer"
+    while len(records) <= days:
         url = 'https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={}&type=0099P&response=json'.format(date.strftime('%Y%m%d'))
-        json_txt = xurl.load(url, verbose=verbose, cacheOnly=not is_today)
-        try:
-            json_obj = json.loads(json_txt)
-        except ValueError as e:
+        json_obj = xurl.load_json(url, verbose=verbose, cacheOnly=not is_today)
+        if not json_obj:
             break
         try:
             if 'stat' in json_obj and json_obj['stat'] == 'OK' and len(json_obj['tables'][8]['data']) > 0:
@@ -280,62 +284,67 @@ def analyze(date, days=30, tail=1, verbose=False):
                 for d in json_obj['tables'][8]['data']:
                     if d[5] != '--':
                         objs.append(AfterTradingInfo(d, date.strftime('%Y%m%d')))
-                trading_objs.append(objs)
+                records.append(objs)
         except ValueError as e:
+            if verbose:
+                print('parse failed: {}'.format(ur))
             break
         date = date - datetime.timedelta(days=1)
 
-    if (len(trading_objs) < 2):
+    if len(records) < 2:
         return None
 
-    parsed = {x.code: HistoryInfo() for x in trading_objs[0]}
+    info = None
 
-    if trading_objs[0][0].date == today_str:
-        has_today_data = True
-
-    infos = None
-
-    if is_today and not has_today_data:
-        codes = [x.code for x in trading_objs[0]]
+    if is_today and records[0][0].date != today_str:
+        codes = [x.code for x in records[0]]
         msg = get_msg(codes)
         if len(msg) and msg[0]['d'] == today_str:
-            infos = [StockInfo(msg=x) for x in msg]
+            info = [StockInfo(msg=x) for x in msg]
 
-    if not infos:
-        infos = [StockInfo(trading=x) for x in trading_objs[0]]
-        trading_objs = trading_objs[1:]
+    if not info:
+        info = [StockInfo(trading=x) for x in records[0]]
+        records = records[1:]
 
-    for trading in trading_objs:
-        for x in trading:
+    parsed = {x.code: HistoryInfo() for x in info}
+
+    # Ordering by "newer"
+    for rec in records:
+        for x in rec:
             if x.code in parsed:
                 parsed[x.code].close.append(x.close)
                 parsed[x.code].volume.append(x.volume)
 
     if tail > 1:
-        for x in infos:
-            x.z = np.round((x.z + np.sum(parsed[x.code].close[1-tail:])) / tail, 2)
-            x.v = np.round((x.v + np.sum(parsed[x.code].volume[1-tail:])) / tail)
+        for x in info:
+            x.z = np.round((x.z + np.sum(parsed[x.code].close[:tail - 1])) / tail, 2)
+            x.v = np.round((x.v + np.sum(parsed[x.code].volume[:tail - 1])) / tail)
 
-    for x in infos:
+    for x in info:
         if len(parsed[x.code].close) and len(parsed[x.code].volume):
             x.y = parsed[x.code].close[0]
-            x.mv = np.mean(parsed[x.code].volume)
-            x.ma = np.mean(parsed[x.code].close)
+            x.mv = int(np.mean(parsed[x.code].volume[:mv_days]))
+            x.ma = np.mean(parsed[x.code].close[:ma_days])
+            x.days_hi = np.max(parsed[x.code].close[:pz_days])
+            x.days_lo = np.min(parsed[x.code].close[:pz_days])
 
-    update_nav(infos)
+    update_etf_nav(info)
 
-    df = pd.DataFrame([x.__dict__ for x in infos])
+    df = pd.DataFrame([x.__dict__ for x in info])
     return df
 
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--days', type=int, default=30)
     parser.add_argument('-v', '--verbose', action="store_true")
     args, unparsed = parser.parse_known_args()
 
     date = unparsed[0] if len(unparsed) > 0 else datetime.date.today()
-    analyze(date, args.days, 1, args.verbose)
+    df = analyze(date, 60, 30, 240, 1, args.verbose)
+
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    print(df)
 
     return
 

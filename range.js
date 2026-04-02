@@ -90,10 +90,10 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
   } else if (sort_by == 'ma_dec') {
     stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
-  } else if (sort_by == 'hi_inc') {
-    stocks = stocks.slice(0).sort((a, b) => ((b.z - b.hi) / (b.hi - b.lo)) - ((a.z - a.hi) / (a.hi - a.lo)));
-  } else if (sort_by == 'hi_dec') {
-    stocks = stocks.slice(0).sort((b, a) => ((b.z - b.hi) / (b.hi - b.lo)) - ((a.z - a.hi) / (a.hi - a.lo)));
+  } else if (sort_by == 'h_inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.h_pct - a.h_pct);
+  } else if (sort_by == 'h_dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.h_pct - a.h_pct);
   }
 
   if (!is_StockTags_loaded) {
@@ -112,16 +112,15 @@ function updateResult() {
     let s = stocks[i];
     let link = `<a href="chart.html?c=${s.code}" target="_blank">${s.code}</a>`;
     let pct = (s.z / s.y - 1) * 100;
-    let h_pct = Math.round((s.z - s.hi) / (s.hi - s.lo) * 100);
-    let vals = [link, s.name, s.z,  pct_str(pct, true), h_pct, pct_str(s.ma_pct, true)];
+    let vals = [link, s.name, s.z,  pct_str(pct, true), s.h_pct, pct_str(s.ma_pct, true)];
     const step = s.ma * r_step / 200;
 
     let kv_list = [
-      ['Hi', s.hi],
-      ['Lo', s.lo],
-      ['23', s.hi - (s.hi - s.lo) * 23.6 / 100],
-      ['38', s.hi - (s.hi - s.lo) * 38.2 / 100],
-      ['61', s.hi - (s.hi - s.lo) * 61.8 / 100]];
+      ['Hi', s.days_hi],
+      ['Lo', s.days_lo],
+      ['23', s.days_hi - (s.days_hi - s.days_lo) * 23.6 / 100],
+      ['38', s.days_hi - (s.days_hi - s.days_lo) * 38.2 / 100],
+      ['61', s.days_hi - (s.days_hi - s.days_lo) * 61.8 / 100]];
 
     text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
     text += '<td>' + vals.join('</td><td>') + '</td>';
@@ -160,7 +159,8 @@ function parseStockJSON(obj) {
 
   // add ma_pct
   for (let s of obj.stocks) {
-    s.ma_pct = (s.z && s.ma) ? (s.z / s.ma * 100 - 100) : 0;
+    s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
+    s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
   cur_stock_json = obj;

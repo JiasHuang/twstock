@@ -5,6 +5,7 @@ import sys
 import re
 import hashlib
 import time
+import json
 
 from urllib.parse import urlparse, quote, unquote, unquote_plus, urljoin
 
@@ -50,16 +51,16 @@ def saveM3U8(local, result):
     fd.close()
     return
 
-def checkExpire(local, expiration=None):
+def checkCache(local, cache, cacheOnly, expiration):
     if not os.path.exists(local):
+        return False
+    if cacheOnly:
         return True
-    if os.path.getsize(local) <= 0:
-        return True
-    expiration = expiration or defvals.expiration
-    t0 = int(os.path.getmtime(local))
-    t1 = int(time.time())
-    if (t1 - t0) > expiration:
-        return True
+    if cache:
+        exp = expiration or defvals.expiration
+        t0 = int(os.path.getmtime(local))
+        t1 = int(time.time())
+        return (t1 - t0) < exp
     return False
 
 def genLocal(url, prefix='twstock_load_', suffix='', opts=None):
@@ -97,8 +98,7 @@ def curl(url, local, opts, ref, encoding):
 
 def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl', verbose=False, encoding=None):
     local = local or genLocal(url, opts=opts)
-    expiration = expiration or defvals.expiration
-    if (cacheOnly and os.path.exists(local)) or (cache and not checkExpire(local, expiration)):
+    if checkCache(local, cache, cacheOnly, expiration):
         if verbose:
             print('[xurl] %s -> %s (cache)' %(url, local))
         return readLocal(local, encoding)
@@ -109,6 +109,21 @@ def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expi
     if verbose:
         print('[xurl] %s -> %s (%.2f)' %(url, local, t1 - t0))
     return ret
+
+def load_json(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl', verbose=False, encoding=None):
+    local = local or genLocal(url, opts=opts)
+    txt = load(url, local, opts, ref, cache, cacheOnly, expiration, cmd, verbose, encoding)
+    try:
+        obj = json.loads(txt)
+        return obj
+    except ValueError as e:
+        if checkCache(local, cache, cacheOnly, expiration) and re.search('頁面無法執行', txt):
+            return load_json(url, local, opts, ref, False, False, expiration, cmd, verbose, encoding)
+
+    if verbose:
+        print('load_json failed: {} (cache={}, cacheOnly={})'.format(url, cache, cacheOnly))
+
+    return None
 
 def addDelayObj(flt, delay):
     delayObj.objs.append(delayObj(flt, delay))

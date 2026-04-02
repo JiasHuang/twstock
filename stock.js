@@ -6,7 +6,13 @@ var selected_innerTag = null;
 var cur_stock_json = null;
 var sort_by = null;
 
-function pct_str(val, chg, pct, cls='', pct_cls='') {
+function pct_fmt(val, pct, pct_cls='') {
+  let val_str = val.toLocaleString('en-US', {maximumFractionDigits:2});
+  let pct_str = pct.toLocaleString('en-US', {signDisplay:'always', maximumFractionDigits:2});
+  return `${val_str} (<span class="${pct_cls}">${pct_str}%</span>)`;
+}
+
+function pz_fmt(val, chg, pct, cls='', pct_cls='') {
   let val_str = val.toLocaleString('en-US', {maximumFractionDigits:2});
   let chg_str = chg.toLocaleString('en-US', {signDisplay:'always', maximumFractionDigits:2});
   let pct_str = pct.toLocaleString('en-US', {signDisplay:'always', maximumFractionDigits:2});
@@ -43,43 +49,40 @@ function getStockTableText(s) {
   cls = ''
   cls = (pct > 0) ? ((pct >= 9) ? 'bg_inc' : 'inc') : cls;
   cls = (pct < 0) ? ((pct <= -9) ? 'bg_dec' : 'dec') : cls;
-  prices.push(pct_str(s.z, chg, pct, cls));
+  prices.push(pz_fmt(s.z, chg, pct, cls));
 
   if (s.h) {
     chg = s.h - s.y
     pct = chg / s.y * 100;
-    prices.push(`Hi ${pct_str(s.h, chg, pct)}`);
+    prices.push(`Hi ${pz_fmt(s.h, chg, pct)}`);
   }
 
   if (s.l) {
     chg = s.l - s.y
     pct = chg / s.y * 100;
-    prices.push(`Lo ${pct_str(s.l, chg, pct)}`);
+    prices.push(`Lo ${pz_fmt(s.l, chg, pct)}`);
   }
 
   text += '<td class="price">' + prices.join('<br>') +'</td>';
 
   var notes = [];
 
-  pct = (s.mv) ? Math.round(s.v / s.mv * 100) : 0;
-  const pct_cls = pct >= 150 ? 'bg_hv':'';
+  const mv_pct_cls = s.mv_pct >= 150 ? 'bg_hv':'';
   const flt_str = getFltText(s, s.flts, 'flt bg_hl', 'flt');
-  notes.push(`#${s.v.toLocaleString()} (<span class="${pct_cls}">${pct}%</span>) ${flt_str}`);
+  notes.push(`#${s.v.toLocaleString()} (<span class="${mv_pct_cls}">${s.mv_pct}%</span>) ${flt_str}`);
 
   if (s.nav) {
-    chg = s.nav - s.z;
-    pct = chg / s.z * 100;
+    let nav_pct = (s.nav / s.z - 1) * 100;
     let time = s.nav_time.substring(0, 5);
     let time_str = `<span class="nav_time">${time}</span>`;
-    notes.push(`<span class="nav">淨值 ${pct_str(s.nav, chg, pct)}</span> ${time_str}`);
+    notes.push(`<span class="nav">淨值 ${pct_fmt(s.nav, nav_pct)}</span> ${time_str}`);
   }
 
   if (s.ma) {
-    chg = s.z - s.ma
-    pct = chg / s.ma * 100;
-    cls = (pct <= -10) ? 'bg_hl' : '';
-    const h_pct = Math.round((s.z - s.hi) / (s.hi - s.lo) * 100);
-    notes.push(`<span class="MA">均線 ${pct_str(s.ma, chg, pct, '', cls)}</span> <span class="h_pct">H(${h_pct})</span>`);
+    let ma_pct_cls = (pct <= -10) ? 'bg_hl' : '';
+    let ma_str = `<span class="MA">均線 ${pct_fmt(s.ma, pct, ma_pct_cls)}</span>`;
+    let h_str = `<span class="h_pct">H(${s.h_pct})</span>`;
+    notes.push(`${ma_str} ${h_str}`);
   }
 
   text += '<td class="note">' + notes.join('<br>') + '</td>';
@@ -196,6 +199,14 @@ function updateResult() {
 }
 
 function parseStockJSON(obj) {
+
+  // add ma_pct and mv_pct
+  for (let s of obj.stocks) {
+    s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
+    s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
+    s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
+  }
+
   cur_stock_json = obj;
   updateResult();
 }

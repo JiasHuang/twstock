@@ -102,7 +102,7 @@ def get_ma(code, days):
 def get_mv(code, days):
     data = twse.get_data_by_days(code, days)
     vals = [int(x['volume']) for x in data]
-    return np.round(np.mean(vals)) if len(vals) else 0
+    return int(np.mean(vals)) if len(vals) else 0
 
 def get_hi_lo(code, days):
     data = twse.get_data_by_days(code, days)
@@ -121,39 +121,12 @@ def get_data(codes):
     update_stock_stats(data)
     return data
 
-def get_etf_msg_by_code(data, code):
-    if 'a1' not in data:
-        return None
-    for a1 in data['a1']:
-        if 'msgArray' in a1:
-            for msg in a1['msgArray']:
-                if msg['a'] == code:
-                    return msg
-    return None
-
-def update_etf_nav(infos):
-    url = 'https://mis.twse.com.tw/stock/data/all_etf.txt'
-    txt = xurl.load(url, cache=False)
-    twse_data = json.loads(txt)
-    for info in infos:
-        if info.code.startswith('00'):
-            msg = get_etf_msg_by_code(twse_data, info.code)
-            if msg:
-                nav = msg['f']
-                if isinstance(nav, float):
-                    info.nav = nav
-                elif isinstance(nav, str) and not nav.startswith('-'):
-                    info.nav = float(nav)
-                info.nav_date = msg['i']
-                info.nav_time = msg['j']
-    return True
-
 def update_stock_stats(infos):
     for info in infos:
         info.ma = get_ma(info.code, 60)
         info.mv = get_mv(info.code, 30)
-        info.hi, info.lo = get_hi_lo(info.code, 360)
-    update_etf_nav(infos)
+        info.days_hi, info.days_lo = get_hi_lo(info.code, 360)
+    twse.update_etf_nav(infos)
     return
 
 def get_codes(codes=None):
@@ -290,7 +263,10 @@ def main():
     update_stock_stats(data)
 
     df = pd.DataFrame([x.__dict__ for x in data])
-    print(df.to_string())
+
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    print(df)
 
     if args.exr:
         exr_data = get_exchange_rate_data()

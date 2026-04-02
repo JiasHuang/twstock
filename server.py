@@ -54,7 +54,7 @@ def analyze(q):
     d = parse_qs(q)
     date = d['d'][0] if 'd' in d else datetime.date.today()
     tail = int(d['t'][0]) if 't' in d else 1
-    df = twse.analyze(date, tail=tail)
+    df = twse.analyze(date, 60, 30, 240, tail=tail)
     return df.to_json(orient='records', indent=4)
 
 def load(q):

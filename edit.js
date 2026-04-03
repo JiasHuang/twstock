@@ -114,7 +114,7 @@ function parseStockJSON(obj) {
 }
 
 function initStockInfo() {
-  var api_url = 'stock.py' + window.location.search;
+  var api_url = 'load.py?n=stocks' + window.location.search;
 
   $.ajax({
     url: api_url,

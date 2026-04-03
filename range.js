@@ -73,12 +73,11 @@ function filterTag() {
 }
 
 function updateResult() {
-  var text = '';
+  const r_min = -20;
+  const r_max = 20;
+  const r_step = 2.5;
   var stocks = cur_stock_json.stocks;
-  var r_min = -20;
-  var r_max = 20;
-  var r_step = 2.5;
-  var optionsAlways = { signDisplay: 'always' };
+  var text = '';
 
   console.log('updateResult');
 
@@ -101,7 +100,7 @@ function updateResult() {
     is_StockTags_loaded = true;
   }
 
-  var cols = ['code', 'name', 'Pz', 'Pz%', 'H%', 'MA%']
+  var cols = ['code', 'name', 'Pz', 'Pz%', 'H%', 'MA%'];
   for (var r=r_min; r<=r_max; r+=r_step)
     cols.push(r == 0 ? 'MA':pct_str(r));
 

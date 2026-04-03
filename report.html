@@ -13,7 +13,7 @@
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 <script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.stock.min.js"></script>
 
-<script type="text/javascript" src="utils.js?v=20260331"></script>
+<script type="text/javascript" src="utils.js?v=20260404"></script>
 <script type="text/javascript" src="report.js?v=20260331"></script>
 
 <script type="text/javascript">
@@ -26,14 +26,29 @@
 
   <div id="topmenu"></div>
 
-  <div id="topbar">
+  <div id="menu">
     <input type="text" id="input_code" onchange="updateReportByInput()" placeholder="請輸入股票代碼" autofocus>
+  </div>
+
+  <div class="flex">
     <div id="info"></div>
   </div>
 
-  <div id="EPS" style="height: 400px; width: 100%;"></div>
-  <div id="Revenue" style="height: 400px; width: 100%;"></div>
-  <div id="result"></div>
+  <div class="flex">
+    <div id="quote"></div>
+  </div>
+
+  <div class="flex">
+    <div id="EPS" style="height: 400px; width: 80%;"></div>
+  </div>
+
+  <div class="flex">
+    <div id="Revenue" style="height: 400px; width: 80%;"></div>
+  </div>
+
+  <div class="flex">
+    <div id="result"></div>
+  </div>
 
 </body>
 

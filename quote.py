@@ -7,8 +7,6 @@ import datetime
 import csv
 import pandas as pd
 import numpy as np
-import talib
-from talib import abstract
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
@@ -25,15 +23,6 @@ class bcolors:
     YELLOW = '\33[33m'
     BLUE = '\33[34m'
     ENDC = '\x1b[0m'
-
-class StockInfo:
-    def __init__(self, row, ma_list):
-        self.date = row['date'].date()
-        attrs = ['open', 'high', 'low', 'close', 'volume']
-        for ma in ma_list:
-            attrs.append('ma'+str(ma))
-        for attr in attrs:
-            setattr(self, attr, getattr(row, attr))
 
 def get_tick(pz):
     if pz < 10:
@@ -72,15 +61,13 @@ def update_csv(path, exchange, code, start, end, verbose):
             os.makedirs(exchange, exist_ok=True)
         df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
 
-def get_data(exchange, code, start, end, ma_list=[], verbose=False):
+def get_data(code, start, end, verbose=False):
+    exchange = get_exchange(code)
     path = os.path.join(exchange, code) + '.csv'
     update_csv(path, exchange, code, start, end, verbose)
 
     new_names = ['date', 'open', 'high', 'low', 'close', 'volume']
     df = pd.read_csv(path, names=new_names, header=0, parse_dates=['date'])
-
-    for ma in ma_list:
-        df['ma'+str(ma)] = abstract.SMA(df, ma)
 
     start_64 = np.datetime64(start)
     end_64 = np.datetime64(end)
@@ -90,113 +77,14 @@ def get_data(exchange, code, start, end, ma_list=[], verbose=False):
 
     return df[(df['date'] >= start_64) & (df['date'] <= end_64)].copy()
 
-def get_attrs(exchange, code, attr, end, days):
-    start = end - datetime.timedelta(days=int(days * 1.5))
-    df = get_data(exchange, code, start, end)
-    return df[attr].tail(days).to_numpy()
+def add_sma(df, days, col='close'):
+    vals = df[col].to_numpy()
+    sma_vals = [vals[idx-days:idx].mean() if idx >= days else 0 for idx in range(len(vals))]
+    return sma_vals
 
-def get_attr(exchange, code, attr, date):
-    vals = get_attrs(exchange, code, attr, date, 30)
-    return vals[0] if len(vals) else None
-
-def get_ma(exchange, code, end, days):
-    vals = get_attrs(exchange, code, "close", end, days)
-    return vals.mean()
-
-def get_ma_ratio(df, ma):
-    low_vals = df['low'].to_numpy()
-    ma_vals = df['ma'+str(ma)].to_numpy()
-    ratios = low_vals / ma_vals
-    return ratios[~np.isnan(ratios)]
-
-def get_infos(exchange, code, start, end, ma_list):
-    df = get_data(exchange, code, start, end, ma_list)
-    infos = [StockInfo(row, ma_list) for idx, row in df.iterrows()]
-    return infos
-
-def analyze(df, ma_list, label):
-
-    pz = df['close'].iloc[-1]
-
-    data = {}
-    data['pz'] = pz
-    for ma in [20, 60, 120, 240]:
-        vals = df['close'].tail(ma).to_numpy()
-        data['ma'+str(ma)] = vals.mean()
-
-    for days in [60, 120, 240]:
-        vals = df['close'].tail(days).to_numpy()
-        data['lo' + str(days)] = np.min(vals)
-        data['hi' + str(days)] = np.max(vals)
-
-    print('---')
-    for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
-        msg = '{} {:.2f} ({:+.2%})'.format(k, v, v/pz - 1)
-        if k == 'pz':
-            msg = bcolors.YELLOW + msg + bcolors.ENDC
-        print('{} {}'.format(label, msg))
-
-    print('---')
-    for ma in ma_list:
-        ma_val = df['ma'+str(ma)].iloc[-1]
-        ma_ratio = get_ma_ratio(df, ma)
-        if np.isnan(ma_val) or len(ma_ratio) == 0:
-            continue
-        max_ratio = max(ma_ratio)
-        min_ratio = min(ma_ratio)
-        max_pct = ((max_ratio - 1) * 100)
-        min_pct = ((min_ratio - 1) * 100)
-        data = {}
-
-        pct = (pz / ma_val - 1) * 100
-        data['{:+.2f}'.format(pct)] = pz
-        data['{:+.2f}'.format(max_pct)] = ma_val * (1 + max_pct / 100)
-        data['{:+.2f}'.format(min_pct)] = ma_val * (1 + min_pct / 100)
-
-        for pct in np.arange(-30, 30 + 2.5, 2.5):
-            if pct < min_pct or pct > max_pct:
-                continue
-            data['{:+.2f}'.format(pct)] = ma_val * (1 + pct / 100)
-        for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
-            msg = 'ma {}% {:.2f}'.format(k, v)
-            if v == pz:
-                msg = bcolors.YELLOW + msg + bcolors.ENDC
-            print('{} {}'.format(label, msg))
-
-    print('---')
-    hi = max(df['close'])
-    lo = min(df['close'])
-    pct_list = [-23.6, -38.2, -61.8]
-    data = {}
-    pct = (pz - hi) / (hi - lo) * 100;
-    data[str(pct)] = pz
-    for pct in pct_list:
-        v = hi + (hi - lo) * pct / 100;
-        data[str(pct)] = v
-    print('{} hi {:.2f}'.format(label, hi))
-    for k, v in sorted(data.items(), key=lambda item: item[1], reverse=True):
-        msg = '{}% {:.2f}'.format(k, v)
-        if v == pz:
-            msg = bcolors.YELLOW + msg + bcolors.ENDC
-        print('{} {}'.format(label, msg))
-    print('{} lo {:.2f}'.format(label, lo))
-
-    return
-
-def print_range(df, code, label):
-
-    pz = df['close'].iloc[-1]
-    tick = get_etf_tick(pz) if code.startswith('00') else get_tick(pz)
-
-    print('---')
-    for pct in np.arange(10, -11, -1):
-        x = pz * (1 + pct / 100)
-        msg = 'pz {:+d}% {:.2f} ({:.2f})'.format(pct, x, round_tick(x, tick))
-        if pct == 0:
-            msg = bcolors.YELLOW + msg + bcolors.ENDC
-        print('{} {}'.format(label, msg))
-
-    return
+def add_pct(df, col_a, col_b):
+    vals = [(a / b * 100 - 100) if b else 0 for a, b in zip(df[col_a], df[col_b])]
+    return vals
 
 def get_percent_color(pct):
     if pct == 0:
@@ -207,17 +95,17 @@ def get_percent_color(pct):
         return 'red'
     return 'grey'
 
-def plot(df):
+def plot(df, title, output=None):
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 10))
+    plt.rcParams['font.sans-serif'] = 'SimHei'
+    plt.rcParams['axes.unicode_minus'] = False
+
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(16, 8))
 
     x = df['date'].to_numpy()
     y = df['close'].to_numpy()
 
     ax.plot(x, y, zorder=10)
-
-    for pct in np.arange(-20, 25, 5):
-        ax.plot(x, df['ma60'].to_numpy() * (100 + pct) / 100, color=get_percent_color(pct), linestyle='dashed', linewidth=0.5, zorder=0)
 
     ax.set_ylabel('close')
     date_formatter = mdates.DateFormatter('%Y-%m-%d')
@@ -226,43 +114,70 @@ def plot(df):
     # improve readability by rotating labels
     plt.xticks(rotation=45, ha='right')
 
-    plt.tight_layout()
-    plt.show()
+    ma = df['ma'].to_numpy()
+    for pct in np.arange(-20, 25, 5):
+        new_vals = [v * (100 + pct) / 100 if v else None for v in ma]
+        if pct == 0:
+            ax.plot(x, new_vals, color='green', linestyle='dashed', linewidth=1, zorder=0)
+        else:
+            ax.plot(x, new_vals, color='grey', linestyle='dashed', linewidth=0.5, zorder=0)
+
+    hi = max(y)
+    lo = min(y)
+    pz = y[-1]
+    pz_pct = (pz - hi) / (hi - lo) * 100
+
+    for pct in [-23.6, -38.2, -61.8]:
+        v = hi + (hi - lo) * pct / 100
+        plt.axhline(y=v, color='grey', linestyle='--', linewidth=1)
+        ax.text(ax.get_xlim()[1], v, '{}% {:.2f}'.format(pct, v), color='grey')
+
+    plt.axhline(y=pz, color='red', linestyle='--', linewidth=1)
+    ax.text(ax.get_xlim()[1], pz, '{:.2f}% {:.2f}'.format(pz_pct, pz), color='red', backgroundcolor='white')
+
+    hi_x = df[df['close'] == hi]['date'].iloc[-1]
+    lo_x = df[df['close'] == lo]['date'].iloc[-1]
+
+    ax.text(hi_x, hi, '{:.2f}'.format(hi))
+    ax.text(lo_x, lo, '{:.2f}'.format(lo))
+
+    plt.ylim(lo, hi)
+    plt.title(title)
+
+    if output:
+        plt.savefig(output, format='png')
+    else:
+        plt.show()
 
     return
 
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-e', '--exchange')
-    parser.add_argument('-c', '--code', nargs='+', default='2330')
-    parser.add_argument('--ma', nargs='+', type=int, default=[60])
-    parser.add_argument('-p', '--plot', action="store_true")
-    parser.add_argument('-r', '--range', action="store_true")
+    parser.add_argument('-c', '--code', default='0050')
     parser.add_argument('-v', '--verbose', action="store_true")
+    parser.add_argument('-o', '--output')
     args, unparsed = parser.parse_known_args()
 
-    if len(unparsed) > 0:
-        args.code = unparsed
+    code = args.code
 
-    for code in args.code:
+    if len(unparsed):
+        code = unparsed[0]
 
-        exchange = args.exchange or get_exchange(code)
-        label = bcolors.GREEN + '{}:{}'.format(exchange, code) + bcolors.ENDC
+    end = datetime.date.today()
+    start = end - datetime.timedelta(days=540)
+    df = get_data(code, start, end, args.verbose)
+    df['ma'] = add_sma(df, 60)
+    df['ma%'] = add_pct(df, 'close', 'ma')
+    ex, name = twse.get_name(code)
 
-        end = datetime.date.today()
-        start = end - datetime.timedelta(days=540)
-        df = get_data(exchange, code, start, end, args.ma, args.verbose)
-        print('---')
+    date = df['date'].iloc[-1].strftime('%Y-%m-%d')
+    title = '{} {} {} ${}'.format(code, name, date, df['close'].iloc[-1])
+
+    if not args.output:
         print(df.tail(20).round(2))
-        analyze(df, args.ma, label)
 
-        if args.range:
-            print_range(df, code, label)
-
-        if args.plot:
-            plot(df)
-
+    plot(df, title, args.output)
     return
 
 if __name__ == '__main__':

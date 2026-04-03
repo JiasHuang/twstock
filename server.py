@@ -34,20 +34,14 @@ def stock(q):
     json_list = [json.dumps(x.__dict__) for x in data]
     return '{"stocks":[%s]}' %(','.join(json_list))
 
-def get_name(code):
-    msg = twse.get_msg([code])
-    name = msg[0].get('n', '-') if len(msg) else '-'
-    return name
-
 def loadcsv(q):
     d = parse_qs(q)
     code = d['c'][0] if 'c' in d else None
     end = datetime.date.today()
     start = end - datetime.timedelta(days=540)
-    exchange = quote.get_exchange(code)
-    df = quote.get_data(exchange, code, start, end)
+    df = quote.get_data(code, start, end)
     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
-    name = get_name(code)
+    ex, name = twse.get_name(code)
     return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
 def analyze(q):
@@ -57,11 +51,22 @@ def analyze(q):
     df = twse.analyze(date, 60, 30, 240, tail=tail)
     return df.to_json(orient='records', indent=4)
 
+def load_stocks():
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/stocks.json')
+    with open(local, 'r') as f:
+        data = json.load(f)
+        for s in data['stocks']:
+            ex, s['name'] = twse.get_name(s['code'])
+        return json.dumps(data)
+
 def load(q):
     d = parse_qs(q)
-    if 'j' in d:
-        j = d['j'][0]
-        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', j)
+    name = d['n'][0] if 'n' in d else None
+    json = d['j'][0] if 'j' in d else None
+    if name == 'stocks':
+        return load_stocks()
+    if json:
+        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', json)
         return xurl.readLocal(local)
     return None
 

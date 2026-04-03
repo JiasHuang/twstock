@@ -24,7 +24,7 @@ function updateInfo(obj) {
   };
 
   var text = '';
-  text += String.format('<span class="title">{0} {1} (${2})</span><br>', code, obj.n, obj.z);
+  text += String.format('<span class="title">{0} {1} (${2})</span><br>', code, obj.name, obj.close);
 
   for (const [name, link] of Object.entries(dict)) {
     text += `<span class="link"><a href="${link}" target="_blank">${name}</a></span>`;
@@ -32,8 +32,13 @@ function updateInfo(obj) {
 
   text += '<span class="link"><a href="#result">#Result</a></span>';
 
-  $('title').html(`${code} ${obj.n} (${obj.z})`);
+  $('title').html(`${code} ${obj.name}`);
   $('#info').html(text);
+}
+
+function updateQuote(obj) {
+  let text = `<img src="loadpng.py?c=${obj.code}">`;
+  $('#quote').html(text);
 }
 
 function updateChart(id, dp_data) {
@@ -74,6 +79,12 @@ function updateChart(id, dp_data) {
 }
 
 function updateEPSChart(obj) {
+
+  if (!obj.eps.length) {
+    $('#EPS').hide();
+    return;
+  }
+
   var dp_data = [];
 
   for (let d of obj.eps) {
@@ -85,6 +96,12 @@ function updateEPSChart(obj) {
 }
 
 function updateRevenueChart(obj) {
+
+  if (!obj.revenue.length) {
+    $('#Revenue').hide();
+    return
+  }
+
   var dp_data = [];
 
   for (let d of obj.revenue) {
@@ -95,7 +112,11 @@ function updateRevenueChart(obj) {
   updateChart('Revenue', dp_data);
 }
 
-function getOverallHTMLText(obj) {
+function updateResult(obj) {
+
+  if (!obj.per_year.length)
+    return;
+
   var text = '';
 
   text += String.format('<table><tr><th colspan={0}>本益比</th></tr>', obj.per_year.length + 1);
@@ -158,7 +179,7 @@ function getOverallHTMLText(obj) {
     }
   }
 
-  var pz = obj.pz_close;
+  var pz = obj.close;
   var eps = pz / obj.per;
   var per_max = per_max_total_sum / per_max_total_weight;
   var per_min = per_min_total_sum / per_min_total_weight;
@@ -195,30 +216,16 @@ function getOverallHTMLText(obj) {
 
   text += '</table>'
 
-  return text;
-}
-
-function updateResult(obj) {
-  let text = getOverallHTMLText(obj);
   $('#result').html(text);
 }
 
 function parseJSON(obj) {
   console.log(obj);
   updateInfo(obj);
+  updateQuote(obj);
+  updateEPSChart(obj);
+  updateRevenueChart(obj);
   updateResult(obj);
-  if (obj.eps.length) {
-    updateEPSChart(obj);
-  }
-  else {
-    $('#eps').hide();
-  }
-  if (obj.revenue.length) {
-    updateRevenueChart(obj);
-  }
-  else {
-    $('#revenue').hide();
-  }
 }
 
 function updateStockReport() {

@@ -28,6 +28,7 @@ function loadTopMenu() {
       <option value="strategy.html">Strategy</option>
       <option value="calendar.html">Calendar</option>
       <option value="analyze.html">Analyze</option>
+      <option value="map.html">Map</option>
     </select>
     </td>
   `;

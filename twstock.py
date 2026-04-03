@@ -56,11 +56,10 @@ class eps_info:
 class stock_report:
     def __init__(self, code):
         self.code = code
-        self.z = 0
-        self.n = None
+        ex, self.name = twse.get_name(code)
         self.eps = []
         self.revenue = []
-        self.pz_close = 0
+        self.close = 0
         self.per = 0
         self.nav = 0
         self.debt_ratio = 0
@@ -78,7 +77,7 @@ class stock_report:
         for x in self.revenue:
             print(x)
         print('-- overall --')
-        print(self.pz_close)
+        print(self.close)
         print(self.per)
         print(self.nav)
         print(self.per_year)
@@ -192,7 +191,7 @@ def update_stock_report_overall(obj):
     txt = xurl.load(url, encoding='big5_hkscs')
     m = re.search(r'>收盤價</td>\s*<td class="t3n1">(.*)</td>', txt)
     if m:
-        obj.pz_close = float(m.group(1).replace(',',''))
+        obj.close = float(m.group(1).replace(',',''))
     m = re.search(r'>本益比</td>\s*<td class="t3n1">(.*)</td>', txt)
     if m and m.group(1) != 'N/A':
         obj.per = float(m.group(1).replace(',',''))
@@ -224,14 +223,6 @@ def update_stock_report_overall(obj):
 
 def get_stock_report(code):
     obj = stock_report(code)
-    codes = get_codes(code)
-    data = get_data(codes)
-    if len(data) == 0:
-        return obj
-    info = data[0]
-    if info:
-        obj.z = info.z
-        obj.n = info.name
     update_stock_report_eps(obj)
     update_stock_report_revenue(obj)
     update_stock_report_overall(obj)

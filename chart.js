@@ -10,13 +10,13 @@ function pz_fmt(z, y, en_cls=false) {
   return `${z} (${chg_str}, <span class="${cls}">${pct_str}%</span>)`;
 }
 
-function calculate_sma(data, idx, count, attr='close') {
-  if (idx < count - 1)
+function calculate_sma(data, idx, days, attr='close') {
+  if (idx < days)
     return null;
   var sum = 0;
-  for (var i=0; i<count; i++)
-    sum += data[idx-i][attr];
-  return sum / count;
+  for (var i=0; i<days; i++)
+    sum += data[idx-1-i][attr];
+  return sum / days;
 }
 
 function mark_price(data) {
@@ -73,13 +73,14 @@ function add_strip_line(data) {
     const v = hi + (hi - lo) * pct / 100;
     lines.push({
       value:v,
-      color:"brown",
+      color:"grey",
       label:`${pct.toFixed(0)}% ${v.toFixed(1)}`,
-      labelPlacement:"outside",
-      labelFontColor:"brown",
-      labelFontSize:12,
+      labelPlacement:"inside",
+      labelAlign:"far",
+      labelFontColor:"grey",
+      labelFontSize:14,
       lineDashType: "dash",
-      lineThickness: 1,
+      thickness: 1.5,
     });
   }
 
@@ -87,11 +88,12 @@ function add_strip_line(data) {
     value:pz,
     color:"red",
     label:`${pz_pct.toFixed(0)}% ${pz}`,
-    labelPlacement:"outside",
+    labelPlacement:"inside",
+    labelAlign:"far",
     labelFontColor:"red",
-    labelFontSize:12,
+    labelFontSize:14,
     lineDashType: "dash",
-    lineThickness: 1,
+    thickness: 1.5,
   });
 
   return [hi, lo, lines];

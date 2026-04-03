@@ -9,3 +9,8 @@
   white-space: pre;
 }
 
+.flex {
+  display: flex;
+  justify-content: center; /* Horizontal centering */
+}
+

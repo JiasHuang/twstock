@@ -123,17 +123,23 @@ def convert_date(s):
     m = re.search(r'(\d+)/(\d+)/(\d+)', s)
     return str(to_common_era(m.group(1))) + m.group(2) + m.group(3)
 
-def is_otc(code):
-    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'otc-code-list.txt')
-    with open(local) as fd:
-        for line in fd.readlines():
-            if line.rstrip() == code:
-                return True
-    return False
+def get_name(code):
+    tse_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/tse-code-list.json')
+    otc_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/otc-code-list.json')
+    with open(tse_output, 'r') as f:
+        data = json.load(f)
+        if code in data:
+            return 'TSE', data[code]
+    with open(otc_output, 'r') as f:
+        data = json.load(f)
+        if code in data:
+            return 'OTC', data[code]
+    return None, None
 
 def get_ex_code(code):
-    ex = 'otc' if is_otc(code) else 'tse'
-    return '{}_{}.tw'.format(ex, code)
+    ex, name = get_name(code)
+    assert ex, 'ERROR: ' + code
+    return '{}_{}.tw'.format(ex.lower(), code)
 
 def get_msg(codes):
     step = 25
@@ -219,7 +225,9 @@ def get_month_data(code, year, month, verbose):
     today = datetime.date.today()
     cache = True
     cacheOnly = (year != today.year or month != today.month)
-    func = get_otc_month_data if is_otc(code) else get_tse_month_data
+    ex, name = get_name(code)
+    assert ex, 'ERROR: ' + code
+    func = get_otc_month_data if ex == 'OTC' else get_tse_month_data
     data = func(code, year, month, cache, cacheOnly, verbose)
     if len(data) == 0 and cacheOnly == False:
         data = func(code, year, month, False, False, verbose)

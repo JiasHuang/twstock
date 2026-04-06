@@ -17,6 +17,8 @@ split_stocks = {
     '00663L': {'date':20250611, 'rate':7},
 }
 
+parsed_name = {}
+
 # "0證券代號","1證券名稱","2成交股數","3成交筆數","4成交金額","5開盤價",
 # "6最高價","7最低價","8收盤價","9漲跌(+/-)","10漲跌價差","11最後揭示買價",
 # "12最後揭示買量","13最後揭示賣價","14最後揭示賣量","15本益比"
@@ -124,17 +126,20 @@ def convert_date(s):
     return str(to_common_era(m.group(1))) + m.group(2) + m.group(3)
 
 def get_name(code):
+    if code in parsed_name:
+        return parsed_name[code]
     tse_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/tse-code-list.json')
     otc_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/otc-code-list.json')
-    with open(tse_output, 'r') as f:
-        data = json.load(f)
-        if code in data:
-            return 'TSE', data[code]
-    with open(otc_output, 'r') as f:
-        data = json.load(f)
-        if code in data:
-            return 'OTC', data[code]
-    return None, None
+    data = {'TSE':tse_output, 'OTC':otc_output}
+    ex, name = None, None
+    for k, v in data.items():
+        with open(v, 'r') as f:
+            data = json.load(f)
+            if code in data:
+                ex, name = k, data[code]
+                break
+    parsed_name[code] = (ex, name)
+    return parsed_name[code]
 
 def get_ex_code(code):
     ex, name = get_name(code)

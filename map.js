@@ -80,7 +80,6 @@ function updateResult() {
     const kv_list = [
       ['Report', `report.html?c=${s.code}`],
       ['Chart', `chart.html?c=${s.code}`],
-      ['Quote', `loadpng.py?c=${s.code}`],
       ['新聞', `https://tw.stock.yahoo.com/q/h?s=${s.code}`],
       ['股利', `https://www.wantgoo.com/stock/etf/${s.code}/dividend-policy/ex-dividend`],
       ['CMoney', `https://www.cmoney.tw/forum/stock/${s.code}`],

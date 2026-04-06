@@ -100,6 +100,12 @@ def upload(post_data, args):
     xurl.saveLocal(defpath, data)
     return
 
+def dispatch(func, args, output):
+    with open(output, 'w') as fd:
+        ret = eval(func+'(args)')
+        fd.write(ret)
+    return
+
 def query_to_dict(q):
     args = parse_qs(q)
     return {k:args[k][0] for k in args.keys()}
@@ -170,12 +176,6 @@ class LoadConfig(argparse.Action):
                 setattr(namespace, k, int(cfg['TWStock'][k]))
             else:
                 setattr(namespace, k, cfg['TWStock'][k])
-
-def dispatch(func, args, output):
-    with open(output, 'w') as fd:
-        ret = eval(func+'(args)')
-        fd.write(ret)
-    return
 
 def main():
 

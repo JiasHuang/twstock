@@ -226,12 +226,10 @@ def get_otc_month_data(code, year, month, cache, cacheOnly, verbose):
                 data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':d[1]})
     return data
 
-def get_month_data(code, year, month, verbose):
+def get_month_data(ex, code, year, month, verbose):
     today = datetime.date.today()
     cache = True
     cacheOnly = (year != today.year or month != today.month)
-    ex, name = get_name(code)
-    assert ex, 'ERROR: ' + code
     func = get_otc_month_data if ex == 'OTC' else get_tse_month_data
     data = func(code, year, month, cache, cacheOnly, verbose)
     if len(data) == 0 and cacheOnly == False:
@@ -241,6 +239,7 @@ def get_month_data(code, year, month, verbose):
 def get_data(code, start, end, verbose=False):
     data = []
     fail = 0
+    ex, name = get_name(code)
     if isinstance(start, str):
         start = datetime.datetime.strptime(start, '%Y%m%d').date()
     if isinstance(end, str):
@@ -250,7 +249,7 @@ def get_data(code, start, end, verbose=False):
     while idx >= idx_s and fail < 2:
         y = int(idx / 12)
         m = (idx % 12) + 1
-        d = get_month_data(code, y, m, verbose)
+        d = get_month_data(ex, code, y, m, verbose)
         if len(d) == 0:
             fail += 1
         data = d + data
@@ -261,12 +260,13 @@ def get_data(code, start, end, verbose=False):
 def get_data_by_days(code, days, verbose=False):
     data = []
     fail = 0
+    ex, name = get_name(code)
     end = datetime.date.today()
     idx = end.year * 12 + end.month - 1
     while len(data) < days and fail < 2:
         y = int(idx / 12)
         m = (idx % 12) + 1
-        d = get_month_data(code, y, m, verbose)
+        d = get_month_data(ex, code, y, m, verbose)
         if len(d) == 0:
             fail += 1
         data = d + data

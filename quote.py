@@ -152,6 +152,24 @@ def plot(df, title, output=None):
 
     return
 
+def chart(code, output, verbose):
+    end = datetime.date.today()
+    start = end - datetime.timedelta(days=540)
+
+    df = get_data(code, start, end, verbose)
+    df['ma'] = add_sma(df, 60)
+    df['ma%'] = add_pct(df, 'close', 'ma')
+
+    ex, name = twse.get_name(code)
+    date = df['date'].iloc[-1].strftime('%Y-%m-%d')
+    title = '{} {} {} ${}'.format(code, name, date, df['close'].iloc[-1])
+
+    if not output:
+        print(df.tail(20).round(2))
+
+    plot(df, title, output)
+    return
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -165,20 +183,7 @@ def main():
     if len(unparsed):
         code = unparsed[0]
 
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days=540)
-    df = get_data(code, start, end, args.verbose)
-    df['ma'] = add_sma(df, 60)
-    df['ma%'] = add_pct(df, 'close', 'ma')
-    ex, name = twse.get_name(code)
-
-    date = df['date'].iloc[-1].strftime('%Y-%m-%d')
-    title = '{} {} {} ${}'.format(code, name, date, df['close'].iloc[-1])
-
-    if not args.output:
-        print(df.tail(20).round(2))
-
-    plot(df, title, args.output)
+    chart(code, args.output, args.verbose)
     return
 
 if __name__ == '__main__':

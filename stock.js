@@ -239,10 +239,8 @@ function initStockInfo() {
 }
 
 function updateExchangeRateInfo() {
-  var api_url = 'exr.py' + window.location.search;
-
   $.ajax({
-    url: api_url,
+    url: 'load.py?n=exr',
     dataType: 'json',
     success: parseExchangeRateJSON,
   });

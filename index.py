@@ -4,6 +4,7 @@
 import os
 import re
 import tempfile
+import json
 import cgi
 import cgitb
 
@@ -12,15 +13,12 @@ def main():
     print('Content-type:text/html\n')
 
     args = cgi.FieldStorage()
-    func_args = ''
-
-    for k in args.keys():
-        func_args = '{}={}'.format(k, args.getvalue(k))
+    func_args = {k:args.getvalue(k) for k in args.keys()}
 
     func = os.path.basename(__file__).replace('.py', '')
     tmpf = tempfile.NamedTemporaryFile(delete=False).name
     server = os.path.join(os.path.dirname(__file__), 'server.py')
-    cmd = '%s -o %s -e \'%s("%s")\'' %(server, tmpf, func, func_args)
+    cmd = '{} --func {} --func_args \'{}\' --output {}'.format(server, func, json.dumps(func_args), tmpf)
 
     os.system(cmd)
     with open(tmpf, 'r') as fd:

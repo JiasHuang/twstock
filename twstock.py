@@ -111,12 +111,8 @@ def get_hi_lo(code, days):
     return hi, lo
 
 def get_data(codes):
-    parsed = {x['code']:x for x in codes}
-    msg = twse.get_msg([x['code'] for x in codes])
+    msg = twse.get_msg(codes)
     data = [twse.StockInfo(msg=m) for m in msg]
-    for d in data:
-        d.tags = parsed[d.code].get('tags', [])
-        d.flts = parsed[d.code].get('flts', [])
     update_stock_stats(data)
     return data
 
@@ -127,16 +123,6 @@ def update_stock_stats(infos):
         info.days_hi, info.days_lo = get_hi_lo(info.code, 360)
     twse.update_etf_nav(infos)
     return
-
-def get_codes(codes=None):
-
-    if codes:
-        return [{'code':c} for c in codes.split(',')]
-
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
-    txt = xurl.readLocal(path)
-    data = json.loads(txt)
-    return data['stocks']
 
 def get_exchange_rate_data():
 
@@ -249,7 +235,13 @@ def main():
                 rpt.show()
         return
 
-    codes = get_codes(args.codes)
+    codes = args.codes.split(',') if args.codes else None
+    if not codes:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
+        with open(path, 'r') as f:
+            obj = json.load(f)
+            codes = [s['code'] for s in obj['stocks']]
+
     data = get_data(codes)
     update_stock_stats(data)
 

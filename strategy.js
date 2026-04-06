@@ -1,73 +1,27 @@
 
-var strategy = null;
-var info = null;
-
-class stat {
-  constructor() {
-    this.ref = [0, 0, 0];
-    this.qty = [0, 0, 0];
-    this.cost = [0, 0, 0];
-    this.total_buy_qty = 0;
-    this.total_sell_qty = 0;
-    this.total_qty = 0;
-    this.total_cost = 0;
-  }
-}
-
-function getStat(s) {
-  var ref_pz = parseFloat(s.ref_pz);
-  var st = new stat();
-
-  // caculate ref prize by levels
-  for (var i=0; i<3; i++) {
-    st.ref[i] = ref_pz * (9 - i) / 10;
-  }
-
-  return st;
-}
-
-function updateResult() {
+function updateResult(obj) {
   var text = '';
   var td_na = '<td><span class="grey">-</span></td>';
-
-  if (!strategy || !info) {
-    return;
-  }
 
   text += '<table id="stocks">';
   text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th>'; // 0:代碼, 1:名稱, 2:參考價
   text += '<th>市價</th><th>漲跌</th><th>殖利率</th><th>備註</th>'; // 3:市價, 4:漲跌, 5:殖利率, 6:備註
   text += '</tr>';
 
-  for (var i=0; i<strategy.stocks.length; i++) {
-
-    let info_stock = null;
-
-    for (var j=0; j<info.stocks.length; j++)
-    {
-      if (strategy.stocks[i].code == info.stocks[j].code)
-      {
-        info_stock = info.stocks[j];
-        break;
-      }
-    }
-
-    let s = strategy.stocks[i];
-    let st = getStat(s);
-    let z = info_stock ? info_stock.z : 0;
-    let z_pct = ((z / s.ref_pz - 1) * 100).toFixed(2);
+  for (const s of obj.stocks) {
+    let z_pct = ((s.z / s.ref_pz - 1) * 100).toFixed(2);
     let z_pct_cls = z_pct < 0 ? 'dec':'grey';
 
     var regexp = /現金股利\s*([\d|.]+)/g;
     var m = regexp.exec(s.note);
-    var yield = m ? (parseFloat(m[1]) / z * 100).toFixed(2) : 0;
+    var yield = m ? (parseFloat(m[1]) / s.z * 100).toFixed(2) : 0;
     var yield_cls = yield > 0 ? '':'grey';
 
     text += '<tr>';
     text += `<td class="edit" contenteditable=true>${s.code}</td>`;
-    text += `<td>${info_stock.name}</td>`;
+    text += `<td>${s.name}</td>`;
     text += `<td class="edit" contenteditable=true><span class="grey">${s.ref_pz}</span></td>`;
-    text += `<td>${z}</td>`;
+    text += `<td>${s.z}</td>`;
     text += `<td><span class="${z_pct_cls}">${z_pct}%</span></td>`;
     text += `<td><span class="${yield_cls}">${yield}%</span></td>`;
     text += `<td class="note" contenteditable=true>${s.note}</td>`;
@@ -89,35 +43,11 @@ function updateResult() {
   $('#result').html(text);
 }
 
-function parseStocksJSON(obj) {
-  info = obj;
-  updateResult();
-}
-
-function loadStocksJSON() {
-  var codes = [];
-
-  for (var i=0; i<strategy.stocks.length; i++) {
-    codes.push(strategy.stocks[i].code);
-  }
-
-  $.ajax({
-    url: `stock.py?c=${codes.join(',')}`,
-    dataType: 'json',
-    success: parseStocksJSON,
-  });
-}
-
-function parseStrategyJSON(obj) {
-  strategy = obj;
-  loadStocksJSON();
-}
- 
 function loadStrategyJSON() {
   $.ajax({
-    url: 'jsons/strategy.json',
+    url: `load.py?n=strategy`,
     dataType: 'json',
-    success: parseStrategyJSON,
+    success: updateResult,
   });
 }
 

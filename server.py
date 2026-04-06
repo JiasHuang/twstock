@@ -21,22 +21,24 @@ class defvals:
     hostport = 8081
     expiration = 28800
 
-def exr(q):
-    d = parse_qs(q)
-    data = twstock.get_exchange_rate_data()
-    json_list = [json.dumps(x.__dict__) for x in data]
-    return '{"ExchangeRates":[%s]}' %(','.join(json_list))
+def load_json(fn):
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', fn)
+    with open(local, 'r') as f:
+        return json.load(f)
+    return None
 
-def stock(q):
-    d = parse_qs(q)
-    codes = twstock.get_codes()
-    data = twstock.get_data(codes)
+def stock(args):
+    obj = load_json('stocks.json')
+    parsed = {s['code']:s for s in obj['stocks']}
+    data = twstock.get_data(list(parsed.keys()))
+    for d in data:
+        d.tags = parsed[d.code]['tags']
+        d.flts = parsed[d.code]['flts']
     json_list = [json.dumps(x.__dict__) for x in data]
     return '{"stocks":[%s]}' %(','.join(json_list))
 
-def loadcsv(q):
-    d = parse_qs(q)
-    code = d['c'][0] if 'c' in d else None
+def loadcsv(args):
+    code = args.get('c')
     end = datetime.date.today()
     start = end - datetime.timedelta(days=540)
     df = quote.get_data(code, start, end)
@@ -44,60 +46,63 @@ def loadcsv(q):
     ex, name = twse.get_name(code)
     return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
-def analyze(q):
-    d = parse_qs(q)
-    date = d['d'][0] if 'd' in d else datetime.date.today()
-    tail = int(d['t'][0]) if 't' in d else 1
+def analyze(args):
+    date = args.get('d', datetime.date.today())
+    tail = int(args.get('t', 1))
     df = twse.analyze(date, 60, 30, 240, tail=tail)
     return df.to_json(orient='records', indent=4)
 
-def load_stocks():
-    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/stocks.json')
-    with open(local, 'r') as f:
-        data = json.load(f)
-        for s in data['stocks']:
-            ex, s['name'] = twse.get_name(s['code'])
-        return json.dumps(data)
+def load_exr():
+    data = twstock.get_exchange_rate_data()
+    json_list = [json.dumps(x.__dict__) for x in data]
+    return '{"ExchangeRates":[%s]}' %(','.join(json_list))
 
-def load(q):
-    d = parse_qs(q)
-    name = d['n'][0] if 'n' in d else None
-    json = d['j'][0] if 'j' in d else None
+def load_stocks():
+    data = load_json('stocks.json')
+    for s in data['stocks']:
+        ex, s['name'] = twse.get_name(s['code'])
+    return json.dumps(data)
+
+def load_strategy():
+    data = load_json('strategy.json')
+    codes = [s['code'] for s in data['stocks']]
+    msg = twse.get_msg(codes)
+    parsed = {m['c']:twse.StockInfo(msg=m) for m in msg}
+    for s in data['stocks']:
+        c = s['code']
+        ex, s['name'] = twse.get_name(c)
+        if c in parsed:
+            s['z'] = parsed[c].z
+    return json.dumps(data)
+
+def load(args):
+    name = args.get('n')
+    json = args.get('j')
+    if name == 'exr':
+        return load_exr()
     if name == 'stocks':
         return load_stocks()
-    if json:
-        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', json)
-        return xurl.readLocal(local)
+    if name == 'strategy':
+        return load_strategy()
     return None
 
-def dividend(q):
-    d = parse_qs(q)
-    code = d['c'][0] if 'c' in d else None
-    objs = []
-    if code:
-        for c in code.split(','):
-            obj = twstock.stock_report(c)
-            twstock.update_stock_report_dividend(obj)
-            objs.append(obj)
-        json_list = [json.dumps(obj.__dict__, cls=twstock.MyJSONEncoder) for obj in objs]
-        return '{"stocks":[%s]}' %(','.join(json_list))
-    return
-
-def report(q):
-    d = parse_qs(q)
-    code = d['c'][0] if 'c' in d else None
+def report(args):
+    code = args.get('c')
     if code:
         rpt_obj = twstock.get_stock_report(code)
         return json.dumps(rpt_obj.__dict__, cls=twstock.MyJSONEncoder)
     return
 
-def upload(post_data, q):
-    d = parse_qs(q)
-    j = d['j'][0] if 'j' in d else None
+def upload(post_data, args):
+    j = args.get('j')
     data = unquote_plus(post_data.decode('utf8'))[5:]
     defpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', os.path.basename(j))
     xurl.saveLocal(defpath, data)
     return
+
+def query_to_dict(q):
+    args = parse_qs(q)
+    return {k:args[k][0] for k in args.keys()}
 
 class TWStockServer(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -107,7 +112,8 @@ class TWStockServer(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_len)
         p = urlparse(self.path)
         if p.path in ['/upload.py']:
-            eval('%s(post_data, p.query)' %(p.path[1:-3]))
+            func_args = query_to_dict(p.query)
+            eval('%s(post_data, func_args)' %(p.path[1:-3]))
             self.send_response(200)
             self.send_header('Content-type', "text/html")
             self.end_headers()
@@ -127,7 +133,8 @@ class TWStockServer(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', "text/html")
             self.end_headers()
-            results = eval('%s(p.query)' %(os.path.basename(p.path)[:-3]))
+            func_args = query_to_dict(p.query)
+            results = eval('%s(func_args)' %(os.path.basename(p.path)[:-3]))
             try:
                 self.wfile.write(bytes(results, 'utf8'))
             except:
@@ -164,15 +171,11 @@ class LoadConfig(argparse.Action):
             else:
                 setattr(namespace, k, cfg['TWStock'][k])
 
-def str2bool(v):
-    if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+def dispatch(func, args, output):
+    with open(output, 'w') as fd:
+        ret = eval(func+'(args)')
+        fd.write(ret)
+    return
 
 def main():
 
@@ -182,8 +185,9 @@ def main():
     parser.add_argument('-n', '--hostname', default=defvals.hostname)
     parser.add_argument('-p', '--hostport', default=defvals.hostport)
     parser.add_argument('-c', '--config', action=LoadConfig)
-    parser.add_argument('-e', '--eval')
-    parser.add_argument('-o', '--output')
+    parser.add_argument('--func')
+    parser.add_argument('--func_args')
+    parser.add_argument('--output')
     parser.add_argument('--workdir')
     parser.add_argument('--ua')
     parser.add_argument('--expiration', default=defvals.expiration)
@@ -194,9 +198,8 @@ def main():
         if getattr(args, k):
             setattr(xurl.defvals, k, getattr(args, k))
 
-    if args.eval and args.output:
-        with open(args.output, 'w') as fd:
-            fd.write(eval(args.eval))
+    if args.func and args.func_args and args.output:
+        dispatch(args.func, json.loads(args.func_args), args.output)
         return
 
     webServer = HTTPServer((args.hostname, args.hostport), TWStockServer)

@@ -146,7 +146,7 @@ def get_ex_code(code):
     assert ex, 'ERROR: ' + code
     return '{}_{}.tw'.format(ex.lower(), code)
 
-def get_msg(codes):
+def get_msg(codes, verbose=False):
     step = 25
     result = []
     idx = 0
@@ -154,7 +154,7 @@ def get_msg(codes):
         count = min(len(codes) - idx, step)
         ex_ch = '|'.join([get_ex_code(x) for x in codes[idx:idx+count]])
         url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
-        txt = xurl.load(url, cache=False)
+        txt = xurl.load(url, cache=False, verbose=verbose)
         data = json.loads(txt)
         for msg in data.get('msgArray', []):
             if all(key in msg for key in ['c', 'n', 'd']):

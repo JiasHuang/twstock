@@ -93,34 +93,26 @@ class MyJSONEncoder(json.JSONEncoder):
             return obj.__jsonencode__()
         return json.JSONEncoder.default(self, obj)
 
-def get_ma(code, days):
-    data = twse.get_data_by_days(code, days)
-    vals = [float(x['close']) for x in data]
-    return np.round(np.mean(vals), 2) if len(vals) else 0
-
-def get_mv(code, days):
-    data = twse.get_data_by_days(code, days)
-    vals = [int(x['volume']) for x in data]
-    return int(np.mean(vals)) if len(vals) else 0
-
-def get_hi_lo(code, days):
-    data = twse.get_data_by_days(code, days)
-    vals = [float(x['close']) for x in data]
-    hi = max(vals)
-    lo = min(vals)
-    return hi, lo
-
-def get_data(codes):
-    msg = twse.get_msg(codes)
+def get_data(codes, verbose=False):
+    msg = twse.get_msg(codes, verbose)
     data = [twse.StockInfo(msg=m) for m in msg]
-    update_stock_stats(data)
+    update_stock_stats(data, verbose)
     return data
 
-def update_stock_stats(infos):
+def update_stock_stats(infos, verbose=False):
+    ma_days = 60
+    mv_days = 30
+    hi_days = 240
+    days = max(ma_days, mv_days, hi_days)
     for info in infos:
-        info.ma = get_ma(info.code, 60)
-        info.mv = get_mv(info.code, 30)
-        info.days_hi, info.days_lo = get_hi_lo(info.code, 360)
+        code = info.code
+        data = twse.get_data_by_days(code, days, verbose)
+        vals = [float(x['close']) for x in data]
+        vols = [int(x['volume']) for x in data]
+        info.ma = np.round(np.mean(vals[-ma_days-1:-1]), 2)
+        info.mv = int(np.mean(vols[-mv_days-1:-1]))
+        info.days_hi = max(vals[-hi_days:])
+        info.days_lo = min(vals[-hi_days:])
     twse.update_etf_nav(infos)
     return
 
@@ -219,42 +211,121 @@ def init_xcurl():
     xurl.addDelayObj(r'twse.com.tw', 0.5)
     return
 
+def load_json(fn):
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', fn)
+    with open(local, 'r') as f:
+        return json.load(f)
+    return None
+
+def stock(args):
+    obj = load_json('stocks.json')
+    parsed = {s['code']:s for s in obj['stocks']}
+    data = get_data(list(parsed.keys()))
+    for d in data:
+        d.tags = parsed[d.code]['tags']
+        d.flts = parsed[d.code]['flts']
+    json_list = [json.dumps(x.__dict__) for x in data]
+    return '{"stocks":[%s]}' %(','.join(json_list))
+
+def loadcsv(args):
+    code = args.get('c')
+    end = datetime.date.today()
+    start = end - datetime.timedelta(days=540)
+    df = quote.get_data(code, start, end)
+    df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+    ex, name = twse.get_name(code)
+    return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
+
+def analyze(args):
+    date = args.get('d', datetime.date.today())
+    tail = int(args.get('t', 1))
+    df = twse.analyze(date, 60, 30, 240, tail=tail)
+    return df.to_json(orient='records', indent=4)
+
+def load_exr():
+    data = get_exchange_rate_data()
+    json_list = [json.dumps(x.__dict__) for x in data]
+    return '{"ExchangeRates":[%s]}' %(','.join(json_list))
+
+def load_stocks():
+    data = load_json('stocks.json')
+    for s in data['stocks']:
+        ex, s['name'] = twse.get_name(s['code'])
+    return json.dumps(data)
+
+def load_strategy():
+    data = load_json('strategy.json')
+    codes = [s['code'] for s in data['stocks']]
+    msg = twse.get_msg(codes)
+    parsed = {m['c']:twse.StockInfo(msg=m) for m in msg}
+    for s in data['stocks']:
+        c = s['code']
+        ex, s['name'] = twse.get_name(c)
+        if c in parsed:
+            s['z'] = parsed[c].z
+    return json.dumps(data)
+
+def load(args):
+    name = args.get('n')
+    json = args.get('j')
+    if name == 'exr':
+        return load_exr()
+    if name == 'stocks':
+        return load_stocks()
+    if name == 'strategy':
+        return load_strategy()
+    return None
+
+def report(args):
+    code = args.get('c')
+    if code:
+        rpt_obj = get_stock_report(code)
+        return json.dumps(rpt_obj.__dict__, cls=MyJSONEncoder)
+    return
+
+def dispatch(fn, args):
+    func = globals().get(fn)
+    if callable(func):
+        return func(args)
+    return 'EEROR'
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--codes')
+    parser.add_argument('-c', '--code')
     parser.add_argument('-r', '--report', action="store_true", default=False)
     parser.add_argument('-e', '--exr', action="store_true", default=False)
+    parser.add_argument('--func')
+    parser.add_argument('--func_args')
+    parser.add_argument('--output')
     args, unparsed = parser.parse_known_args()
 
     init_xcurl()
 
-    if args.report:
-        if args.codes:
-            for code in args.codes.split(','):
-                rpt = get_stock_report(code)
-                rpt.show()
+    if args.report and args.code:
+        rpt = get_stock_report(code)
+        rpt.show()
         return
-
-    codes = args.codes.split(',') if args.codes else None
-    if not codes:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'stocks.json')
-        with open(path, 'r') as f:
-            obj = json.load(f)
-            codes = [s['code'] for s in obj['stocks']]
-
-    data = get_data(codes)
-    update_stock_stats(data)
-
-    df = pd.DataFrame([x.__dict__ for x in data])
-
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_columns', None)
-    print(df)
 
     if args.exr:
         exr_data = get_exchange_rate_data()
         exr_df = pd.DataFrame([x.__dict__ for x in exr_data])
         print(exr_df)
+        return
+
+    if args.func and args.func_args and args.output:
+        ret = dispatch(args.func, json.loads(args.func_args))
+        with open(args.output, 'w') as fd:
+            fd.write(ret)
+        return
+
+    obj = load_json('stocks.json')
+    codes = [s['code'] for s in obj['stocks']]
+    data = get_data(codes, True)
+    df = pd.DataFrame([x.__dict__ for x in data])
+
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    print(df)
 
     return
 

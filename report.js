@@ -30,8 +30,6 @@ function updateInfo(obj) {
     text += `<span class="link"><a href="${link}" target="_blank">${name}</a></span>`;
   }
 
-  text += '<span class="link"><a href="#result">#Result</a></span>';
-
   $('title').html(`${code} ${obj.name}`);
   $('#info').html(text);
 }

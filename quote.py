@@ -51,7 +51,8 @@ def get_exchange(code):
         path = os.path.join(exchange, code + '.csv')
         if os.path.exists(path):
              return exchange
-    return 'OTC' if twse.is_otc(code) else 'TSE'
+    ex, name = twse.get_name(code)
+    return ex
 
 def update_csv(path, exchange, code, start, end, verbose):
     if exchange in ['TSE', 'OTC']:

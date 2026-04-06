@@ -12,7 +12,7 @@ otc_test = ['00720B']
 
 def parse(url, output):
     txt = xurl.load(url, encoding='big5_hkscs', verbose=True)
-    matches = re.finditer(r'<tr><td bgcolor=#FAFAD2>(\w+)　(\w+)', txt)
+    matches = re.finditer(r'<tr><td bgcolor=#FAFAD2>(\w+)　([\w&-\*]+)', txt)
     data = {m.group(1):m.group(2) for m in matches}
     with open(output, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)

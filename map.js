@@ -1,38 +1,34 @@
 
-var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
-var cur_stock_json = null;
 
 function selectTag(tag) {
   selected_tag = tag;
   selected_innerTag = null;
-  updateResult();
+  filterTag();
 }
 
 function selectInnerTag(tag) {
   selected_tag = null;
   selected_innerTag = tag;
-  updateResult();
+  filterTag();
 }
 
-function updateTags(stocks) {
+function updateTags(objs) {
   var text = '';
   var tags = [];
 
-  for (var i=0; i<stocks.length; i++) {
-    for (var j=0; j<stocks[i].tags.length; j++) {
-      if (!tags.includes(stocks[i].tags[j])) {
-        tags.push(stocks[i].tags[j]);
-      }
+  for (const s of objs) {
+    for (const tag of s.tags) {
+      if (!tags.includes(tag))
+        tags.push(tag);
     }
   }
 
   if (tags.length) {
     text += '<button onclick=selectInnerTag("all")>all</button>';
-    for (var i=0; i<tags.length; i++) {
-      text += `<button onclick=selectTag("${tags[i]}")>${tags[i]}</button>`;
-    }
+    for (const tag of tags)
+      text += `<button onclick=selectTag("${tag}")>${tag}</button>`;
     text += '<button onclick=selectInnerTag("na")>na</button>';
   }
 
@@ -63,19 +59,12 @@ function filterTag() {
   }
 }
 
-function updateResult() {
+function updateResult(objs) {
   var text = '';
-  var stocks = cur_stock_json.stocks;
-
-  if (!is_StockTags_loaded) {
-    updateTags(stocks);
-    is_StockTags_loaded = true;
-  }
 
   text += '<table id="stocks">';
 
-  for (var i=0; i<stocks.length; i++) {
-    const s = stocks[i];
+  for (const s of objs) {
     const k_list = [s.code, s.name];
     const kv_list = [
       ['Report', `report.html?c=${s.code}`],
@@ -104,9 +93,9 @@ function updateResult() {
   filterTag();
 }
 
-function parseStockJSON(obj) {
-  cur_stock_json = obj;
-  updateResult();
+function parseStockJSON(objs) {
+  updateTags(objs);
+  updateResult(objs);
 }
 
 function updateStockInfo() {

@@ -1,4 +1,4 @@
-{"stocks":[
+[
 	{"code":"0050","tags":["etf"],"flts":["z<=63"]},
 	{"code":"00720B","tags":["bond"],"flts":["z<=33.2","z<=31.95"]},
 	{"code":"00751B","tags":["bond"],"flts":["z>=34"]},
@@ -34,4 +34,4 @@
 	{"code":"2408","tags":["tech"],"flts":[]},
 	{"code":"3711","tags":["tech"],"flts":[]},
 	{"code":"00631L","tags":["etf_L"],"flts":["z<=16"]}
-]}
+]

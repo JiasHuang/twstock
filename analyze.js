@@ -1,5 +1,5 @@
 
-var cur_stock_json = null;
+var cur_objs = null;
 var sort_by = null;
 var interval_id = null;
 
@@ -15,7 +15,7 @@ function pz_fmt(z, y, en_cls=false) {
 
 function updateResult() {
   var text = '';
-  var stocks = cur_stock_json;
+  var stocks = cur_objs;
 
   if (sort_by == 'vol') {
     stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
@@ -73,16 +73,16 @@ function updateResult() {
   $('#result').html(text);
 }
 
-function parseStockJSON(obj) {
+function parseStockJSON(objs) {
 
   // add ma_pct and mv_pct
-  for (let s of obj) {
+  for (let s of objs) {
     s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
     s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
     s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
-  cur_stock_json = obj;
+  cur_objs = objs;
   updateResult();
 
   if (interval_id == null)

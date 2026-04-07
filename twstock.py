@@ -93,20 +93,20 @@ class MyJSONEncoder(json.JSONEncoder):
             return obj.__jsonencode__()
         return json.JSONEncoder.default(self, obj)
 
-def get_data(codes, verbose=False):
-    msg = twse.get_msg(codes, verbose)
+def get_data(codes):
+    msg = twse.get_msg(codes)
     data = [twse.StockInfo(msg=m) for m in msg]
-    update_stock_stats(data, verbose)
+    update_stock_stats(data)
     return data
 
-def update_stock_stats(infos, verbose=False):
+def update_stock_stats(infos):
     ma_days = 60
     mv_days = 30
     pz_days = 240
     days = max(ma_days, mv_days, pz_days)
     for info in infos:
         code = info.code
-        data = twse.get_data_by_days(code, days, verbose)
+        data = twse.get_data_by_days(code, days)
         vals = [float(x['close']) for x in data]
         vols = [int(x['volume']) for x in data]
         if len(vals) and len(vols):
@@ -121,16 +121,14 @@ def update_stock_stats(infos, verbose=False):
 
 def get_exchange_rate_data():
 
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', 'exr.json')
-    txt = xurl.readLocal(path)
-    data = json.loads(txt)
+    data = load_json('exr.json')
     result = []
 
     url = 'https://rate.bot.com.tw/xrt/flcsv/0/day'
     txt = xurl.load(url, cache=False)
 
     # Currency,Rate,Cash,Spot
-    for exr in data['ExchangeRates']:
+    for exr in data:
         c = exr['currency']
         m = re.search(re.escape(c) + r',本行買入,([^,]*),([^,]*),.*?本行賣出,([^,]*),([^,]*),', txt)
         if m:
@@ -232,43 +230,40 @@ def analyze(args):
 
 def load_exr():
     data = get_exchange_rate_data()
-    json_list = [json.dumps(x.__dict__) for x in data]
-    return '{"ExchangeRates":[%s]}' %(','.join(json_list))
+    return json.dumps([x.__dict__ for x in data])
 
 def load_stock():
-    obj = load_json('stocks.json')
-    parsed = {s['code']:s for s in obj['stocks']}
+    objs = load_json('stocks.json')
+    parsed = {s['code']:s for s in objs}
     data = get_data(list(parsed.keys()))
     for d in data:
         d.tags = parsed[d.code]['tags']
         d.flts = parsed[d.code]['flts']
-    json_list = [json.dumps(x.__dict__) for x in data]
-    return '{"stocks":[%s]}' %(','.join(json_list))
+    return json.dumps([x.__dict__ for x in data])
 
 def load_edit():
-    data = load_json('stocks.json')
-    for s in data['stocks']:
+    objs = load_json('stocks.json')
+    for s in objs:
         ex, s['name'] = twse.get_name(s['code'])
-    return json.dumps(data)
+    return json.dumps(objs)
 
 def load_strategy():
-    data = load_json('strategy.json')
-    codes = [s['code'] for s in data['stocks']]
+    objs = load_json('strategy.json')
+    codes = [s['code'] for s in objs]
     msg = twse.get_msg(codes)
     parsed = {m['c']:twse.StockInfo(msg=m) for m in msg}
-    for s in data['stocks']:
+    for s in objs:
         c = s['code']
         if c in parsed:
             s['z'] = parsed[c].z
             s['name'] = parsed[c].name
-    return json.dumps(data)
+    return json.dumps(objs)
 
 def load_etf():
     obj = load_json('tse-code-list.json')
     codes = [k for k in obj.keys() if k.startswith('00')]
     data = get_data(codes)
-    json_list = [json.dumps(x.__dict__) for x in data]
-    return '{"stocks":[%s]}' %(','.join(json_list))
+    return json.dumps([x.__dict__ for x in data])
 
 def load(args):
     name = args.get('n')

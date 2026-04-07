@@ -2,7 +2,7 @@
 var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
-var cur_stock_json = null;
+var cur_objs = null;
 var sort_by = null;
 var interval_id = null;
 var interval_id_exr = null;
@@ -106,15 +106,14 @@ function selectInnerTag(tag) {
   updateResult();
 }
 
-function getTagsText(obj) {
+function getTagsText(objs) {
   var text = '';
   var tags = [];
 
-  for (var i=0; i<obj.stocks.length; i++) {
-    for (var j=0; j<obj.stocks[i].tags.length; j++) {
-      if (!tags.includes(obj.stocks[i].tags[j])) {
-        tags.push(obj.stocks[i].tags[j]);
-      }
+  for (const s of objs) {
+    for (const tag of s.tags) {
+      if (!tags.includes(tag))
+        tags.push(tag);
     }
   }
 
@@ -122,9 +121,8 @@ function getTagsText(obj) {
     text += '<button onclick=selectInnerTag("all")>all</button>';
     text += '<button onclick=selectInnerTag("hl")>hl</button>';
     text += '<button onclick=selectInnerTag("hv")>hv</button>';
-    for (var i=0; i<tags.length; i++) {
-      text += `<button onclick=selectTag("${tags[i]}")>${tags[i]}</button>`;
-    }
+    for (const tag of tags)
+      text += `<button onclick=selectTag("${tag}")>${tag}</button>`;
     text += '<button onclick=selectInnerTag("na")>na</button>';
   }
 
@@ -169,10 +167,10 @@ function filterTag() {
 
 function updateResult() {
   var text = '';
-  var stocks = cur_stock_json.stocks;
+  var stocks = cur_objs;
 
   if (!is_StockTags_loaded) {
-    $('#tags').html(getTagsText(cur_stock_json));
+    $('#tags').html(getTagsText(cur_objs));
     is_StockTags_loaded = true;
   }
 
@@ -188,25 +186,24 @@ function updateResult() {
     stocks = stocks.slice(0).sort((b, a) => b.z/b.ma - a.z/a.ma);
   }
 
-  for (var i=0; i<stocks.length; i++) {
-    text += getStockTableText(stocks[i]);
-  }
+  for (const s of stocks)
+    text += getStockTableText(s);
 
   $('#result').html(text);
 
   filterTag();
 }
 
-function parseStockJSON(obj) {
+function parseStockJSON(objs) {
 
   // add ma_pct and mv_pct
-  for (let s of obj.stocks) {
+  for (let s of objs) {
     s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
     s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
     s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
-  cur_stock_json = obj;
+  cur_objs = objs;
   updateResult();
 
   if (interval_id == null)
@@ -219,8 +216,8 @@ function parseStockJSON(obj) {
 
 }
 
-function parseExchangeRateJSON(obj) {
-  $('#exrs').html(getExchangeRateTableText(obj.ExchangeRates));
+function parseExchangeRateJSON(objs) {
+  $('#exrs').html(getExchangeRateTableText(objs));
 
   if (interval_id_exr == null)
   {

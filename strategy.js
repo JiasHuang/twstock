@@ -1,5 +1,5 @@
 
-function updateResult(obj) {
+function updateResult(objs) {
   var text = '';
   var td_na = '<td><span class="grey">-</span></td>';
 
@@ -8,7 +8,7 @@ function updateResult(obj) {
   text += '<th>市價</th><th>漲跌</th><th>殖利率</th><th>備註</th>'; // 3:市價, 4:漲跌, 5:殖利率, 6:備註
   text += '</tr>';
 
-  for (const s of obj.stocks) {
+  for (const s of objs) {
     let z_pct = ((s.z / s.ref_pz - 1) * 100).toFixed(2);
     let z_pct_cls = z_pct < 0 ? 'dec':'grey';
 
@@ -109,7 +109,7 @@ function onSave() {
   for (var i = 0; i < objs.length; i++)
     jsons.push(JSON.stringify(objs[i]));
 
-  let data = '{"stocks":[\n\t' + jsons.join(',\n\t') + '\n]}';
+  let data = '[\n\t' + jsons.join(',\n\t') + '\n]';
   $.ajax({
     type: 'POST',
     url: 'upload.py?j=strategy.json',

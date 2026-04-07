@@ -1,46 +1,34 @@
 
-var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
-var cur_stock_json = null;
-
-String.format = function() {
-  var s = arguments[0];
-  for (var i = 0; i < arguments.length - 1; i++) {
-    var reg = new RegExp("\\{" + i + "\\}", "gm");
-    s = s.replace(reg, arguments[i + 1]);
-  }
-  return s;
-}
 
 function selectTag(tag) {
   selected_tag = tag;
   selected_innerTag = null;
-  updateResult();
+  filterTag();
 }
 
 function selectInnerTag(tag) {
   selected_tag = null;
   selected_innerTag = tag;
-  updateResult();
+  filterTag();
 }
 
-function updateTags(stocks) {
+function updateTags(objs) {
   var text = '';
   var tags = [];
 
-  for (var i=0; i<stocks.length; i++) {
-    for (var j=0; j<stocks[i].tags.length; j++) {
-      if (!tags.includes(stocks[i].tags[j])) {
-        tags.push(stocks[i].tags[j]);
-      }
+  for (const s of objs) {
+    for (const tag of s.tags) {
+      if (!tags.includes(tag))
+        tags.push(tag);
     }
   }
 
   if (tags.length) {
-    for (var i=0; i<tags.length; i++) {
-      text += String.format('<button onclick=selectTag("{0}")>{0}</button>', tags[i]);
-    }
+    text += '<button onclick=selectInnerTag("all")>all</button>';
+    for (const tag of tags)
+      text += `<button onclick=selectTag("${tag}")>${tag}</button>`;
     text += '<button onclick=selectInnerTag("na")>na</button>';
   }
 
@@ -65,32 +53,26 @@ function filterTag() {
   if (selected_tag) {
     $('tr').filter('.stockinfo').hide();
     $('tr').filter('.stockinfo.'+selected_tag).show();
-  }
-  else if (selected_innerTag) {
+  }  else if (selected_innerTag == 'na') {
     $('tr').filter('.stockinfo').hide();
     $('tr[class="stockinfo "]').show();
+  }  else if (selected_innerTag == 'all') {
+    $('tr').filter('.stockinfo').show();
   }
 }
 
-function updateResult() {
+function updateResult(objs) {
   var text = '';
-  var stocks = cur_stock_json.stocks;
-
-  if (!is_StockTags_loaded) {
-    updateTags(stocks);
-    is_StockTags_loaded = true;
-  }
 
   text += '<table id="stocks">';
   text += '<tr><th>code</th><th>name</th><th>tags</th><th>flts</th></tr>';
 
-  for (var i=0; i<stocks.length; i++) {
-    let s = stocks[i];
-    text += String.format('<tr class="stockinfo {0}">', s.tags.join(' '));
-    text += String.format('<td contenteditable=true>{0}</td>', s.code);
-    text += String.format('<td>{0}</td>', s.name);
-    text += String.format('<td contenteditable=true>{0}</td>', getTagsText(s));
-    text += String.format('<td contenteditable=true>{0}</td>', getFltsText(s));
+  for (const s of objs) {
+    text += `<tr class="stockinfo ${s.tags.join(' ')}">`;
+    text += `<td contenteditable=true>${s.code}</td>`;
+    text += `<td>${s.name}</td>`;
+    text += `<td contenteditable=true>${getTagsText(s)}</td>`;
+    text += `<td contenteditable=true>${getFltsText(s)}</td>`;
     text += '</tr>';
   }
 
@@ -105,12 +87,11 @@ function updateResult() {
   text += '</table>';
 
   $('#result').html(text);
-  filterTag();
 }
 
-function parseStockJSON(obj) {
-  cur_stock_json = obj;
-  updateResult();
+function parseStockJSON(objs) {
+  updateTags(objs);
+  updateResult(objs);
 }
 
 function updateStockInfo() {
@@ -141,7 +122,7 @@ function onSave() {
       jsons.push(JSON.stringify(obj));
     }
   }
-  let data = '{"stocks":[\n\t' + jsons.join(',\n\t') + '\n]}';
+  let data = '[\n\t' + jsons.join(',\n\t') + '\n]';
   $.ajax({
     type: 'POST',
     url: 'upload.py?j=stocks.json',

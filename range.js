@@ -1,8 +1,7 @@
 
-var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
-var cur_stock_json = null;
+var cur_objs = null;
 var sort_by = null;
 var interval_id = null;
 
@@ -17,32 +16,30 @@ function pct_str(x, en_cls=false) {
 function selectTag(tag) {
   selected_tag = tag;
   selected_innerTag = null;
-  updateResult();
+  filterTag();
 }
 
 function selectInnerTag(tag) {
   selected_tag = null;
   selected_innerTag = tag;
-  updateResult();
+  filterTag();
 }
 
-function updateTags(stocks) {
+function updateTags(objs) {
   var text = '';
   var tags = [];
 
-  for (var i=0; i<stocks.length; i++) {
-    for (var j=0; j<stocks[i].tags.length; j++) {
-      if (!tags.includes(stocks[i].tags[j])) {
-        tags.push(stocks[i].tags[j]);
-      }
+  for (const s of objs) {
+    for (const tag of s.tags) {
+      if (!tags.includes(tag))
+        tags.push(tag);
     }
   }
 
   if (tags.length) {
     text += '<button onclick=selectInnerTag("all")>all</button>';
-    for (var i=0; i<tags.length; i++) {
-      text += `<button onclick=selectTag("${tags[i]}")>${tags[i]}</button>`;
-    }
+    for (const tag of tags)
+      text += `<button onclick=selectTag("${tag}")>${tag}</button>`;
     text += '<button onclick=selectInnerTag("na")>na</button>';
   }
 
@@ -70,6 +67,8 @@ function filterTag() {
   }  else if (selected_innerTag == 'na') {
     $('tr').filter('.stockinfo').hide();
     $('tr[class="stockinfo "]').show();
+  }  else if (selected_innerTag == 'all') {
+    $('tr').filter('.stockinfo').show();
   }
 }
 
@@ -77,7 +76,7 @@ function updateResult() {
   const r_min = -20;
   const r_max = 20;
   const r_step = 2.5;
-  var stocks = cur_stock_json.stocks;
+  var stocks = cur_objs;
   var text = '';
 
   console.log('updateResult');
@@ -94,11 +93,6 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.h_pct - a.h_pct);
   } else if (sort_by == 'h_dec') {
     stocks = stocks.slice(0).sort((b, a) => b.h_pct - a.h_pct);
-  }
-
-  if (!is_StockTags_loaded) {
-    updateTags(stocks);
-    is_StockTags_loaded = true;
   }
 
   var cols = ['code', 'name', 'Pz', 'Pz%', 'H%', 'MA%'];
@@ -151,19 +145,19 @@ function updateResult() {
   text += '</table>';
 
   $('#result').html(text);
-  filterTag();
 }
 
-function parseStockJSON(obj) {
+function parseStockJSON(objs) {
   console.log('parseStockInfo');
 
   // add ma_pct
-  for (let s of obj.stocks) {
+  for (let s of objs) {
     s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
     s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
-  cur_stock_json = obj;
+  cur_objs = objs;
+  updateTags(objs);
   updateResult();
 
   if (interval_id == null)

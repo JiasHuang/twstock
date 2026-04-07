@@ -97,7 +97,7 @@ function parseStockJSON(objs) {
 
 function updateStockInfo() {
   $.ajax({
-    url: 'analyze.py' + window.location.search,
+    url: 'load.py?n=etf',
     dataType: 'json',
     success: parseStockJSON,
     timeout: 30000, // 30s
@@ -127,9 +127,8 @@ function onSelectChange() {
 
 function onDateChange() {
   const date = $(this).val().replace(/-/g, "");
-  const search = window.location.search;
   $.ajax({
-    url: search.length ? `analyze.py${search}&d=${date}` : `analyze.py?d=${date}`,
+    url: `load.py?n=etf&d=${date}`,
     dataType: 'json',
     success: parseStockJSON,
     timeout: 30000, // 30s

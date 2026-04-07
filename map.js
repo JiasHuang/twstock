@@ -101,7 +101,7 @@ function parseStockJSON(objs) {
 function updateStockInfo() {
   console.log('updateStockInfo');
   $.ajax({
-    url: 'load.py?n=edit',
+    url: 'load.py?n=watchlist',
     dataType: 'json',
     success: parseStockJSON,
   });

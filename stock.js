@@ -80,8 +80,8 @@ function getStockTableText(s) {
   }
 
   if (s.ma) {
-    let ma_pct_cls = (pct <= -10) ? 'bg_hl' : '';
-    let ma_str = `<span class="MA">均線 ${pct_fmt(s.ma, pct, ma_pct_cls)}</span>`;
+    let ma_pct_cls = (s.ma_pct <= -10) ? 'bg_hl' : '';
+    let ma_str = `<span class="MA">均線 ${pct_fmt(s.ma, s.ma_pct, ma_pct_cls)}</span>`;
     let h_str = `<span class="h_pct">H(${s.h_pct})</span>`;
     notes.push(`${ma_str} ${h_str}`);
   }
@@ -175,15 +175,15 @@ function updateResult() {
   }
 
   if (sort_by == 'vol') {
-    stocks = stocks.slice(0).sort((a, b) => b.v/b.mv - a.v/a.mv);
+    stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
   } else if (sort_by == 'inc') {
     stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
   } else if (sort_by == 'dec') {
     stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
   } else if (sort_by == 'ma_inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.z/b.ma - a.z/a.ma);
+    stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
   } else if (sort_by == 'ma_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.z/b.ma - a.z/a.ma);
+    stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
   }
 
   for (const s of stocks)

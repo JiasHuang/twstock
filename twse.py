@@ -270,7 +270,7 @@ def get_data_by_days(code, days, verbose=False):
 
     return data
 
-def analyze(date, ma_days, mv_days, pz_days, tail=1, verbose=False):
+def all_etf(date, days, tail=1, verbose=False):
 
     if isinstance(date, str):
         date = datetime.datetime.strptime(date, '%Y%m%d').date()
@@ -280,7 +280,6 @@ def analyze(date, ma_days, mv_days, pz_days, tail=1, verbose=False):
     today_str = today.strftime('%Y%m%d')
     has_today_data = False
 
-    days = max(ma_days, mv_days, pz_days)
     records = [] # Ordering by "newer"
     while len(records) <= days:
         url = 'https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={}&type=0099P&response=json'.format(date.strftime('%Y%m%d'))
@@ -333,10 +332,10 @@ def analyze(date, ma_days, mv_days, pz_days, tail=1, verbose=False):
     for x in info:
         if len(parsed[x.code].close) and len(parsed[x.code].volume):
             x.y = parsed[x.code].close[0]
-            x.mv = int(np.mean(parsed[x.code].volume[:mv_days]))
-            x.ma = np.mean(parsed[x.code].close[:ma_days])
-            x.days_hi = np.max(parsed[x.code].close[:pz_days])
-            x.days_lo = np.min(parsed[x.code].close[:pz_days])
+            x.mv = int(np.mean(parsed[x.code].volume))
+            x.ma = np.mean(parsed[x.code].close)
+            x.days_hi = np.max(parsed[x.code].close)
+            x.days_lo = np.min(parsed[x.code].close)
 
     update_etf_nav(info)
 
@@ -349,7 +348,7 @@ def main():
     args, unparsed = parser.parse_known_args()
 
     date = unparsed[0] if len(unparsed) > 0 else datetime.date.today()
-    df = analyze(date, 60, 30, 240, 1, True)
+    df = all_etf(date, 60, 1, True)
 
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)

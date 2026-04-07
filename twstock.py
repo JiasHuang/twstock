@@ -9,6 +9,7 @@ import datetime
 import pandas as pd
 import numpy as np
 
+import quote
 import twse
 import xurl
 
@@ -222,12 +223,6 @@ def loadcsv(args):
     ex, name = twse.get_name(code)
     return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
-def analyze(args):
-    date = args.get('d', datetime.date.today())
-    tail = int(args.get('t', 1))
-    df = twse.analyze(date, 60, 30, 240, tail)
-    return df.to_json(orient='records', indent=4)
-
 def load_exr():
     data = get_exchange_rate_data()
     return json.dumps([x.__dict__ for x in data])
@@ -241,7 +236,7 @@ def load_stock():
         d.flts = parsed[d.code]['flts']
     return json.dumps([x.__dict__ for x in data])
 
-def load_edit():
+def load_watchlist():
     objs = load_json('stocks.json')
     for s in objs:
         ex, s['name'] = twse.get_name(s['code'])
@@ -259,11 +254,11 @@ def load_strategy():
             s['name'] = parsed[c].name
     return json.dumps(objs)
 
-def load_etf():
-    obj = load_json('tse-code-list.json')
-    codes = [k for k in obj.keys() if k.startswith('00')]
-    data = get_data(codes)
-    return json.dumps([x.__dict__ for x in data])
+def load_etf(args):
+    date = args.get('d', datetime.date.today())
+    tail = int(args.get('t', 1))
+    df = twse.all_etf(date, 60, tail)
+    return df.to_json(orient='records', indent=4)
 
 def load(args):
     name = args.get('n')
@@ -271,12 +266,12 @@ def load(args):
         return load_exr()
     if name == 'stock':
         return load_stock()
-    if name == 'edit':
-        return load_edit()
+    if name == 'watchlist':
+        return load_watchlist()
     if name == 'strategy':
         return load_strategy()
     if name == 'etf':
-        return load_etf()
+        return load_etf(args)
     return None
 
 def report(args):

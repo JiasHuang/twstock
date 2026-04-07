@@ -91,6 +91,7 @@ function add_strip_line(data) {
     labelPlacement:"inside",
     labelAlign:"far",
     labelFontColor:"red",
+    labelBackgroundColor:"white",
     labelFontSize:14,
     lineDashType: "dash",
     thickness: 1.5,

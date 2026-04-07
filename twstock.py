@@ -107,9 +107,9 @@ def update_stock_stats(infos):
     days = max(ma_days, mv_days, pz_days)
     for info in infos:
         code = info.code
-        data = twse.get_data_by_days(code, days)
-        vals = [float(x['close']) for x in data]
-        vols = [int(x['volume']) for x in data]
+        df = quote.get_data_by_days(code, days)
+        vals = df['close'].to_numpy()
+        vols = df['volume'].to_numpy()
         if len(vals) and len(vols):
             info.ma = np.round(np.mean(vals[-ma_days-1:-1]), 2) if len(vals) > ma_days else 0
             info.mv = int(np.mean(vols[-mv_days-1:-1])) if len(vols) > mv_days else 0
@@ -214,15 +214,6 @@ def load_json(fn):
         return json.load(f)
     return None
 
-def loadcsv(args):
-    code = args.get('c')
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days=540)
-    df = quote.get_data(code, start, end)
-    df['date'] = df['date'].dt.strftime('%Y-%m-%d')
-    ex, name = twse.get_name(code)
-    return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
-
 def load_exr():
     data = get_exchange_rate_data()
     return json.dumps([x.__dict__ for x in data])
@@ -254,6 +245,15 @@ def load_strategy():
             s['name'] = parsed[c].name
     return json.dumps(objs)
 
+def load_csv(args):
+    code = args.get('c')
+    end = datetime.datetime.now()
+    start = end - datetime.timedelta(days=540)
+    df = quote.get_data(code, start, end)
+    df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+    ex, name = twse.get_name(code)
+    return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
+
 def load_etf(args):
     date = args.get('d', datetime.date.today())
     tail = int(args.get('t', 1))
@@ -270,6 +270,8 @@ def load(args):
         return load_watchlist()
     if name == 'strategy':
         return load_strategy()
+    if name == 'csv':
+        return load_csv(args)
     if name == 'etf':
         return load_etf(args)
     return None
@@ -289,7 +291,7 @@ def dispatch(fn, args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--code')
+    parser.add_argument('-c', '--code', default='0050')
     parser.add_argument('-r', '--report', action="store_true", default=False)
     parser.add_argument('-v', '--verbose', action="store_true", default=False)
     parser.add_argument('--func')
@@ -297,8 +299,6 @@ def main():
     parser.add_argument('--output')
     args, unparsed = parser.parse_known_args()
 
-    xurl.addDelayObj(r'fbs.com.tw', 0.5)
-    xurl.addDelayObj(r'twse.com.tw', 0.5)
     xurl.set_verbose(args.verbose)
 
     if args.func and args.func_args and args.output:
@@ -313,7 +313,7 @@ def main():
         return
 
     if unparsed:
-        ret = load({'n':unparsed[0]})
+        ret = load({'n':unparsed[0], 'c':args.code})
         print(ret)
 
     return

@@ -318,6 +318,6 @@ function parseJson(obj) {
 }
 
 function onDocumentReady() {
-  var api_url = 'loadcsv.py' + window.location.search;
+  var api_url = 'load.py' + window.location.search + '&n=csv';
   $.getJSON(api_url, parseJson);
 }

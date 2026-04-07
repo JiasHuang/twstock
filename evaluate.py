@@ -36,8 +36,7 @@ class Record:
         self.cost = cost
 
 class Stock:
-    def __init__(self, exchange, code):
-        self.exchange = exchange
+    def __init__(self, code, start, end):
         self.code = code
         self.cost = 0
         self.qty = 0
@@ -47,6 +46,7 @@ class Stock:
         self.max_return = None
         self.max_return_date = None
         self.records = []
+        self.df = quote.get_data(code, start, end)
 
     def add_cost(self, date, pz, cost):
         self.cost += cost
@@ -54,17 +54,25 @@ class Stock:
         self.avg = self.cost / self.qty
         self.records.append(Record(date, pz, cost))
 
-    def get_infos(self, start, end, ma_list):
-        return quote.get_infos(self.exchange, self.code, start, end, ma_list)
-
     def get_price(self, date):
-        return quote.get_attr(self.exchange, self.code, 'close', date)
+        df = self.df
+        start = date - datetime.timedelta(days=30)
+        vals = df[(df['date'] >= start) & (df['date'] <= date)]['close'].to_numpy()
+        return vals[-1]
 
     def get_prices(self, date, days):
-        return quote.get_attrs(self.exchange, self.code, 'close', date, days)
+        df = self.df
+        days = min(int(days * 7 / 5), 30)
+        start = date - datetime.timedelta(days=days)
+        vals = df[(df['date'] >= start) & (df['date'] <= date)]['close'].tail(days).to_numpy()
+        return vals
 
     def get_ma(self, date, days):
-        return quote.get_ma(self.exchange, self.code, date, days)
+        df = self.df
+        days = min(int(days * 7 / 5), 30)
+        start = date - datetime.timedelta(days=days)
+        vals = df[(df['date'] >= start) & (df['date'] <= date)]['close'].tail(days).to_numpy()
+        return vals.mean()
 
     def get_gain(self, pz):
         gain = int(pz * self.qty - self.cost)
@@ -99,11 +107,11 @@ class Action:
     def __str__(self):
         s = self.stock
         gain = self.pz / s.avg - 1
-        return '[{}] {}:{} pz {:,} ma {:,.2f} rate {:.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.exchange, s.code, self.pz, self.ma, self.rate, self.cost, s.qty, s.avg, gain)
+        return '[{}] {} pz {:,} ma {:,.2f} rate {:.2f} cost {:,} qty {:,.2f} avg {:,.2f} gain {:.2%}'.format(self.date, s.code, self.pz, self.ma, self.rate, self.cost, s.qty, s.avg, gain)
 
 class Result:
     def __init__(self, args, stock, total_gain, total_return, annual_return):
-        self.label = '{}:{} b{}_{}'.format(stock.exchange, stock.code, args.batch, args.policy)
+        self.label = '{} b{}_{}'.format(stock.code, args.batch, args.policy)
         self.records = stock.records
         self.total_cost = stock.cost
         self.total_gain = total_gain
@@ -144,132 +152,16 @@ def evaluate_action(args, stock, date):
 
     return action
 
-def analyze(args):
-
-    start = datetime.datetime.strptime(args.start, '%Y%m%d').date()
-    end = datetime.datetime.strptime(args.end, '%Y%m%d').date()
-
-    stock = Stock(args.exchange, args.code)
-    label = bcolors.GREEN + '{}:{}'.format(stock.exchange, stock.code) + bcolors.ENDC
-
-    print('\n---')
-
-    ma_list = [60]
-    interval = 20
-    infos = stock.get_infos(start, end, ma_list)
-    avg_vol = np.mean([x.volume for x in infos])
-    for idx, x in enumerate(infos):
-        if idx > interval and idx + interval < len(infos):
-            vals = [y.close for y in infos[idx - interval:idx + interval]]
-            if infos[idx].close == max(vals):
-                infos[idx].desc.append('high')
-            if infos[idx].close == min(vals):
-                infos[idx].desc.append('low')
-
-    for idx, x in enumerate(infos):
-        if x.desc or idx > len(infos) - 10:
-            basic = []
-            for ma in ma_list:
-                rate = x.close / getattr(x, 'ma'+str(ma)) - 1
-                basic.append('ma{} {:+.2%}'.format(ma, rate))
-            basic.append('vol {:+.2%}'.format(x.volume / avg_vol - 1))
-            print('{} {} {:.2f} {} {}'.format(label, x.date, x.close, ' '.join(basic), ' '.join(x.desc)))
-
-    print('---')
-    idx = max(0, len(infos) - 120)
-    while idx < len(infos):
-        week_num = infos[idx].date.isocalendar()[1]
-        week = [infos[idx]]
-        for idx2 in range(idx + 1, len(infos)):
-            if infos[idx2].date.isocalendar()[1] != week_num:
-                break
-            week.append(infos[idx2])
-
-        last_close = infos[max(idx - 1, 0)].close
-        wk_return = week[-1].close / last_close - 1
-        wk_vol = np.mean([y.volume for y in week]) / avg_vol - 1
-        wk_low = min([y.low for y in week])
-        print('{} {} ~ {} (w{}) {:.2f} return {:.2%} vol {:+.2%} low {:.2f}'.format(label, week[0].date, week[-1].date, week_num, week[-1].close, wk_return, wk_vol, wk_low))
-        idx = idx + len(week)
-
-    pz = infos[-1].close
-
-    print('---')
-    idxs = [0, len(infos) - 120, len(infos) - 60, len(infos) - 20]
-    for idx in idxs:
-        if idx < 0:
-            continue
-        pz_s = infos[idx].close
-        total_return = pz / pz_s - 1
-        annual_return = count_annualized_return(infos[idx].date, end, total_return)
-        diff_in_month = round((end - infos[idx].date).days / 30, 1)
-        print('{} {} ~ {} ({}m) return {:.2%} (annual {:.2%})'.format(label, infos[idx].date, end, diff_in_month, total_return, annual_return))
-
-    vals = {}
-    vals['*** pz ***'] = pz
-    for ma in [5, 10, 20, 60, 120, 240]:
-        vals['ma'+str(ma)] = stock.get_ma(end, ma)
-
-    for days in [60, 120, 240]:
-        pzs = stock.get_prices(end, days)
-        vals['low' + str(days)] = min(pzs)
-
-    print('---')
-    for k, v in sorted(vals.items(), key=lambda item: item[1], reverse=True):
-        print('{} {} {:.2f} ({:+.2%})'.format(label, k, v, v/pz-1))
-
-    return
-
-def regression(args):
-
-    ystart = int(args.regression)
-    yend = datetime.date.today().year
-    rank = {}
-
-    for y in range(ystart, yend + 1):
-        results = []
-        for code in args.code.split(','):
-            for batch in args.batch.split(','):
-                for policy in args.policy.split(','):
-                    new_args = copy.deepcopy(args)
-                    new_args.start = str(y) + '0101'
-                    new_args.code = code
-                    new_args.batch = batch
-                    new_args.policy = policy
-                    ret = core(new_args)
-                    if ret.total_cost:
-                        results.append(ret)
-                        if ret.label not in rank:
-                            rank[ret.label] = ret.total_gain
-                        else:
-                            rank[ret.label] += ret.total_gain
-                    if batch == '1':
-                        break
-
-        results.sort(key=lambda x: x.total_gain, reverse=True)
-
-        print('\n---')
-        for x in results:
-            print(x)
-        print('---')
-
-    print('\n---')
-    for k, v in sorted(rank.items(), key=lambda item: item[1], reverse=True):
-        print('{}: {:,}'.format(k, v))
-    print('---')
-
-    return
-
 def core(args):
 
-    start = datetime.datetime.strptime(args.start, '%Y%m%d').date()
-    end = datetime.datetime.strptime(args.end, '%Y%m%d').date()
+    start = datetime.datetime.strptime(args.start, '%Y%m%d')
+    end = datetime.datetime.strptime(args.end, '%Y%m%d')
 
-    stock = Stock(args.exchange, args.code)
+    stock = Stock(args.code, start, end)
     balance = args.limit
 
     print('\n---')
-    print(bcolors.GREEN + '{}:{} b{}_{} [{} ~ {}]'.format(args.exchange, args.code, args.batch, args.policy, start, end) + bcolors.ENDC)
+    print(bcolors.GREEN + '{} b{}_{} [{} ~ {}]'.format(args.code, args.batch, args.policy, start, end) + bcolors.ENDC)
 
     d = start
     while d <= end:
@@ -289,7 +181,7 @@ def core(args):
     annual_return = 0
 
     if stock.cost:
-        label = bcolors.GREEN + '[{}] {}:{}'.format(end, stock.exchange, stock.code) + bcolors.ENDC
+        label = bcolors.GREEN + '[{}] {}'.format(end, stock.code) + bcolors.ENDC
         pz = stock.get_price(end)
         total_gain, total_return = stock.get_gain(pz)
         annual_return = count_annualized_return(start, end, total_return)
@@ -303,7 +195,6 @@ def core(args):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-E', '--exchange')
     parser.add_argument('-c', '--code', default=defs.code)
     parser.add_argument('-s', '--start', default='')
     parser.add_argument('-e', '--end', default='')
@@ -314,8 +205,6 @@ def main():
     parser.add_argument('-V', '--mv_days', type=int, default=defs.mv_days)
     parser.add_argument('-p', '--policy', default=defs.policy)
     parser.add_argument('-v', '--verbose', action="store_true")
-    parser.add_argument('-a', '--analyze', action="store_true")
-    parser.add_argument('-r', '--regression')
 
     args, unparsed = parser.parse_known_args()
 
@@ -323,33 +212,18 @@ def main():
         args.code = unparsed[0]
 
     if len(args.start) == 0:
-        if args.analyze:
-            args.start = (datetime.date.today() - datetime.timedelta(days=365)).strftime('%Y%m%d')
-        else:
-            args.start = str(datetime.date.today().year) + '0101'
+        args.start = str(datetime.datetime.now().year) + '0101'
     elif len(args.start) == 4:
         args.start = args.start + '0101'
     elif len(args.start) == 6:
         args.start = args.start + '01'
 
     if len(args.end) == 0:
-        args.end = datetime.date.today().strftime('%Y%m%d')
+        args.end = datetime.datetime.now().strftime('%Y%m%d')
     elif len(args.end) == 4:
         args.end = args.end + '1231'
     elif len(args.end) == 6:
         args.end = args.end + '31'
-
-    if args.analyze:
-        for code in args.code.split(','):
-            new_args = copy.deepcopy(args)
-            new_args.code = code
-            new_args.exchange = args.exchange or quote.get_exchange(code)
-            analyze(new_args)
-        return
-
-    if args.regression:
-        regression(args)
-        return
 
     results = []
     for code in args.code.split(','):
@@ -359,7 +233,6 @@ def main():
                 new_args.code = code
                 new_args.batch = batch
                 new_args.policy = policy
-                new_args.exchange = args.exchange or quote.get_exchange(code)
                 result = core(new_args)
                 if result.total_cost:
                     results.append(result)

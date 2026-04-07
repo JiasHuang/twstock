@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 import twse
+import xurl
 
 class bcolors:
     BLACK_ON_RED = '\x1b[3;30;41m'
@@ -54,18 +55,18 @@ def get_exchange(code):
     ex, name = twse.get_name(code)
     return ex
 
-def update_csv(path, exchange, code, start, end, verbose):
+def update_csv(path, exchange, code, start, end):
     if exchange in ['TSE', 'OTC']:
-        data = twse.get_data(code, start, end, verbose)
+        data = twse.get_data(code, start, end)
         df = pd.DataFrame(data)
         if not os.path.exists(exchange):
             os.makedirs(exchange, exist_ok=True)
         df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
 
-def get_data(code, start, end, verbose=False):
+def get_data(code, start, end):
     exchange = get_exchange(code)
     path = os.path.join(exchange, code) + '.csv'
-    update_csv(path, exchange, code, start, end, verbose)
+    update_csv(path, exchange, code, start, end)
 
     new_names = ['date', 'open', 'high', 'low', 'close', 'volume']
     df = pd.read_csv(path, names=new_names, header=0, parse_dates=['date'])
@@ -73,10 +74,13 @@ def get_data(code, start, end, verbose=False):
     start_64 = np.datetime64(start)
     end_64 = np.datetime64(end)
 
-    if verbose:
-        print(df.to_string())
-
     return df[(df['date'] >= start_64) & (df['date'] <= end_64)].copy()
+
+def get_data_by_days(code, days):
+    adjust_days = int(days / 5 * 7)
+    end = datetime.datetime.now()
+    start = end - datetime.timedelta(days=adjust_days)
+    return get_data(code, start, end)
 
 def add_sma(df, days, col='close'):
     vals = df[col].to_numpy()
@@ -152,11 +156,11 @@ def plot(df, title, output=None):
 
     return
 
-def chart(code, output, verbose):
-    end = datetime.date.today()
+def chart(code, output):
+    end = datetime.datetime.now()
     start = end - datetime.timedelta(days=540)
 
-    df = get_data(code, start, end, verbose)
+    df = get_data(code, start, end)
     df['ma'] = add_sma(df, 60)
     df['ma%'] = add_pct(df, 'close', 'ma')
 
@@ -165,7 +169,8 @@ def chart(code, output, verbose):
     title = '{} {} {} ${}'.format(code, name, date, df['close'].iloc[-1])
 
     if not output:
-        print(df.tail(20).round(2))
+        print(df.head(10).round(2))
+        print(df.tail(10).round(2))
 
     plot(df, title, output)
     return
@@ -178,12 +183,11 @@ def main():
     parser.add_argument('-o', '--output')
     args, unparsed = parser.parse_known_args()
 
-    code = args.code
+    xurl.set_verbose(args.verbose)
 
-    if len(unparsed):
-        code = unparsed[0]
+    code = unparsed[0] if len(unparsed) else args.code
+    chart(code, args.output)
 
-    chart(code, args.output, args.verbose)
     return
 
 if __name__ == '__main__':

@@ -7,18 +7,18 @@ import hashlib
 import time
 import json
 
-class defvals:
-    workdir             = '/var/tmp/'
-    ua                  = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
-    expiration          = 14400
-    verbose = False
-
 class delayObj:
     def __init__(self, flt, delay):
         self.flt = flt
         self.delay = delay
         self.time = None
-    objs = []
+
+class defvals:
+    workdir = '/var/tmp/'
+    ua = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36'
+    expiration = 14400
+    verbose = False
+    delay = [delayObj(r'twse.com.tw', 0.5), delayObj(r'finance.yahoo.com', 1)]
 
 class xurlObj:
     def __init__(self, url, cookies=None, ref=None):
@@ -78,7 +78,7 @@ def curl(url, local, opts, ref, encoding):
     opts.append('-H \'User-Agent: %s\'' %(defvals.ua))
     opts.append('-H \'Accept-Encoding: gzip, deflate\'')
     opts.append('--compressed')
-    cmd = 'curl -kLsf -o %s %s \'%s\'' %(local, ' '.join(opts), url)
+    cmd = 'curl_chrome116 -kLsf -o %s %s \'%s\'' %(local, ' '.join(opts), url)
     try:
         os.system(cmd)
     except:
@@ -115,7 +115,7 @@ def load_json(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False,
     return None
 
 def addDelayObj(flt, delay):
-    delayObj.objs.append(delayObj(flt, delay))
+    defvals.delay.append(delayObj(flt, delay))
     return
 
 def set_verbose(en):
@@ -124,7 +124,7 @@ def set_verbose(en):
 
 def checkDelay(url):
     now = time.time()
-    for obj in delayObj.objs:
+    for obj in defvals.delay:
         if re.search(obj.flt, url):
             if not obj.time:
                 obj.time = now

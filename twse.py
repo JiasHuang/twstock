@@ -6,9 +6,11 @@ import re
 import json
 import argparse
 import datetime
+import calendar
 import pandas as pd
 import numpy as np
 
+import yfin
 import xurl
 
 split_stocks = {
@@ -191,10 +193,10 @@ def update_etf_nav(infos):
                 info.nav_time = msg['j']
     return True
 
-def get_tse_month_data(code, year, month, cache, cacheOnly, verbose):
+def get_tse_month_data(code, year, month, cache, cacheOnly):
     data = []
     url = 'http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date={}{:02}01&stockNo={}'.format(year, month, code)
-    json_obj = xurl.load_json(url, cache=cache, cacheOnly=cacheOnly, verbose=verbose)
+    json_obj = xurl.load_json(url, cache=cache, cacheOnly=cacheOnly)
     if not json_obj:
         return []
     # fields":["日期","成交股數","成交金額","開盤價","最高價","最低價","收盤價","漲跌價差","成交筆數"]
@@ -208,10 +210,10 @@ def get_tse_month_data(code, year, month, cache, cacheOnly, verbose):
                     apply_split(code, data[-1])
     return data
 
-def get_otc_month_data(code, year, month, cache, cacheOnly, verbose):
+def get_otc_month_data(code, year, month, cache, cacheOnly):
     data = []
     url = 'https://www.tpex.org.tw/www/zh-tw/afterTrading/tradingStock?code={}&date={}%2F{:02d}%2F{:02d}&id=&response=json'.format(code, year, month, 1)
-    json_obj = xurl.load_json(url, cache=cache, cacheOnly=cacheOnly, verbose=verbose)
+    json_obj = xurl.load_json(url, cache=cache, cacheOnly=cacheOnly)
     if not json_obj:
         return []
     # fields":["日期","成交張數","成交仟元","開盤","最高","最低","收盤","筆數"]
@@ -222,47 +224,34 @@ def get_otc_month_data(code, year, month, cache, cacheOnly, verbose):
                 data.append({'date':convert_date(d[0]), 'open':d[3], 'high':d[4], 'low':d[5], 'close':d[6], 'volume':d[1]})
     return data
 
-def get_month_data(ex, code, year, month, verbose):
+def get_month_data(ex, code, year, month):
     today = datetime.date.today()
     cache = True
     cacheOnly = (year != today.year or month != today.month)
-    func = get_otc_month_data if ex == 'OTC' else get_tse_month_data
-    data = func(code, year, month, cache, cacheOnly, verbose)
-    if len(data) == 0 and cacheOnly == False:
-        data = func(code, year, month, False, False, verbose)
-    return data
+    if ex == 'TSE':
+        return get_tse_month_data(code, year, month, cache, cacheOnly)
+    if ex == 'OTC':
+        return get_otc_month_data(code, year, month, cache, cacheOnly)
+    return []
 
-def get_data(code, start, end, verbose=False):
+def get_data(code, start, end):
     data = []
     fail = 0
     ex, name = get_name(code)
     if isinstance(start, str):
-        start = datetime.datetime.strptime(start, '%Y%m%d').date()
+        start = datetime.datetime.strptime(start, '%Y%m%d')
     if isinstance(end, str):
-        end = datetime.datetime.strptime(end, '%Y%m%d').date()
+        end = datetime.datetime.strptime(end, '%Y%m%d')
+
+    if ex == 'TSE':
+        return yfin.get_data(code, start, end)
+
     idx_s = start.year * 12 + start.month - 1
     idx = end.year * 12 + end.month - 1
     while idx >= idx_s and fail < 2:
         y = int(idx / 12)
         m = (idx % 12) + 1
-        d = get_month_data(ex, code, y, m, verbose)
-        if len(d) == 0:
-            fail += 1
-        data = d + data
-        idx -= 1
-
-    return data
-
-def get_data_by_days(code, days, verbose=False):
-    data = []
-    fail = 0
-    ex, name = get_name(code)
-    end = datetime.date.today()
-    idx = end.year * 12 + end.month - 1
-    while len(data) < days and fail < 2:
-        y = int(idx / 12)
-        m = (idx % 12) + 1
-        d = get_month_data(ex, code, y, m, verbose)
+        d = get_month_data(ex, code, y, m)
         if len(d) == 0:
             fail += 1
         data = d + data
@@ -345,8 +334,10 @@ def all_etf(date, days, tail=1, verbose=False):
 def main():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--verbose', action="store_true", default=False)
     args, unparsed = parser.parse_known_args()
 
+    xurl.set_verbose(args.verbose)
     date = unparsed[0] if len(unparsed) > 0 else datetime.date.today()
     df = all_etf(date, 60, 1, True)
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -11,6 +11,7 @@ import sys
 def main():
 
     sys.stdout.write('Content-Type: image/png\r\n\r\n')
+    sys.stdout.flush()
 
     args = cgi.FieldStorage()
     code = args.getvalue('c', '0050')
@@ -21,7 +22,7 @@ def main():
 
     os.system(cmd)
     with open(tmpf, 'rb') as fd:
-        sys.stdout.write(fd.read())
+        sys.stdout.buffer.write(fd.read())
     os.remove(tmpf)
 
     return

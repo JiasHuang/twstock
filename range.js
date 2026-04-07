@@ -4,6 +4,7 @@ var selected_tag = null;
 var selected_innerTag = null;
 var cur_stock_json = null;
 var sort_by = null;
+var interval_id = null;
 
 function pct_str(x, en_cls=false) {
   var cls = '';
@@ -164,26 +165,30 @@ function parseStockJSON(obj) {
 
   cur_stock_json = obj;
   updateResult();
+
+  if (interval_id == null)
+  {
+    const today = new Date();
+    const isWeekend = today.getDay()%6==0;
+    if (!isWeekend)
+      interval_id = setInterval(updateStockInfo, 30000); // 30s
+  }
+
 }
 
 function updateStockInfo() {
   console.log('updateStockInfo');
   $.ajax({
-    url: 'stock.py' + window.location.search,
+    url: 'load.py?n=stock',
     dataType: 'json',
     success: parseStockJSON,
+    timeout: 30000, // 30s
   });
 }
 
 function onDocumentReady() {
   loadTopMenu();
   updateStockInfo();
-
-  const today = new Date();
-  const isWeekend = today.getDay()%6==0;
-
-  if (!isWeekend)
-    setInterval(updateStockInfo, 30000); // 30s
 }
 
 function onSelectChange() {

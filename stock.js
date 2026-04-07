@@ -1,10 +1,11 @@
 
-var is_StockInfo_loaded = false;
 var is_StockTags_loaded = false;
 var selected_tag = null;
 var selected_innerTag = null;
 var cur_stock_json = null;
 var sort_by = null;
+var interval_id = null;
+var interval_id_exr = null;
 
 function pct_fmt(val, pct, pct_cls='') {
   let val_str = val.toLocaleString('en-US', {maximumFractionDigits:2});
@@ -194,8 +195,6 @@ function updateResult() {
   $('#result').html(text);
 
   filterTag();
-
-  is_StockInfo_loaded = true;
 }
 
 function parseStockJSON(obj) {
@@ -209,10 +208,28 @@ function parseStockJSON(obj) {
 
   cur_stock_json = obj;
   updateResult();
+
+  if (interval_id == null)
+  {
+    const today = new Date();
+    const isWeekend = today.getDay()%6==0;
+    if (!isWeekend)
+      interval_id = setInterval(updateStockInfo, 30000); // 30s
+  }
+
 }
 
 function parseExchangeRateJSON(obj) {
   $('#exrs').html(getExchangeRateTableText(obj.ExchangeRates));
+
+  if (interval_id_exr == null)
+  {
+    const today = new Date();
+    const isWeekend = today.getDay()%6==0;
+    if (!isWeekend)
+      interval_id_exr = setInterval(updateExchangeRateInfo, 60000); // 60s
+  }
+
 }
 
 function showLoading() {
@@ -221,20 +238,10 @@ function showLoading() {
 
 function updateStockInfo() {
   $.ajax({
-    url: 'stock.py' + window.location.search,
+    url: 'load.py?n=stock',
     dataType: 'json',
     success: parseStockJSON,
-  });
-}
-
-function initStockInfo() {
-  var api_url = 'stock.py' + window.location.search;
-
-  showLoading();
-  $.ajax({
-    url: api_url,
-    dataType: 'json',
-    success: parseStockJSON,
+    timeout: 30000, // 30s
   });
 }
 
@@ -243,21 +250,14 @@ function updateExchangeRateInfo() {
     url: 'load.py?n=exr',
     dataType: 'json',
     success: parseExchangeRateJSON,
+    timeout: 30000, // 30s
   });
-}
-
-function updateInfoIfNeeded() {
-  if (is_StockInfo_loaded) {
-    updateStockInfo();
-  }
-  updateExchangeRateInfo();
 }
 
 function onDocumentReady() {
   loadTopMenu();
-  initStockInfo();
+  updateStockInfo();
   updateExchangeRateInfo();
-  setInterval(updateInfoIfNeeded, 30000); // 30s
 }
 
 function onSelectChange() {

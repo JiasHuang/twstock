@@ -112,7 +112,7 @@ function parseStockJSON(obj) {
 function updateStockInfo() {
   console.log('updateStockInfo');
   $.ajax({
-    url: 'load.py?n=stocks' + window.location.search,
+    url: 'load.py?n=edit',
     dataType: 'json',
     success: parseStockJSON,
   });

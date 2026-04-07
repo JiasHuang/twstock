@@ -102,17 +102,20 @@ def get_data(codes, verbose=False):
 def update_stock_stats(infos, verbose=False):
     ma_days = 60
     mv_days = 30
-    hi_days = 240
-    days = max(ma_days, mv_days, hi_days)
+    pz_days = 240
+    days = max(ma_days, mv_days, pz_days)
     for info in infos:
         code = info.code
         data = twse.get_data_by_days(code, days, verbose)
         vals = [float(x['close']) for x in data]
         vols = [int(x['volume']) for x in data]
-        info.ma = np.round(np.mean(vals[-ma_days-1:-1]), 2)
-        info.mv = int(np.mean(vols[-mv_days-1:-1]))
-        info.days_hi = max(vals[-hi_days:])
-        info.days_lo = min(vals[-hi_days:])
+        if len(vals) and len(vols):
+            info.ma = np.round(np.mean(vals[-ma_days-1:-1]), 2) if len(vals) > ma_days else 0
+            info.mv = int(np.mean(vols[-mv_days-1:-1])) if len(vols) > mv_days else 0
+            info.days_hi = max(vals[max(0, len(vals)-pz_days):])
+            info.days_lo = min(vals[max(0, len(vals)-pz_days):])
+        else:
+            info.ma, info.mv, info.days_hi, info.days_lo = 0, 0, 0, 0
     twse.update_etf_nav(infos)
     return
 
@@ -206,26 +209,11 @@ def get_stock_report(code):
     update_stock_report_overall(obj)
     return obj
 
-def init_xcurl():
-    xurl.addDelayObj(r'fbs.com.tw', 0.5)
-    xurl.addDelayObj(r'twse.com.tw', 0.5)
-    return
-
 def load_json(fn):
     local = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons', fn)
     with open(local, 'r') as f:
         return json.load(f)
     return None
-
-def stock(args):
-    obj = load_json('stocks.json')
-    parsed = {s['code']:s for s in obj['stocks']}
-    data = get_data(list(parsed.keys()))
-    for d in data:
-        d.tags = parsed[d.code]['tags']
-        d.flts = parsed[d.code]['flts']
-    json_list = [json.dumps(x.__dict__) for x in data]
-    return '{"stocks":[%s]}' %(','.join(json_list))
 
 def loadcsv(args):
     code = args.get('c')
@@ -239,7 +227,7 @@ def loadcsv(args):
 def analyze(args):
     date = args.get('d', datetime.date.today())
     tail = int(args.get('t', 1))
-    df = twse.analyze(date, 60, 30, 240, tail=tail)
+    df = twse.analyze(date, 60, 30, 240, tail)
     return df.to_json(orient='records', indent=4)
 
 def load_exr():
@@ -247,7 +235,17 @@ def load_exr():
     json_list = [json.dumps(x.__dict__) for x in data]
     return '{"ExchangeRates":[%s]}' %(','.join(json_list))
 
-def load_stocks():
+def load_stock():
+    obj = load_json('stocks.json')
+    parsed = {s['code']:s for s in obj['stocks']}
+    data = get_data(list(parsed.keys()))
+    for d in data:
+        d.tags = parsed[d.code]['tags']
+        d.flts = parsed[d.code]['flts']
+    json_list = [json.dumps(x.__dict__) for x in data]
+    return '{"stocks":[%s]}' %(','.join(json_list))
+
+def load_edit():
     data = load_json('stocks.json')
     for s in data['stocks']:
         ex, s['name'] = twse.get_name(s['code'])
@@ -260,20 +258,30 @@ def load_strategy():
     parsed = {m['c']:twse.StockInfo(msg=m) for m in msg}
     for s in data['stocks']:
         c = s['code']
-        ex, s['name'] = twse.get_name(c)
         if c in parsed:
             s['z'] = parsed[c].z
+            s['name'] = parsed[c].name
     return json.dumps(data)
+
+def load_etf():
+    obj = load_json('tse-code-list.json')
+    codes = [k for k in obj.keys() if k.startswith('00')]
+    data = get_data(codes)
+    json_list = [json.dumps(x.__dict__) for x in data]
+    return '{"stocks":[%s]}' %(','.join(json_list))
 
 def load(args):
     name = args.get('n')
-    json = args.get('j')
     if name == 'exr':
         return load_exr()
-    if name == 'stocks':
-        return load_stocks()
+    if name == 'stock':
+        return load_stock()
+    if name == 'edit':
+        return load_edit()
     if name == 'strategy':
         return load_strategy()
+    if name == 'etf':
+        return load_etf()
     return None
 
 def report(args):
@@ -293,24 +301,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--code')
     parser.add_argument('-r', '--report', action="store_true", default=False)
-    parser.add_argument('-e', '--exr', action="store_true", default=False)
+    parser.add_argument('-v', '--verbose', action="store_true", default=False)
     parser.add_argument('--func')
     parser.add_argument('--func_args')
     parser.add_argument('--output')
     args, unparsed = parser.parse_known_args()
 
-    init_xcurl()
-
-    if args.report and args.code:
-        rpt = get_stock_report(code)
-        rpt.show()
-        return
-
-    if args.exr:
-        exr_data = get_exchange_rate_data()
-        exr_df = pd.DataFrame([x.__dict__ for x in exr_data])
-        print(exr_df)
-        return
+    xurl.addDelayObj(r'fbs.com.tw', 0.5)
+    xurl.addDelayObj(r'twse.com.tw', 0.5)
+    xurl.set_verbose(args.verbose)
 
     if args.func and args.func_args and args.output:
         ret = dispatch(args.func, json.loads(args.func_args))
@@ -318,14 +317,14 @@ def main():
             fd.write(ret)
         return
 
-    obj = load_json('stocks.json')
-    codes = [s['code'] for s in obj['stocks']]
-    data = get_data(codes, True)
-    df = pd.DataFrame([x.__dict__ for x in data])
+    if args.report and args.code:
+        rpt = get_stock_report(code)
+        rpt.show()
+        return
 
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_columns', None)
-    print(df)
+    if unparsed:
+        ret = load({'n':unparsed[0]})
+        print(ret)
 
     return
 

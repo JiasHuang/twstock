@@ -7,12 +7,11 @@ import hashlib
 import time
 import json
 
-from urllib.parse import urlparse, quote, unquote, unquote_plus, urljoin
-
 class defvals:
     workdir             = '/var/tmp/'
     ua                  = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
     expiration          = 14400
+    verbose = False
 
 class delayObj:
     def __init__(self, flt, delay):
@@ -41,16 +40,6 @@ def saveLocal(local, text):
     fd.close()
     return
 
-def saveM3U8(local, result):
-    fd = open(local, 'w')
-    fd.write('#EXTM3U\n')
-    for r in result:
-        fd.write('#EXTINF:-1,0\n')
-        fd.write(r+'\n')
-    fd.write('#EXT-X-ENDLIST\n')
-    fd.close()
-    return
-
 def checkCache(local, cache, cacheOnly, expiration):
     if not os.path.exists(local):
         return False
@@ -73,7 +62,7 @@ def genLocal(url, prefix='twstock_load_', suffix='', opts=None):
 
 def getContentType(url):
     local = genLocal(url, suffix='.hdr')
-    txt = load(url, local, opts=['--head'], cmd='curl')
+    txt = load(url, local, opts=['--head'])
     m = re.search(r'Content-Type: (.*?)(;|\s)', txt, re.IGNORECASE)
     if m:
         return m.group(1)
@@ -96,37 +85,41 @@ def curl(url, local, opts, ref, encoding):
         print('Exception:\n' + cmd)
     return readLocal(local, encoding)
 
-def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl', verbose=False, encoding=None):
+def load(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, verbose=False, encoding=None):
     local = local or genLocal(url, opts=opts)
     if checkCache(local, cache, cacheOnly, expiration):
-        if verbose:
+        if defvals.verbose or verbose:
             print('[xurl] %s -> %s (cache)' %(url, local))
         return readLocal(local, encoding)
     checkDelay(url)
     t0 = time.time()
-    ret = eval('%s(url, local, opts=opts, ref=ref, encoding=encoding)' %(cmd))
+    ret = curl(url, local, opts, ref, encoding)
     t1 = time.time()
-    if verbose:
+    if defvals.verbose or verbose:
         print('[xurl] %s -> %s (%.2f)' %(url, local, t1 - t0))
     return ret
 
-def load_json(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, cmd='curl', verbose=False, encoding=None):
+def load_json(url, local=None, opts=None, ref=None, cache=True, cacheOnly=False, expiration=None, verbose=False, encoding=None):
     local = local or genLocal(url, opts=opts)
-    txt = load(url, local, opts, ref, cache, cacheOnly, expiration, cmd, verbose, encoding)
+    txt = load(url, local, opts, ref, cache, cacheOnly, expiration, verbose, encoding)
     try:
         obj = json.loads(txt)
         return obj
     except ValueError as e:
-        if checkCache(local, cache, cacheOnly, expiration) and re.search('頁面無法執行', txt):
-            return load_json(url, local, opts, ref, False, False, expiration, cmd, verbose, encoding)
+        if cacheOnly and re.search('頁面無法執行', txt):
+            return load_json(url, local, opts, ref, cache, False, expiration, verbose, encoding)
 
-    if verbose:
+    if defvals.verbose or verbose:
         print('load_json failed: {} (cache={}, cacheOnly={})'.format(url, cache, cacheOnly))
 
     return None
 
 def addDelayObj(flt, delay):
     delayObj.objs.append(delayObj(flt, delay))
+    return
+
+def set_verbose(en):
+    defvals.verbose = en
     return
 
 def checkDelay(url):

@@ -84,6 +84,15 @@ function parseStockJSON(obj) {
 
   cur_stock_json = obj;
   updateResult();
+
+  if (interval_id == null)
+  {
+    const today = new Date();
+    const isWeekend = today.getDay()%6==0;
+    if (!isWeekend)
+      interval_id = setInterval(updateStockInfo, 30000); // 30s
+  }
+
 }
 
 function updateStockInfo() {
@@ -91,6 +100,7 @@ function updateStockInfo() {
     url: 'analyze.py' + window.location.search,
     dataType: 'json',
     success: parseStockJSON,
+    timeout: 30000, // 30s
   });
 }
 
@@ -108,12 +118,6 @@ function onDocumentReady() {
 
   loadTopMenu();
   updateStockInfo();
-
-  const today = new Date();
-  const isWeekend = today.getDay()%6==0;
-
-  if (!isWeekend)
-    interval_id = setInterval(updateStockInfo, 30000); // 30s
 }
 
 function onSelectChange() {
@@ -128,6 +132,7 @@ function onDateChange() {
     url: search.length ? `analyze.py${search}&d=${date}` : `analyze.py?d=${date}`,
     dataType: 'json',
     success: parseStockJSON,
+    timeout: 30000, // 30s
   });
 
   if (interval_id)

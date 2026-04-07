@@ -113,11 +113,9 @@ function parseStockJSON(obj) {
   updateResult();
 }
 
-function initStockInfo() {
-  var api_url = 'load.py?n=stocks' + window.location.search;
-
+function updateStockInfo() {
   $.ajax({
-    url: api_url,
+    url: 'load.py?n=edit',
     dataType: 'json',
     success: parseStockJSON,
   });
@@ -154,6 +152,6 @@ function onSave() {
 
 function onDocumentReady() {
   loadTopMenu();
-  initStockInfo();
+  updateStockInfo();
 }
 

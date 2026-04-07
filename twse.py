@@ -154,11 +154,11 @@ def get_msg(codes, verbose=False):
         count = min(len(codes) - idx, step)
         ex_ch = '|'.join([get_ex_code(x) for x in codes[idx:idx+count]])
         url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
-        txt = xurl.load(url, cache=False, verbose=verbose)
-        data = json.loads(txt)
-        for msg in data.get('msgArray', []):
-            if all(key in msg for key in ['c', 'n', 'd']):
-                result.append(msg)
+        data = xurl.load_json(url, cache=False, verbose=verbose)
+        if data:
+            for msg in data.get('msgArray', []):
+                if all(key in msg for key in ['c', 'n', 'd']):
+                    result.append(msg)
         idx += count
     return result
 
@@ -194,10 +194,8 @@ def update_etf_nav(infos):
 def get_tse_month_data(code, year, month, cache, cacheOnly, verbose):
     data = []
     url = 'http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date={}{:02}01&stockNo={}'.format(year, month, code)
-    json_txt = xurl.load(url, cache=cache, cacheOnly=cacheOnly, verbose=verbose)
-    try:
-        json_obj = json.loads(json_txt)
-    except ValueError as e:
+    json_obj = xurl.load_json(url, cache=cache, cacheOnly=cacheOnly, verbose=verbose)
+    if not json_obj:
         return []
     # fields":["日期","成交股數","成交金額","開盤價","最高價","最低價","收盤價","漲跌價差","成交筆數"]
     if 'data' in json_obj:
@@ -213,10 +211,8 @@ def get_tse_month_data(code, year, month, cache, cacheOnly, verbose):
 def get_otc_month_data(code, year, month, cache, cacheOnly, verbose):
     data = []
     url = 'https://www.tpex.org.tw/www/zh-tw/afterTrading/tradingStock?code={}&date={}%2F{:02d}%2F{:02d}&id=&response=json'.format(code, year, month, 1)
-    json_txt = xurl.load(url, cache=cache, cacheOnly=cacheOnly, verbose=verbose)
-    try:
-        json_obj = json.loads(json_txt)
-    except ValueError as e:
+    json_obj = xurl.load_json(url, cache=cache, cacheOnly=cacheOnly, verbose=verbose)
+    if not json_obj:
         return []
     # fields":["日期","成交張數","成交仟元","開盤","最高","最低","收盤","筆數"]
     if 'tables' in json_obj and 'data' in json_obj['tables'][0]:
@@ -288,7 +284,8 @@ def analyze(date, ma_days, mv_days, pz_days, tail=1, verbose=False):
     records = [] # Ordering by "newer"
     while len(records) <= days:
         url = 'https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={}&type=0099P&response=json'.format(date.strftime('%Y%m%d'))
-        json_obj = xurl.load_json(url, verbose=verbose, cacheOnly=not is_today)
+        cacheOnly = not is_today
+        json_obj = xurl.load_json(url, cacheOnly=cacheOnly, verbose=verbose)
         if not json_obj:
             break
         try:
@@ -349,11 +346,10 @@ def analyze(date, ma_days, mv_days, pz_days, tail=1, verbose=False):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--verbose', action="store_true")
     args, unparsed = parser.parse_known_args()
 
     date = unparsed[0] if len(unparsed) > 0 else datetime.date.today()
-    df = analyze(date, 60, 30, 240, 1, args.verbose)
+    df = analyze(date, 60, 30, 240, 1, True)
 
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)

@@ -17,7 +17,7 @@ def main():
     func_args = {k:args.getvalue(k) for k in args.keys()}
     func = os.path.basename(__file__).replace('.py', '')
 
-    if True:
+    if False:
         ret = twstock.dispatch(func, func_args)
         print(ret)
         return

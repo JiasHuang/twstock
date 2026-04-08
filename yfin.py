@@ -108,7 +108,7 @@ def main():
     args, unparsed = parser.parse_known_args()
 
     if not args.end:
-        args.end = datetime.datetime.now().strftime('%Y%m%d')
+        args.end = datetime.datetime.now()
 
     xurl.set_verbose(args.verbose)
 

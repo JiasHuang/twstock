@@ -3,16 +3,6 @@ var cur_objs = null;
 var sort_by = null;
 var interval_id = null;
 
-function pz_fmt(z, y, en_cls=false) {
-  if (y == 0)
-    return `${z}`;
-  const chg = z - y;
-  const chg_str = chg.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
-  const pct_str = (chg / y * 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
-  const cls = (en_cls && chg != 0) ? (chg > 0 ? 'inc':'dec'):'';
-  return `${z} (${chg_str}, <span class="${cls}">${pct_str}%</span>)`;
-}
-
 function updateResult() {
   var text = '';
   var stocks = cur_objs;
@@ -23,21 +13,13 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
   } else if (sort_by == 'dec') {
     stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
-  } else if (sort_by == 'nav_inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.nav/b.z - a.nav/a.z);
-  } else if (sort_by == 'nav_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.nav/b.z - a.nav/a.z);
   } else if (sort_by == 'ma_inc') {
     stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
   } else if (sort_by == 'ma_dec') {
     stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
-  } else if (sort_by == 'h_inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.h_pct - a.h_pct);
-  } else if (sort_by == 'h_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.h_pct - a.h_pct);
   }
 
-  const cols = ['code', 'name', 'pz', 'nav', 'MA', 'MA%', 'high', 'low', 'H%', 'vol'];
+  const cols = ['code', 'name', 'pz', 'pz%', 'MA', 'MA%', 'high', 'low', 'H%', 'vol', 'MV%'];
 
   text += '<table id="stocks">';
   text += '<tr><th>' + cols.join('</th><th>') + '</th></tr>';
@@ -61,10 +43,8 @@ function updateResult() {
     if (!flt_ret)
       continue;
     const link = `<a href="chart.html?c=${s.code}" target="_blank">${s.code}</a>`;
-    const pz_str = pz_fmt(s.z, s.y, true);
-    const nav_str = pz_fmt(s.nav, s.z) + ` <span class="nav_time">${s.nav_time}</span>`;
-    const vol_str = `${s.v.toLocaleString()} (${s.mv_pct}%)`;
-    const vals = [link, s.name, pz_str, nav_str, s.ma.toFixed(2), s.ma_pct.toFixed(2), s.days_hi, s.days_lo, s.h_pct, vol_str];
+    const pz_pct = s.y != 0 ? (s.z / s.y  - 1) * 100 : 0;
+    const vals = [link, s.name, s.z, pz_pct.toFixed(2), s.ma.toFixed(2), s.ma_pct.toFixed(2), s.days_hi, s.days_lo, s.h_pct, s.v.toLocaleString(), s.mv_pct];
     text += '<tr><td>' + vals.join('</td><td>') + '</td></tr>';
   }
 

@@ -76,9 +76,10 @@ def get_data(code, start, end):
 
     return df[(df['date'] >= start_64) & (df['date'] <= end_64)].copy()
 
-def get_data_by_days(code, days):
-    adjust_days = int(days / 5 * 7)
-    end = datetime.datetime.now()
+def get_data_by_days(code, days, end=None):
+    if not end:
+        end = datetime.datetime.now() - datetime.timedelta(days=1)
+    adjust_days = max(int(days * 7 / 5), 15)
     start = end - datetime.timedelta(days=adjust_days)
     return get_data(code, start, end)
 

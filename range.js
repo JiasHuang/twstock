@@ -89,10 +89,6 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
   } else if (sort_by == 'ma_dec') {
     stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
-  } else if (sort_by == 'h_inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.h_pct - a.h_pct);
-  } else if (sort_by == 'h_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.h_pct - a.h_pct);
   }
 
   var cols = ['code', 'name', 'Pz', 'Pz%', 'H%', 'MA%'];

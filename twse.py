@@ -21,22 +21,6 @@ split_stocks = {
 
 parsed_name = {}
 
-# "0證券代號","1證券名稱","2成交股數","3成交筆數","4成交金額","5開盤價",
-# "6最高價","7最低價","8收盤價","9漲跌(+/-)","10漲跌價差","11最後揭示買價",
-# "12最後揭示買量","13最後揭示賣價","14最後揭示賣量","15本益比"
-class AfterTradingInfo:
-    def __init__(self, v, date):
-        self.code = v[0]
-        self.name = v[1]
-        self.date = date
-        self.volume = round(int(v[2].replace(',','')) / 1000)
-        self.open = float(v[5])
-        self.high = float(v[6])
-        self.low = float(v[7])
-        self.close = float(v[8])
-        if self.code in split_stocks:
-            apply_split(self.code, self)
-
 class StockInfo:
     def __init__(self, msg=None, trading=None):
         self.code = None
@@ -87,11 +71,6 @@ class StockInfo:
             self.h = trading.high
             self.l = trading.low
             self.z = trading.close
-
-class HistoryInfo:
-    def __init__(self):
-        self.close = []
-        self.volume = []
 
 def apply_split(code, data):
     date = split_stocks[code]['date']
@@ -152,11 +131,13 @@ def get_msg(codes, verbose=False):
     step = 25
     result = []
     idx = 0
+    now_time = datetime.datetime.now().time()
+    cache = now_time < datetime.time(9, 0) or now_time > datetime.time(13, 30)
     while idx < len(codes):
         count = min(len(codes) - idx, step)
         ex_ch = '|'.join([get_ex_code(x) for x in codes[idx:idx+count]])
         url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
-        data = xurl.load_json(url, cache=False, verbose=verbose)
+        data = xurl.load_json(url, cache=cache, verbose=verbose)
         if data:
             for msg in data.get('msgArray', []):
                 if all(key in msg for key in ['c', 'n', 'd']):
@@ -176,7 +157,9 @@ def get_etf_msg(data, code):
 
 def update_etf_nav(infos):
     url = 'https://mis.twse.com.tw/stock/data/all_etf.txt'
-    txt = xurl.load(url, cache=False)
+    now_time = datetime.datetime.now().time()
+    cache = now_time < datetime.time(8, 0) or now_time > datetime.time(18, 0)
+    txt = xurl.load(url, cache=cache)
     data = json.loads(txt)
     parsed = {x.code:x for x in infos}
     for a1 in data.get('a1', []):
@@ -259,91 +242,19 @@ def get_data(code, start, end):
 
     return data
 
-def all_etf(date, days, tail=1, verbose=False):
-
-    if isinstance(date, str):
-        date = datetime.datetime.strptime(date, '%Y%m%d').date()
-
-    today = datetime.date.today()
-    is_today = date == today
-    today_str = today.strftime('%Y%m%d')
-    has_today_data = False
-
-    records = [] # Ordering by "newer"
-    while len(records) <= days:
-        url = 'https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={}&type=0099P&response=json'.format(date.strftime('%Y%m%d'))
-        cacheOnly = not is_today
-        json_obj = xurl.load_json(url, cacheOnly=cacheOnly, verbose=verbose)
-        if not json_obj:
-            break
-        try:
-            if 'stat' in json_obj and json_obj['stat'] == 'OK' and len(json_obj['tables'][8]['data']) > 0:
-                objs = []
-                for d in json_obj['tables'][8]['data']:
-                    if d[5] != '--':
-                        objs.append(AfterTradingInfo(d, date.strftime('%Y%m%d')))
-                records.append(objs)
-        except ValueError as e:
-            if verbose:
-                print('parse failed: {}'.format(ur))
-            break
-        date = date - datetime.timedelta(days=1)
-
-    if len(records) < 2:
-        return None
-
-    info = None
-
-    if is_today and records[0][0].date != today_str:
-        codes = [x.code for x in records[0]]
-        msg = get_msg(codes)
-        if len(msg) and msg[0]['d'] == today_str:
-            info = [StockInfo(msg=x) for x in msg]
-
-    if not info:
-        info = [StockInfo(trading=x) for x in records[0]]
-        records = records[1:]
-
-    parsed = {x.code: HistoryInfo() for x in info}
-
-    # Ordering by "newer"
-    for rec in records:
-        for x in rec:
-            if x.code in parsed:
-                parsed[x.code].close.append(x.close)
-                parsed[x.code].volume.append(x.volume)
-
-    if tail > 1:
-        for x in info:
-            x.z = np.round((x.z + np.sum(parsed[x.code].close[:tail - 1])) / tail, 2)
-            x.v = np.round((x.v + np.sum(parsed[x.code].volume[:tail - 1])) / tail)
-
-    for x in info:
-        if len(parsed[x.code].close) and len(parsed[x.code].volume):
-            x.y = parsed[x.code].close[0]
-            x.mv = int(np.mean(parsed[x.code].volume))
-            x.ma = np.mean(parsed[x.code].close)
-            x.days_hi = np.max(parsed[x.code].close)
-            x.days_lo = np.min(parsed[x.code].close)
-
-    update_etf_nav(info)
-
-    df = pd.DataFrame([x.__dict__ for x in info])
-    return df
-
 def main():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--code', default='0050')
     parser.add_argument('-v', '--verbose', action="store_true", default=False)
     args, unparsed = parser.parse_known_args()
 
     xurl.set_verbose(args.verbose)
-    date = unparsed[0] if len(unparsed) > 0 else datetime.date.today()
-    df = all_etf(date, 60, 1, True)
 
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_columns', None)
-    print(df)
+    code = unparsed[0] if unparsed else args.code
+    objs = get_data(code, '20260101', '20260430')
+    for obj in objs:
+        print(obj)
 
     return
 

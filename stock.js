@@ -235,7 +235,7 @@ function showLoading() {
 
 function updateStockInfo() {
   $.ajax({
-    url: 'load.py?n=stock',
+    url: 'load.py?n=stock&nav=1',
     dataType: 'json',
     success: parseStockJSON,
     timeout: 30000, // 30s

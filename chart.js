@@ -2,14 +2,6 @@
 const mv_days = 30;
 const ma_days = 60;
 
-function pz_fmt(z, y, en_cls=false) {
-  const chg = z - y;
-  const chg_str = chg.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
-  const pct_str = (chg / y * 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
-  const cls = (en_cls && chg != 0) ? (chg > 0 ? 'inc':'dec'):'';
-  return `${z} (${chg_str}, <span class="${cls}">${pct_str}%</span>)`;
-}
-
 function calculate_sma(data, idx, days, attr='close') {
   if (idx < days)
     return null;
@@ -283,7 +275,7 @@ function updateChart(obj) {
 
 function updateResult(obj) {
   const data = obj.data;
-  const cols = ['date', 'close', 'MA5', 'MA20', 'MA', 'MA%', 'H%', 'volume', 'MV%'];
+  const cols = ['date', 'close', 'chg%', 'MA5', 'MA20', 'MA', 'MA%', 'H%', 'vol', 'MV%'];
   const tail = Math.min(data.length, 5);
   const vals = data.map(x => x.close);
   const hi = Math.max(...vals);
@@ -296,15 +288,15 @@ function updateResult(obj) {
   for (var i=0; i<tail; i++) {
     let idx = data.length - tail + i;
     let d = data[idx];
-    let y = idx > 0 ? data[idx-1].close:data[idx].close;
+    let pz_pct = idx > 0 ? (d.close / data[idx-1].close * 100 - 100): 0;
     let ma5 = calculate_sma(data, idx, 5);
     let ma20 = calculate_sma(data, idx, 20);
     let ma = calculate_sma(data, idx, ma_days);
     let mv = calculate_sma(data, idx, mv_days, 'volume');
-    let ma_pct_str = (d.close / ma * 100 - 100).toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
+    let ma_pct = d.close / ma * 100 - 100;
     let mv_pct = Math.round(d.volume / mv * 100);
     let h_pct = Math.round((d.close - hi) / (hi - lo) * 100);
-    let vals = [d.date, pz_fmt(d.close, y, true), ma5.toFixed(2), ma20.toFixed(2), ma.toFixed(2), ma_pct_str, h_pct, d.volume.toLocaleString(), mv_pct];
+    let vals = [d.date, d.close, pz_pct.toFixed(2),  ma5.toFixed(2), ma20.toFixed(2), ma.toFixed(2), ma_pct.toFixed(2), h_pct, d.volume.toLocaleString(), mv_pct];
     text += '<tr><td>' + vals.join('</td><td>') + '</tr>';
   }
 

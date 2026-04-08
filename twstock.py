@@ -55,9 +55,9 @@ class eps_info:
         return {'Y':self.Y, 'Q':self.Q, 'rev':self.rev, 'gross':self.gross, 'profit':self.profit, 'nor':self.nor, 'ni':self.ni, 'eps':self.eps}
 
 class stock_report:
-    def __init__(self, code):
+    def __init__(self, code, name):
         self.code = code
-        ex, self.name = twse.get_name(code)
+        self.name = name
         self.eps = []
         self.revenue = []
         self.close = 0
@@ -71,6 +71,7 @@ class stock_report:
         self.dividend_stock = []
         self.capital_stock = 0
     def show(self):
+        print('{} {}'.format(self.code, self.name))
         print('-- eps --')
         for x in self.eps:
             print(x)
@@ -108,16 +109,13 @@ def update_stock_stats(infos):
     for info in infos:
         code = info.code
         df = quote.get_data_by_days(code, days)
-        vals = df['close'].to_numpy()
-        vols = df['volume'].to_numpy()
-        if len(vals) and len(vols):
-            info.ma = np.round(np.mean(vals[-ma_days-1:-1]), 2) if len(vals) > ma_days else 0
-            info.mv = int(np.mean(vols[-mv_days-1:-1])) if len(vols) > mv_days else 0
-            info.days_hi = max(vals[max(0, len(vals)-pz_days):])
-            info.days_lo = min(vals[max(0, len(vals)-pz_days):])
+        if len(df.index):
+            info.ma = round(df['close'].tail(ma_days).mean(), 2)
+            info.mv = int(df['volume'].tail(mv_days).mean())
+            info.days_hi = df['close'].tail(pz_days).max()
+            info.days_lo = df['close'].tail(pz_days).min()
         else:
             info.ma, info.mv, info.days_hi, info.days_lo = 0, 0, 0, 0
-    twse.update_etf_nav(infos)
     return
 
 def get_exchange_rate_data():
@@ -131,7 +129,7 @@ def get_exchange_rate_data():
     # Currency,Rate,Cash,Spot
     for exr in data:
         c = exr['currency']
-        m = re.search(re.escape(c) + r',本行買入,([^,]*),([^,]*),.*?本行賣出,([^,]*),([^,]*),', txt)
+        m = re.search(re.escape(c) + r',Buying,([^,]*),([^,]*),.*?Selling,([^,]*),([^,]*),', txt)
         if m:
             result.append(exchange_rate_info(c, m.group(2), m.group(4), exr.get('flts', [])))
 
@@ -202,7 +200,8 @@ def update_stock_report_overall(obj):
     return
 
 def get_stock_report(code):
-    obj = stock_report(code)
+    ex, name = twse.get_name(code)
+    obj = stock_report(code, name)
     update_stock_report_eps(obj)
     update_stock_report_revenue(obj)
     update_stock_report_overall(obj)
@@ -214,26 +213,29 @@ def load_json(fn):
         return json.load(f)
     return None
 
-def load_exr():
+def load_exr(args):
     data = get_exchange_rate_data()
     return json.dumps([x.__dict__ for x in data])
 
-def load_stock():
+def load_stock(args):
+    nav = args.get('nav')
     objs = load_json('stocks.json')
     parsed = {s['code']:s for s in objs}
     data = get_data(list(parsed.keys()))
     for d in data:
         d.tags = parsed[d.code]['tags']
         d.flts = parsed[d.code]['flts']
+    if nav == '1':
+        twse.update_etf_nav(data)
     return json.dumps([x.__dict__ for x in data])
 
-def load_watchlist():
+def load_watchlist(args):
     objs = load_json('stocks.json')
     for s in objs:
         ex, s['name'] = twse.get_name(s['code'])
     return json.dumps(objs)
 
-def load_strategy():
+def load_strategy(args):
     objs = load_json('strategy.json')
     codes = [s['code'] for s in objs]
     msg = twse.get_msg(codes)
@@ -255,25 +257,16 @@ def load_csv(args):
     return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
 def load_etf(args):
-    date = args.get('d', datetime.date.today())
-    tail = int(args.get('t', 1))
-    df = twse.all_etf(date, 60, tail)
-    return df.to_json(orient='records', indent=4)
+    obj = load_json('tse-etf-code-list.json')
+    codes = list(obj.keys())
+    data = get_data(codes)
+    return json.dumps([x.__dict__ for x in data])
 
 def load(args):
-    name = args.get('n')
-    if name == 'exr':
-        return load_exr()
-    if name == 'stock':
-        return load_stock()
-    if name == 'watchlist':
-        return load_watchlist()
-    if name == 'strategy':
-        return load_strategy()
-    if name == 'csv':
-        return load_csv(args)
-    if name == 'etf':
-        return load_etf(args)
+    fn = 'load_' + args.get('n')
+    func = globals().get(fn)
+    if callable(func):
+        return func(args)
     return None
 
 def report(args):
@@ -308,13 +301,18 @@ def main():
         return
 
     if args.report and args.code:
-        rpt = get_stock_report(code)
+        rpt = get_stock_report(args.code)
         rpt.show()
         return
 
     if unparsed:
         ret = load({'n':unparsed[0], 'c':args.code})
-        print(ret)
+        with open('output.json', 'w') as f:
+            f.write(ret)
+        return
+
+    data = get_data([args.code])
+    print([x.__dict__ for x in data])
 
     return
 

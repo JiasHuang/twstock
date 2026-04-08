@@ -40,7 +40,7 @@ function getStockTableText(s) {
   text += '<tr>';
 
   text += '<td class="link">';
-  text += `<a href="chart.html?c=${s.code}" target="_blank">${s.code}<br>${s.name}</a>`;
+  text += `<a href="report.html?c=${s.code}" target="_blank">${s.code}<br>${s.name}</a>`;
   text += '</td>';
 
   var prices = [];

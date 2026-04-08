@@ -66,7 +66,7 @@ function add_strip_line(data) {
     lines.push({
       value:v,
       color:"grey",
-      label:`${pct.toFixed(0)}% ${v.toFixed(1)}`,
+      label:`${v.toFixed(1)} (${pct.toFixed(0)}%)`,
       labelPlacement:"inside",
       labelAlign:"far",
       labelFontColor:"grey",
@@ -79,7 +79,7 @@ function add_strip_line(data) {
   lines.push({
     value:pz,
     color:"red",
-    label:`${pz_pct.toFixed(0)}% ${pz}`,
+    label:`${pz} (${pz_pct.toFixed(0)}%)`,
     labelPlacement:"inside",
     labelAlign:"far",
     labelFontColor:"red",

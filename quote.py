@@ -136,10 +136,10 @@ def plot(df, title, output=None):
     for pct in [-23.6, -38.2, -61.8]:
         v = hi + (hi - lo) * pct / 100
         plt.axhline(y=v, color='grey', linestyle='--', linewidth=1)
-        ax.text(ax.get_xlim()[1], v, '{}% {:.2f}'.format(pct, v), color='grey')
+        ax.text(ax.get_xlim()[1], v, ' {:.2f} ({}%)'.format(v, pct), color='grey')
 
     plt.axhline(y=pz, color='red', linestyle='--', linewidth=1)
-    ax.text(ax.get_xlim()[1], pz, '{:.2f}% {:.2f}'.format(pz_pct, pz), color='red', backgroundcolor='white')
+    ax.text(ax.get_xlim()[1], pz, ' {:.2f} ({:.2f}%)'.format(pz, pz_pct), color='red', backgroundcolor='white')
 
     hi_x = df[df['close'] == hi]['date'].iloc[-1]
     lo_x = df[df['close'] == lo]['date'].iloc[-1]
@@ -167,7 +167,10 @@ def chart(code, output):
 
     ex, name = twse.get_name(code)
     date = df['date'].iloc[-1].strftime('%Y-%m-%d')
-    title = '{} {} {} ${}'.format(code, name, date, df['close'].iloc[-1])
+    pz = df['close'].iloc[-1]
+    ma = df['ma'].iloc[-1]
+    ma_pct = df['ma%'].iloc[-1]
+    title = '{} {}\n[{}] Close {}, MA {:.2f} ({:.2f}%)'.format(code, name, date, pz, ma, ma_pct)
 
     if not output:
         print(df.head(10).round(2))

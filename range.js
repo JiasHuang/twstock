@@ -100,7 +100,7 @@ function updateResult() {
 
   for (var i=0; i<stocks.length; i++) {
     let s = stocks[i];
-    let link = `<a href="chart.html?c=${s.code}" target="_blank">${s.code}</a>`;
+    let link = `<a href="report.html?c=${s.code}" target="_blank">${s.code}</a>`;
     let pct = (s.z / s.y - 1) * 100;
     let vals = [link, s.name, s.z,  pct_str(pct, true), s.h_pct, pct_str(s.ma_pct, true)];
     const step = s.ma * r_step / 200;

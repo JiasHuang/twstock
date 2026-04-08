@@ -1,13 +1,4 @@
 
-String.format = function() {
-  var s = arguments[0];
-  for (var i = 0; i < arguments.length - 1; i++) {
-    var reg = new RegExp("\\{" + i + "\\}", "gm");
-    s = s.replace(reg, arguments[i + 1]);
-  }
-  return s;
-}
-
 function updateInfo(obj) {
   const code = obj.code;
   const dict = {
@@ -24,7 +15,7 @@ function updateInfo(obj) {
   };
 
   var text = '';
-  text += String.format('<span class="title">{0} {1} (${2})</span><br>', code, obj.name, obj.close);
+  text += `<span class="title">${code} ${obj.name}</span><br>`;
 
   for (const [name, link] of Object.entries(dict)) {
     text += `<span class="link"><a href="${link}" target="_blank">${name}</a></span>`;
@@ -117,101 +108,35 @@ function updateResult(obj) {
 
   var text = '';
 
-  text += String.format('<table><tr><th colspan={0}>本益比</th></tr>', obj.per_year.length + 1);
+  const pz = obj.close;
+  const eps = pz / obj.per;
+  const kv_list0 = [
+    ['年度', obj.per_year],
+    ['最高本益比', obj.per_max],
+    ['最低本益比', obj.per_min],
+    ['現金股利', obj.dividend_cash],
+    ['股票股利', obj.dividend_stock]
+  ];
 
-  text += '<tr><td>年度</td>';
-  for (let year of obj.per_year)
-    text += String.format('<td>{0}</td>', year);
-  text += '</tr>';
+  text += '<table>';
+  for (const [k, v] of kv_list0)
+    text += '<tr><td>' + k + '</td><td>' + v.join('</td><td>') + '</td></tr>';
+  text += '</table>';
 
-  text += '<tr><td>最高本益比</td>';
-  for (let per_max of obj.per_max)
-    text += String.format('<td>{0}</td>', per_max);
-  text += '</tr>';
+  const kv_list1 = [
+    ['收盤價', pz],
+    ['淨值', obj.nav],
+    ['股數(億)', obj.capital_stock / 10],
+    ['股價淨值比', pz / obj.nav],
+    ['股東權益報酬率ROE', eps / obj.nav * 100],
+    ['負債比例', obj.debt_ratio * 100],
+    ['本益比', obj.per],
+    ['EPS', eps]
+  ];
 
-  text += '<tr><td>最低本益比</td>';
-  for (let per_min of obj.per_min)
-    text += String.format('<td>{0}</td>', per_min);
-  text += '</tr>';
-
-  text += '<tr><td>現金股利</td>';
-  for (let cash of obj.dividend_cash)
-    text += String.format('<td>{0}</td>', cash);
-  text += '</tr>';
-
-  text += '<tr><td>股票股利</td>';
-  for (let stock of obj.dividend_stock)
-    text += String.format('<td>{0}</td>', stock);
-  text += '</tr>';
-
-  text += '</table><br>';
-
-  const last_dividend_cash = obj.dividend_cash.slice(1, Math.min(obj.dividend_cash.length, 6));
-  const last_dividend_stock = obj.dividend_stock.slice(1, Math.min(obj.dividend_stock.length, 6));
-  const last_dividend_cash_sum = last_dividend_cash.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-  const last_dividend_cash_avg = last_dividend_cash_sum / last_dividend_cash.length;
-  const last_dividend_stock_sum = last_dividend_stock.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-  const last_dividend_stock_avg = last_dividend_stock_sum / last_dividend_stock.length;
-  const last_dividend_avg = last_dividend_cash_avg + last_dividend_stock_avg;
-
-  var per_max_total_weight = 0;
-  var per_max_total_sum = 0;
-  var per_min_total_weight = 0;
-  var per_min_total_sum = 0;
-
-  for (let i in obj.per_max) {
-    if (obj.per_max[i] > 0)
-    {
-      let weight = Math.pow(0.67, i);
-      per_max_total_sum += weight * obj.per_max[i];
-      per_max_total_weight += weight;
-    }
-  }
-
-  for (let i in obj.per_min) {
-    if (obj.per_min[i] > 0)
-    {
-      let weight = Math.pow(0.67, i);
-      per_min_total_sum += weight * obj.per_min[i];
-      per_min_total_weight += weight;
-    }
-  }
-
-  var pz = obj.close;
-  var eps = pz / obj.per;
-  var per_max = per_max_total_sum / per_max_total_weight;
-  var per_min = per_min_total_sum / per_min_total_weight;
-
-  if (obj.per_max[0] > 0)
-    per_max = Math.min(obj.per_max[0], per_max)
-
-  if (obj.per_min[0] > 0)
-    per_min = Math.min(obj.per_min[0], per_min)
-
-  var pz_max = eps * per_max;
-  var pz_min = eps * per_min;
-  var pz_mid = (pz_max + pz_min) / 2;
-
-  text += '<table><tr><th colspan=3>Overall</th></tr>';
-
-  text += String.format('<tr><td colspan=2></td><td rowspan=9>');
-  text += String.format('推估PER：{0} ~ {1}<br>', per_min.toFixed(2), per_max.toFixed(2));
-  text += String.format('推估最低價：{0}<br>', pz_min.toFixed(2));
-  text += String.format('推估中間價：{0}<br>', pz_mid.toFixed(2));
-  text += String.format('推估最高價：{0}<br>', pz_max.toFixed(2));
-  text += String.format('近期股利：{0}<br>', last_dividend_avg.toFixed(2));
-  text += String.format('近期殖利率：{0}%<br>', (last_dividend_avg / pz * 100).toFixed(2));
-  text += String.format('</td></tr>', pz_min.toFixed(2));
-
-  text += String.format('<tr><td>收盤價</td><td>{0}</td></tr>', pz.toFixed(2));
-  text += String.format('<tr><td>淨值 (NAV)</td><td>{0}</td></tr>', obj.nav.toFixed(2));
-  text += String.format('<tr><td>股數(億)</td><td>{0}</td></tr>', (obj.capital_stock / 10).toFixed(2));
-  text += String.format('<tr><td>股價淨值比  (PBR)</td><td>{0}</td></tr>', (pz / obj.nav).toFixed(2));
-  text += String.format('<tr><td>股東權益報酬率 (ROE)</td><td>{0}%</td></tr>', (eps / obj.nav * 100).toFixed(2));
-  text += String.format('<tr><td>負債比例</td><td>{0}%</td></tr>', (obj.debt_ratio * 100).toFixed(2));
-  text += String.format('<tr><td>本益比 (PER)</td><td>{0}</td></tr>', obj.per.toFixed(2));
-  text += String.format('<tr><td>EPS</td><td>{0}</td></tr>', eps.toFixed(2));
-
+  text += '<table>';
+  for (const [k, v] of kv_list1)
+    text += '<tr><td>' + k + '</td><td>' + v.toFixed(2) + '</td></tr>';
   text += '</table>'
 
   $('#result').html(text);
@@ -230,7 +155,7 @@ function updateStockReport() {
   var params = (new URL(window.location)).searchParams;
   var code = params.get('c');
   $.ajax({
-    url: 'report.py' + window.location.search,
+    url: `load.py?n=report&c=${code}`,
     dataType: 'json',
     success: parseJSON,
   });

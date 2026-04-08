@@ -48,11 +48,8 @@ class eps_info:
         self.ni = ni # Net Income 稅後淨利
         self.eps = eps
 
-    def __str__(self):
-        return 'Y {} Q {} rev {} profit {} nor {} ni {} eps {}'.format(self.Y, self.Q, self.rev, self.profit, self.nor, self.ni, self.eps)
-
     def __jsonencode__(self):
-        return {'Y':self.Y, 'Q':self.Q, 'rev':self.rev, 'gross':self.gross, 'profit':self.profit, 'nor':self.nor, 'ni':self.ni, 'eps':self.eps}
+        return self.__dict__
 
 class stock_report:
     def __init__(self, code, name):
@@ -70,30 +67,6 @@ class stock_report:
         self.dividend_cash = []
         self.dividend_stock = []
         self.capital_stock = 0
-    def show(self):
-        print('{} {}'.format(self.code, self.name))
-        print('-- eps --')
-        for x in self.eps:
-            print(x)
-        print('-- revenue --')
-        for x in self.revenue:
-            print(x)
-        print('-- overall --')
-        print(self.close)
-        print(self.per)
-        print(self.nav)
-        print(self.per_year)
-        print(self.per_max)
-        print(self.per_min)
-        print(self.dividend_cash)
-        print(self.dividend_stock)
-        print(self.capital_stock)
-
-class MyJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, '__jsonencode__'):
-            return obj.__jsonencode__()
-        return json.JSONEncoder.default(self, obj)
 
 def get_data(codes):
     msg = twse.get_msg(codes)
@@ -215,7 +188,7 @@ def load_json(fn):
 
 def load_exr(args):
     data = get_exchange_rate_data()
-    return json.dumps([x.__dict__ for x in data])
+    return json.dumps([x.__dict__ for x in data], indent=4)
 
 def load_stock(args):
     nav = args.get('nav')
@@ -227,13 +200,13 @@ def load_stock(args):
         d.flts = parsed[d.code]['flts']
     if nav == '1':
         twse.update_etf_nav(data)
-    return json.dumps([x.__dict__ for x in data])
+    return json.dumps([x.__dict__ for x in data], indent=4)
 
 def load_watchlist(args):
     objs = load_json('stocks.json')
     for s in objs:
         ex, s['name'] = twse.get_name(s['code'])
-    return json.dumps(objs)
+    return json.dumps(objs, indent=4)
 
 def load_strategy(args):
     objs = load_json('strategy.json')
@@ -245,7 +218,7 @@ def load_strategy(args):
         if c in parsed:
             s['z'] = parsed[c].z
             s['name'] = parsed[c].name
-    return json.dumps(objs)
+    return json.dumps(objs, indent=4)
 
 def load_csv(args):
     code = args.get('c')
@@ -260,7 +233,12 @@ def load_etf(args):
     obj = load_json('tse-etf-code-list.json')
     codes = list(obj.keys())
     data = get_data(codes)
-    return json.dumps([x.__dict__ for x in data])
+    return json.dumps([x.__dict__ for x in data], indent=4)
+
+def load_report(args):
+    code = args.get('c', '0050')
+    obj = get_stock_report(code)
+    return json.dumps(obj.__dict__, default=lambda o: o.__dict__, indent=4)
 
 def load(args):
     fn = 'load_' + args.get('n')
@@ -268,13 +246,6 @@ def load(args):
     if callable(func):
         return func(args)
     return None
-
-def report(args):
-    code = args.get('c')
-    if code:
-        rpt_obj = get_stock_report(code)
-        return json.dumps(rpt_obj.__dict__, cls=MyJSONEncoder)
-    return
 
 def dispatch(fn, args):
     func = globals().get(fn)
@@ -285,7 +256,6 @@ def dispatch(fn, args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--code', default='0050')
-    parser.add_argument('-r', '--report', action="store_true", default=False)
     parser.add_argument('-v', '--verbose', action="store_true", default=False)
     parser.add_argument('--func')
     parser.add_argument('--func_args')
@@ -300,19 +270,13 @@ def main():
             fd.write(ret)
         return
 
-    if args.report and args.code:
-        rpt = get_stock_report(args.code)
-        rpt.show()
-        return
-
-    if unparsed:
-        ret = load({'n':unparsed[0], 'c':args.code})
-        with open('output.json', 'w') as f:
-            f.write(ret)
-        return
-
-    data = get_data([args.code])
-    print([x.__dict__ for x in data])
+    for name in unparsed:
+        ret = load({'n':name, 'c':args.code})
+        if ret:
+            output = args.output or 'output_{}.json'.format(name)
+            print(output)
+            with open(output, 'w') as f:
+                f.write(ret)
 
     return
 

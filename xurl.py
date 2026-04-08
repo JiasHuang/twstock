@@ -60,31 +60,31 @@ def curl(url, local, encoding):
         print('Exception:\n' + cmd)
     return readLocal(local, encoding)
 
-def load(url, local=None, cache=True, cacheOnly=False, expiration=None, verbose=False, encoding=None):
+def load(url, local=None, cache=True, cacheOnly=False, expiration=None, encoding=None):
     local = local or genLocal(url)
     if checkCache(local, cache, cacheOnly, expiration):
-        if defvals.verbose or verbose:
+        if defvals.verbose:
             print('[xurl] %s -> %s (cache)' %(url, local))
         return readLocal(local, encoding)
     checkDelay(url)
     t0 = time.time()
     ret = curl(url, local, encoding)
     t1 = time.time()
-    if defvals.verbose or verbose:
+    if defvals.verbose:
         print('[xurl] %s -> %s (%.2f)' %(url, local, t1 - t0))
     return ret
 
-def load_json(url, local=None, cache=True, cacheOnly=False, expiration=None, verbose=False, encoding=None):
+def load_json(url, local=None, cache=True, cacheOnly=False, expiration=None, encoding=None):
     local = local or genLocal(url)
-    txt = load(url, local, cache, cacheOnly, expiration, verbose, encoding)
+    txt = load(url, local, cache, cacheOnly, expiration, encoding)
     try:
         obj = json.loads(txt)
         return obj
     except ValueError as e:
         if cacheOnly and re.search('頁面無法執行', txt):
-            return load_json(url, local, cache, False, expiration, verbose, encoding)
+            return load_json(url, local, cache, False, expiration, encoding)
 
-    if defvals.verbose or verbose:
+    if defvals.verbose:
         print('load_json failed: {} (cache={}, cacheOnly={})'.format(url, cache, cacheOnly))
 
     return None

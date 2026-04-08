@@ -42,7 +42,7 @@ function updateResult() {
 
     if (!flt_ret)
       continue;
-    const link = `<a href="chart.html?c=${s.code}" target="_blank">${s.code}</a>`;
+    const link = `<a href="report.html?c=${s.code}" target="_blank">${s.code}</a>`;
     const pz_pct = s.y != 0 ? (s.z / s.y  - 1) * 100 : 0;
     const vals = [link, s.name, s.z, pz_pct.toFixed(2), s.ma.toFixed(2), s.ma_pct.toFixed(2), s.days_hi, s.days_lo, s.h_pct, s.v.toLocaleString(), s.mv_pct];
     text += '<tr><td>' + vals.join('</td><td>') + '</td></tr>';

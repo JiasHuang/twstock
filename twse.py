@@ -127,7 +127,7 @@ def get_ex_code(code):
     assert ex, 'ERROR: ' + code
     return '{}_{}.tw'.format(ex.lower(), code)
 
-def get_msg(codes, verbose=False):
+def get_msg(codes):
     step = 25
     result = []
     idx = 0
@@ -137,7 +137,7 @@ def get_msg(codes, verbose=False):
         count = min(len(codes) - idx, step)
         ex_ch = '|'.join([get_ex_code(x) for x in codes[idx:idx+count]])
         url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
-        data = xurl.load_json(url, cache=cache, verbose=verbose)
+        data = xurl.load_json(url, cache=cache)
         if data:
             for msg in data.get('msgArray', []):
                 if all(key in msg for key in ['c', 'n', 'd']):
@@ -158,7 +158,7 @@ def get_etf_msg(data, code):
 def update_etf_nav(infos):
     url = 'https://mis.twse.com.tw/stock/data/all_etf.txt'
     now_time = datetime.datetime.now().time()
-    cache = now_time < datetime.time(8, 0) or now_time > datetime.time(18, 0)
+    cache = now_time < datetime.time(8, 0) or now_time > datetime.time(15, 30)
     txt = xurl.load(url, cache=cache)
     data = json.loads(txt)
     parsed = {x.code:x for x in infos}

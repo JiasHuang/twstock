@@ -46,28 +46,20 @@ def get_etf_tick(pz):
 def round_tick(pz, tick):
     return round(pz / tick) * tick
 
-def get_exchange(code):
-    exchanges = ['TPE', 'NASDAQ', 'NYSEARCA', 'NYSE', 'TSE', 'OTC']
-    for exchange in exchanges:
-        path = os.path.join(exchange, code + '.csv')
-        if os.path.exists(path):
-             return exchange
+def load_csv(code, start, end):
+    path = 'csv/{}.csv'.format(code)
     ex, name = twse.get_name(code)
-    return ex
-
-def update_csv(path, exchange, code, start, end):
-    if exchange in ['TSE', 'OTC']:
-        data = twse.get_data(code, start, end)
-        df = pd.DataFrame(data)
-        if not os.path.exists(exchange):
-            os.makedirs(exchange, exist_ok=True)
-        df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
+    if not ex:
+        return path if os.path.exists(path) else None
+    data = twse.get_data(code, start, end)
+    df = pd.DataFrame(data)
+    os.makedirs('csv', exist_ok=True)
+    df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
+    return path
 
 def get_data(code, start, end):
-    exchange = get_exchange(code)
-    path = os.path.join(exchange, code) + '.csv'
-    update_csv(path, exchange, code, start, end)
-
+    path = load_csv(code, start, end)
+    assert path, 'Not Found'
     new_names = ['date', 'open', 'high', 'low', 'close', 'volume']
     df = pd.read_csv(path, names=new_names, header=0, parse_dates=['date'])
 

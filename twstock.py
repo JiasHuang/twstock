@@ -220,8 +220,9 @@ def load_csv(args):
     ex, name = twse.get_name(code)
     return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
-def load_etf(args):
-    df = gfin.load_df('TPE_ETF', 300)
+def load_sheet(args):
+    q = args.get('q')
+    df = gfin.load_df(q)
     return df.to_json(orient='records', indent=4)
 
 def load_report(args):

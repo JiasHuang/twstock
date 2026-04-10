@@ -3,12 +3,20 @@ var cur_objs = null;
 var sort_by = null;
 var interval_id = null;
 
+function pct_fmt(pct) {
+  let cls = pct == 0 ? '' : (pct < 0 ? 'dec' : 'inc');
+  let str = pct.toLocaleString('en-US', {signDisplay:'always', maximumFractionDigits:2});
+  return `<span class="${cls}">${str}%</span>`;
+}
+
 function updateResult() {
   var text = '';
   var stocks = cur_objs;
 
   if (sort_by == 'vol') {
     stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
+  } else if (sort_by == 'amount') {
+    stocks = stocks.slice(0).sort((a, b) => (b.z * b.v) - (a.z * a.v));
   } else if (sort_by == 'inc') {
     stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
   } else if (sort_by == 'dec') {
@@ -43,7 +51,7 @@ function updateResult() {
     if (!flt_ret)
       continue;
     const link = `<a href="report.html?c=${s.code}" target="_blank">${s.code}</a>`;
-    const vals = [link, s.name, s.z, s.pz_pct.toFixed(2), s.ma.toFixed(2), s.ma_pct.toFixed(2), s.days_hi, s.days_lo, s.h_pct, s.v.toLocaleString(), s.mv_pct];
+    const vals = [link, s.name, s.z, pct_fmt(s.pz_pct), s.ma.toFixed(2), pct_fmt(s.ma_pct), s.days_hi, s.days_lo, s.h_pct, s.v.toLocaleString(), s.mv_pct];
     text += '<tr><td>' + vals.join('</td><td>') + '</td></tr>';
   }
 
@@ -76,8 +84,13 @@ function parseStockJSON(objs) {
 }
 
 function updateStockInfo() {
+
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const q = urlParams.get('q');
+
   $.ajax({
-    url: 'load.py?n=etf',
+    url: 'load.py?n=sheet&q='+q,
     dataType: 'json',
     success: parseStockJSON,
     timeout: 30000, // 30s

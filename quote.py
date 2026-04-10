@@ -83,6 +83,17 @@ def get_data_by_days(code, days, end=None):
     start = end - datetime.timedelta(days=adjust_days)
     return get_data(code, start, end)
 
+def get_stat(code, ma_days=60, mv_days=30, pz_days=240):
+    days = max(ma_days, mv_days, pz_days)
+    df = get_data_by_days(code, days)
+    if len(df.index):
+        ma = round(df['close'].tail(ma_days).mean(), 2)
+        mv = int(df['volume'].tail(mv_days).mean())
+        days_hi = df['close'].tail(pz_days).max()
+        days_lo = df['close'].tail(pz_days).min()
+        return {'ma':ma, 'mv':mv, 'days_hi':days_hi, 'days_lo':days_lo}
+    return None
+
 def add_sma(df, days, col='close'):
     vals = df[col].to_numpy()
     sma_vals = [vals[idx-days:idx].mean() if idx >= days else 0 for idx in range(len(vals))]
@@ -148,7 +159,7 @@ def plot(df, title, output=None):
     ax.text(lo_x, lo, '{:.2f}'.format(lo))
 
     plt.ylim(lo, hi)
-    plt.title(title)
+    plt.title(title, pad=20)
 
     if output:
         plt.savefig(output, format='png')
@@ -170,7 +181,7 @@ def chart(code, output):
     pz = df['close'].iloc[-1]
     ma = df['ma'].iloc[-1]
     ma_pct = df['ma%'].iloc[-1]
-    title = '{} {}\n[{}] Close {}, MA {:.2f} ({:.2f}%)'.format(code, name, date, pz, ma, ma_pct)
+    title = '{} {}\n[{}] ${}, 均線 {:.2f} ({:+.2f}%)'.format(code, name, date, pz, ma, ma_pct)
 
     if not output:
         print(df.head(10).round(2))

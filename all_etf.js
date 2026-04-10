@@ -105,16 +105,3 @@ function onSelectChange() {
   updateResult();
 }
 
-function onDateChange() {
-  const date = $(this).val().replace(/-/g, "");
-  $.ajax({
-    url: `load.py?n=etf&d=${date}`,
-    dataType: 'json',
-    success: parseStockJSON,
-    timeout: 30000, // 30s
-  });
-
-  if (interval_id)
-    clearInterval(interval_id);
-}
-

@@ -72,24 +72,15 @@ class stock_report:
 def get_data(codes):
     msg = twse.get_msg(codes)
     data = [twse.StockInfo(msg=m) for m in msg]
-    update_stock_stats(data)
     return data
 
-def update_stock_stats(infos):
-    ma_days = 60
-    mv_days = 30
-    pz_days = 240
-    days = max(ma_days, mv_days, pz_days)
+def update_stat(infos):
+    gdf = gfin.load_df('TPE_ETF')
     for info in infos:
         code = info.code
-        df = quote.get_data_by_days(code, days)
-        if len(df.index):
-            info.ma = round(df['close'].tail(ma_days).mean(), 2)
-            info.mv = int(df['volume'].tail(mv_days).mean())
-            info.days_hi = df['close'].tail(pz_days).max()
-            info.days_lo = df['close'].tail(pz_days).min()
-        else:
-            info.ma, info.mv, info.days_hi, info.days_lo = 0, 0, 0, 0
+        d = gfin.query(gdf, code) or quote.get_stat(code)
+        if d:
+            info.ma, info.mv, info.days_hi, info.days_lo = d['ma'], d['mv'], d['days_hi'], d['days_lo']
     return
 
 def get_exchange_rate_data():
@@ -196,6 +187,7 @@ def load_stock(args):
     objs = load_json('stocks.json')
     parsed = {s['code']:s for s in objs}
     data = get_data(list(parsed.keys()))
+    update_stat(data)
     for d in data:
         d.tags = parsed[d.code]['tags']
         d.flts = parsed[d.code]['flts']
@@ -231,9 +223,7 @@ def load_csv(args):
     return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
 def load_etf(args):
-    path = gfin.load_sheet('TPE_ETF', 300)
-    new_names = ['code', 'name', 'z', 'y', 'v', 'days_hi', 'days_lo', 'ma', 'mv']
-    df = pd.read_csv(path, names=new_names, header=0)
+    df = gfin.load_df('TPE_ETF', 300)
     return df.to_json(orient='records', indent=4)
 
 def load_report(args):

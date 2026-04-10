@@ -1,4 +1,10 @@
 
+
+#menu {
+  position: fixed;
+  right: 16px;
+}
+
 #menu button {
   background-color: #4682B4;
   border: none;
@@ -8,12 +14,9 @@
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 32px;
+  font-size: 24px;
   margin: 12px 12px;
   cursor: pointer;
-  position: fixed;
-  top: 16px;
-  right: 16px;
   z-index: 30;
 }
 

@@ -52,7 +52,6 @@ function get_week_html(y, q, m, w) {
 function updateResult() {
   var text = '';
 
-  text += String.format('<h1>{0}</h1>', Calendar.Y);
   text += '<table>';
   text += '<tr><th>Q</th><th>M</th><th>Note</th><th>W</th>';
 

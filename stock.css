@@ -1,6 +1,18 @@
 
+
+#menu {
+  float: right;
+}
+
+#menu select {
+  font-size: 18px;
+  padding: 5px 15px;
+  border: 1px solid black;
+  margin: 12px 12px;
+}
+
 #topbar {
-  width: 100%;
+  width: 80%;
 }
 
 #exrs tr:nth-child(odd) {
@@ -37,12 +49,6 @@
   font-size: 24px;
   margin: 5px;
   cursor: pointer;
-}
-
-#sort select {
-  font-size: 18px;
-  padding: 4px 16px;
-  border: 1px solid black;
 }
 
 #result table {

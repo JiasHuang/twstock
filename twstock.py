@@ -75,10 +75,8 @@ def get_data(codes):
     return data
 
 def update_stat(infos):
-    gdf = gfin.load_df('TPE_ETF')
     for info in infos:
-        code = info.code
-        d = gfin.query(gdf, code) or quote.get_stat(code)
+        d = gfin.query(info.code) or quote.get_stat(info.code)
         if d:
             info.ma, info.mv, info.days_hi, info.days_lo = d['ma'], d['mv'], d['days_hi'], d['days_lo']
     return

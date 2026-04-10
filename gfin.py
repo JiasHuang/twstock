@@ -23,7 +23,7 @@ def load_sheet(sheet, expiration=defvals.expiration):
         return output
     cmd = 'curl -s -o {} --create-dirs \"https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}\"'.format(output, defvals.spreadsheets, sheet)
     os.system(cmd)
-    return
+    return output
 
 def main():
     parser = argparse.ArgumentParser()

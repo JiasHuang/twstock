@@ -12,6 +12,7 @@ import numpy as np
 import quote
 import twse
 import xurl
+import gfin
 
 from optparse import OptionParser
 
@@ -230,10 +231,10 @@ def load_csv(args):
     return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
 def load_etf(args):
-    obj = load_json('tse-etf-code-list.json')
-    codes = list(obj.keys())
-    data = get_data(codes)
-    return json.dumps([x.__dict__ for x in data], indent=4)
+    path = gfin.load_sheet('TPE_ETF', 300)
+    new_names = ['code', 'name', 'z', 'y', 'v', 'days_hi', 'days_lo', 'ma', 'mv']
+    df = pd.read_csv(path, names=new_names, header=0)
+    return df.to_json(orient='records', indent=4)
 
 def load_report(args):
     code = args.get('c', '0050')

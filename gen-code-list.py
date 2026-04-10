@@ -4,12 +4,23 @@
 import re
 import json
 import argparse
+import pandas as pd
 
 import xurl
 
+
+# 有價證券代號及名稱
+# 國際證券辨識號碼(ISIN Code)
+# 上市日
+# 市場別
+# 產業別
+# CFICode
+# 備註
+
+tse_url = 'https://isin.twse.com.tw/isin/C_public.jsp?strMode=2'
+otc_url = 'https://isin.twse.com.tw/isin/C_public.jsp?strMode=4'
 tse_output = 'jsons/tse-code-list.json'
 otc_output = 'jsons/otc-code-list.json'
-etf_output = 'jsons/etf-code-list.json'
 tse_etf_output = 'jsons/tse-etf-code-list.json'
 otc_etf_output = 'jsons/otc-etf-code-list.json'
 tse_test = ['0050']
@@ -18,22 +29,29 @@ otc_test = ['00720B']
 def save(path, data):
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+    df = pd.DataFrame.from_dict(data, orient='index')
+    df.to_csv(path[:-4] + 'csv', header=False)
 
 def parse(url):
+    data = {}
     txt = xurl.load(url, encoding='big5_hkscs')
-    matches = re.finditer(r'<tr><td bgcolor=#FAFAD2>(\w+)　([\w&-\*]+)', txt)
-    data = {m.group(1):m.group(2) for m in matches}
+    trs = re.findall(r'<tr>(.*?)</tr>', txt)
+    for tr in trs:
+        m = re.findall(r'>([^<]*)</td>', tr)
+        if len(m) == 7:
+            cfi_code = m[5]
+            if cfi_code.startswith('ES') or cfi_code.startswith('CE'):
+                code, name = m[0].split('　')
+                data[code] = name
     return data
 
 def gen_tse():
-    url = 'https://isin.twse.com.tw/isin/C_public.jsp?strMode=2'
-    data = parse(url)
+    data = parse(tse_url)
     save(tse_output, data)
     return data
 
 def gen_otc():
-    url = 'https://isin.twse.com.tw/isin/C_public.jsp?strMode=4'
-    data = parse(url)
+    data = parse(otc_url)
     save(otc_output, data)
     return data
 
@@ -46,7 +64,6 @@ def gen_etf():
             code = msg['a']
             name = msg['b']
             parsed[code] = name
-    save(etf_output, parsed)
     return parsed
 
 def gen_overlap(output, a, b):

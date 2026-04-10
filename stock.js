@@ -46,11 +46,10 @@ function getStockTableText(s) {
   var prices = [];
 
   chg = s.z - s.y;
-  pct = chg / s.y * 100;
   cls = ''
-  cls = (pct > 0) ? ((pct >= 9) ? 'bg_inc' : 'inc') : cls;
-  cls = (pct < 0) ? ((pct <= -9) ? 'bg_dec' : 'dec') : cls;
-  prices.push(pz_fmt(s.z, chg, pct, cls));
+  cls = (s.pz_pct > 0) ? ((s.pz_pct >= 9) ? 'bg_inc' : 'inc') : cls;
+  cls = (s.pz_pct < 0) ? ((s.pz_pct <= -9) ? 'bg_dec' : 'dec') : cls;
+  prices.push(pz_fmt(s.z, chg, s.pz_pct, cls));
 
   if (s.h) {
     chg = s.h - s.y
@@ -177,9 +176,9 @@ function updateResult() {
   if (sort_by == 'vol') {
     stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
   } else if (sort_by == 'inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
+    stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
   } else if (sort_by == 'dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
+    stocks = stocks.slice(0).sort((b, a) => b.pz_pct - a.pz_pct);
   } else if (sort_by == 'ma_inc') {
     stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
   } else if (sort_by == 'ma_dec') {
@@ -196,8 +195,9 @@ function updateResult() {
 
 function parseStockJSON(objs) {
 
-  // add ma_pct and mv_pct
+  // add pct
   for (let s of objs) {
+    s.pz_pct = s.y ? (s.z / s.y * 100 - 100) : 0;
     s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
     s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
     s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;

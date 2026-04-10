@@ -146,7 +146,7 @@ function updateResult() {
 function parseStockJSON(objs) {
   console.log('parseStockInfo');
 
-  // add ma_pct
+  // add pct
   for (let s of objs) {
     s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
     s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;

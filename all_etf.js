@@ -10,9 +10,9 @@ function updateResult() {
   if (sort_by == 'vol') {
     stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
   } else if (sort_by == 'inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
+    stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
   } else if (sort_by == 'dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
+    stocks = stocks.slice(0).sort((b, a) => b.pz_pct - a.pz_pct);
   } else if (sort_by == 'ma_inc') {
     stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
   } else if (sort_by == 'ma_dec') {
@@ -43,8 +43,7 @@ function updateResult() {
     if (!flt_ret)
       continue;
     const link = `<a href="report.html?c=${s.code}" target="_blank">${s.code}</a>`;
-    const pz_pct = s.y != 0 ? (s.z / s.y  - 1) * 100 : 0;
-    const vals = [link, s.name, s.z, pz_pct.toFixed(2), s.ma.toFixed(2), s.ma_pct.toFixed(2), s.days_hi, s.days_lo, s.h_pct, s.v.toLocaleString(), s.mv_pct];
+    const vals = [link, s.name, s.z, s.pz_pct.toFixed(2), s.ma.toFixed(2), s.ma_pct.toFixed(2), s.days_hi, s.days_lo, s.h_pct, s.v.toLocaleString(), s.mv_pct];
     text += '<tr><td>' + vals.join('</td><td>') + '</td></tr>';
   }
 
@@ -55,8 +54,9 @@ function updateResult() {
 
 function parseStockJSON(objs) {
 
-  // add ma_pct and mv_pct
+  // add pct
   for (let s of objs) {
+    s.pz_pct = s.y ? (s.z / s.y * 100 - 100) : 0;
     s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
     s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
     s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;

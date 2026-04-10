@@ -112,7 +112,7 @@ def get_name(code):
     tse_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/tse-code-list.json')
     otc_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/otc-code-list.json')
     data = {'TSE':tse_output, 'OTC':otc_output}
-    ex, name = None, None
+    ex, name = None, ''
     for k, v in data.items():
         with open(v, 'r') as f:
             data = json.load(f)

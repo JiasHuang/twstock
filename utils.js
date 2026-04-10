@@ -30,6 +30,7 @@ function loadTopMenu() {
       <option value="sheet.html?q=TPE&s=amount">TPE</option>
       <option value="sheet.html?q=TPE_ETF&s=amount">TPE_ETF</option>
       <option value="map.html">Map</option>
+      <option value="global.html">Global</option>
     </select>
     </td>
   `;

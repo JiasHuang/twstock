@@ -173,7 +173,7 @@ def chart(code, output):
     pz = df['close'].iloc[-1]
     ma = df['ma'].iloc[-1]
     ma_pct = df['ma%'].iloc[-1]
-    title = '{} {}\n[{}] ${}, 均線 {:.2f} ({:+.2f}%)'.format(code, name, date, pz, ma, ma_pct)
+    title = '{} {} ${}\n[{}] 均線 {:.2f} ({:+.2f}%)'.format(code, name, pz, date, ma, ma_pct)
 
     if not output:
         print(df.head(10).round(2))

@@ -230,6 +230,10 @@ def load_report(args):
     obj = get_stock_report(code)
     return json.dumps(obj.__dict__, default=lambda o: o.__dict__, indent=4)
 
+def load_global(args):
+    obj = load_json('global.json')
+    return json.dumps(obj, indent=4)
+
 def load(args):
     fn = 'load_' + args.get('n')
     func = globals().get(fn)

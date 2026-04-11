@@ -230,9 +230,19 @@ def load_report(args):
     obj = get_stock_report(code)
     return json.dumps(obj.__dict__, default=lambda o: o.__dict__, indent=4)
 
-def load_global(args):
-    obj = load_json('global.json')
-    return json.dumps(obj, indent=4)
+def load_code(args):
+    q = args.get('q', 'global')
+    if q == 'global':
+        obj = load_json('global.json')
+        return json.dumps(obj, indent=4)
+    if q == 'local':
+        objs = load_json('stocks.json')
+        for s in objs:
+            ex, s['name'] = twse.get_name(s['code'])
+        parsed = {s['code']:s['name'] for s in objs}
+        return json.dumps(parsed, indent=4)
+
+    return None
 
 def load(args):
     fn = 'load_' + args.get('n')

@@ -78,7 +78,7 @@ def update_stat(infos):
     for info in infos:
         d = gfin.query(info.code) or quote.get_stat(info.code)
         if d:
-            info.ma, info.mv, info.days_hi, info.days_lo = d['ma'], d['mv'], d['days_hi'], d['days_lo']
+            info.ma20, info.ma60, info.mv, info.days_hi, info.days_lo = d['ma20'], d['ma60'], d['mv'], d['days_hi'], d['days_lo']
     return
 
 def get_exchange_rate_data():
@@ -163,7 +163,7 @@ def update_stock_report_overall(obj):
     return
 
 def get_stock_report(code):
-    ex, name = twse.get_name(code)
+    name = twse.get_name(code)
     obj = stock_report(code, name)
     update_stock_report_eps(obj)
     update_stock_report_revenue(obj)
@@ -196,7 +196,7 @@ def load_stock(args):
 def load_watchlist(args):
     objs = load_json('stocks.json')
     for s in objs:
-        ex, s['name'] = twse.get_name(s['code'])
+        s['name'] = twse.get_name(s['code'])
     return json.dumps(objs, indent=4)
 
 def load_strategy(args):
@@ -217,7 +217,7 @@ def load_csv(args):
     start = end - datetime.timedelta(days=540)
     df = quote.get_data(code, start, end)
     df['date'] = df['date'].dt.strftime('%Y-%m-%d')
-    ex, name = twse.get_name(code)
+    name = twse.get_name(code)
     return '{{"code":"{}","name":"{}","data":{}}}'.format(code, name, df.to_json(orient='records', indent=4))
 
 def load_sheet(args):
@@ -231,15 +231,14 @@ def load_report(args):
     return json.dumps(obj.__dict__, default=lambda o: o.__dict__, indent=4)
 
 def load_code(args):
-    q = args.get('q', 'global')
+    q = args.get('q', 'local')
     if q == 'global':
         obj = load_json('global.json')
         return json.dumps(obj, indent=4)
     if q == 'local':
         objs = load_json('stocks.json')
-        for s in objs:
-            ex, s['name'] = twse.get_name(s['code'])
-        parsed = {s['code']:s['name'] for s in objs}
+        codes = [s['code'] for s in objs if s['code'].startswith('00')]
+        parsed = {c:twse.get_name(c) for c in codes}
         return json.dumps(parsed, indent=4)
 
     return None

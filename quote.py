@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 import twse
+import gfin
 import xurl
 
 class bcolors:
@@ -48,9 +49,9 @@ def round_tick(pz, tick):
 
 def load_csv(code, start, end):
     path = 'csv/{}.csv'.format(code)
-    ex, name = twse.get_name(code)
+    ex, name = twse.get_ex_name(code)
     if not ex:
-        return path if os.path.exists(path) else None
+        return gfin.load_sheet(code)
     data = twse.get_data(code, start, end)
     df = pd.DataFrame(data)
     os.makedirs('csv', exist_ok=True)
@@ -75,20 +76,20 @@ def get_data_by_days(code, days, end=None):
     start = end - datetime.timedelta(days=adjust_days)
     return get_data(code, start, end)
 
-def get_stat(code, ma_days=60, mv_days=30, pz_days=240):
-    days = max(ma_days, mv_days, pz_days)
+def get_stat(code, days=360):
     df = get_data_by_days(code, days)
     if len(df.index):
-        ma = round(df['close'].tail(ma_days).mean(), 2)
-        mv = int(df['volume'].tail(mv_days).mean())
-        days_hi = df['close'].tail(pz_days).max()
-        days_lo = df['close'].tail(pz_days).min()
-        return {'ma':ma, 'mv':mv, 'days_hi':days_hi, 'days_lo':days_lo}
+        ma20 = round(df['close'].tail(20).mean(), 2)
+        ma60 = round(df['close'].tail(60).mean(), 2)
+        mv30 = int(df['volume'].tail(30).mean())
+        days_hi = df['close'].max()
+        days_lo = df['close'].min()
+        return {'ma20':ma20, 'ma60':ma60, 'mv':mv30, 'days_hi':days_hi, 'days_lo':days_lo}
     return None
 
 def add_sma(df, days, col='close'):
     vals = df[col].to_numpy()
-    sma_vals = [vals[idx-days:idx].mean() if idx >= days else 0 for idx in range(len(vals))]
+    sma_vals = [vals[idx-days:idx].mean() if idx >= days else None for idx in range(len(vals))]
     return sma_vals
 
 def add_pct(df, col_a, col_b):
@@ -123,13 +124,16 @@ def plot(df, title, output=None):
     # improve readability by rotating labels
     plt.xticks(rotation=45, ha='right')
 
-    ma = df['ma'].to_numpy()
+    ma60 = df['ma60'].to_numpy()
     for pct in np.arange(-20, 25, 5):
-        new_vals = [v * (100 + pct) / 100 if v else None for v in ma]
+        new_vals = [v * (100 + pct) / 100 if v else None for v in ma60]
         if pct == 0:
-            ax.plot(x, new_vals, color='green', linestyle='dashed', linewidth=1, zorder=0)
+            ax.plot(x, new_vals, color='green', linestyle='dashed', linewidth=1, zorder=0, label='ma60')
         else:
             ax.plot(x, new_vals, color='grey', linestyle='dashed', linewidth=0.5, zorder=0)
+
+    ma20 = df['ma20'].to_numpy()
+    ax.plot(x, ma20, color='deeppink', linestyle='dashed', linewidth=1, zorder=1, label='ma20')
 
     hi = max(y)
     lo = min(y)
@@ -152,6 +156,7 @@ def plot(df, title, output=None):
 
     plt.ylim(lo, hi)
     plt.title(title, pad=20)
+    plt.legend()
 
     if output:
         plt.savefig(output, format='png')
@@ -160,20 +165,25 @@ def plot(df, title, output=None):
 
     return
 
-def chart(code, output):
+def chart(code, output, days=540):
     end = datetime.datetime.now()
-    start = end - datetime.timedelta(days=540)
+    start = end - datetime.timedelta(days=days)
 
     df = get_data(code, start, end)
-    df['ma'] = add_sma(df, 60)
-    df['ma%'] = add_pct(df, 'close', 'ma')
+    df['ma20'] = add_sma(df, 20)
+    df['ma60'] = add_sma(df, 60)
 
-    ex, name = twse.get_name(code)
+    name = twse.get_name(code)
     date = df['date'].iloc[-1].strftime('%Y-%m-%d')
     pz = df['close'].iloc[-1]
-    ma = df['ma'].iloc[-1]
-    ma_pct = df['ma%'].iloc[-1]
-    title = '{} {} ${}\n[{}] 均線 {:.2f} ({:+.2f}%)'.format(code, name, pz, date, ma, ma_pct)
+    y = df['close'].iloc[-2]
+    chg_pct = (pz / y - 1) * 100
+    ma20 = df['ma20'].iloc[-1]
+    ma20_pct = (pz / ma20 - 1) * 100
+    ma60 = df['ma60'].iloc[-1]
+    ma60_pct = (pz / ma60 - 1) * 100
+    mv = round(df['volume'].tail(30).mean())
+    title = '{} {} ${} ({:+.2f}%)\n[{}] MA20 {:.2f} ({:+.2f}%) MA60 {:.2f} ({:+.2f}%)均量 {:,}'.format(code, name, pz, chg_pct, date, ma20, ma20_pct, ma60, ma60_pct, mv)
 
     if not output:
         print(df.head(10).round(2))

@@ -33,7 +33,8 @@ class StockInfo:
         self.v = 0
         self.y = 0
         self.mv = 0
-        self.ma = 0
+        self.ma20 = 0
+        self.ma60 = 0
         self.nav = 0
         self.nav_date = None
         self.nav_time = None
@@ -106,7 +107,7 @@ def convert_date(s):
     m = re.search(r'(\d+)/(\d+)/(\d+)', s)
     return str(to_common_era(m.group(1))) + m.group(2) + m.group(3)
 
-def get_name(code):
+def get_ex_name(code):
     if code in parsed_name:
         return parsed_name[code]
     tse_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/tse-code-list.json')
@@ -122,8 +123,12 @@ def get_name(code):
     parsed_name[code] = (ex, name)
     return parsed_name[code]
 
+def get_name(code):
+    ex, name = get_ex_name(code)
+    return name
+
 def get_ex_code(code):
-    ex, name = get_name(code)
+    ex, name = get_ex_name(code)
     assert ex, 'ERROR: ' + code
     return '{}_{}.tw'.format(ex.lower(), code)
 
@@ -220,7 +225,7 @@ def get_month_data(ex, code, year, month):
 def get_data(code, start, end):
     data = []
     fail = 0
-    ex, name = get_name(code)
+    ex, name = get_ex_name(code)
     if isinstance(start, str):
         start = datetime.datetime.strptime(start, '%Y%m%d')
     if isinstance(end, str):

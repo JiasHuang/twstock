@@ -79,21 +79,19 @@ function updateResult() {
   var stocks = cur_objs;
   var text = '';
 
-  console.log('updateResult');
-
   if (sort_by == 'inc') {
     stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
   } else if (sort_by == 'dec') {
     stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
-  } else if (sort_by == 'ma_inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
-  } else if (sort_by == 'ma_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
+  } else if (sort_by == 'ma60_inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.ma60_pct - a.ma60_pct);
+  } else if (sort_by == 'ma60_dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.ma60_pct - a.ma60_pct);
   }
 
-  var cols = ['code', 'name', 'Pz', 'Pz%', 'H%', 'MA%'];
+  var cols = ['code', 'name', 'Pz', 'Pz%', 'H%', 'MA60%'];
   for (var r=r_min; r<=r_max; r+=r_step)
-    cols.push(r == 0 ? 'MA':pct_str(r));
+    cols.push(r == 0 ? 'MA60':pct_str(r));
 
   text += '<table id="stocks">';
   text += '<tr><th>' + cols.join('</th><th>') + '</th><tr>';
@@ -102,8 +100,8 @@ function updateResult() {
     let s = stocks[i];
     let link = `<a href="report.html?c=${s.code}" target="_blank">${s.code}</a>`;
     let pct = (s.z / s.y - 1) * 100;
-    let vals = [link, s.name, s.z,  pct_str(pct, true), s.h_pct, pct_str(s.ma_pct, true)];
-    const step = s.ma * r_step / 200;
+    let vals = [link, s.name, s.z,  pct_str(pct, true), s.h_pct, pct_str(s.ma60_pct, true)];
+    const step = s.ma60 * r_step / 200;
 
     let kv_list = [
       ['Hi', s.days_hi],
@@ -116,7 +114,7 @@ function updateResult() {
     text += '<td>' + vals.join('</td><td>') + '</td>';
 
     for (var r=r_min; r<=r_max; r+=r_step) {
-      let x = s.ma * (100 + r) / 100;
+      let x = s.ma60 * (100 + r) / 100;
       let c = '';
       if (r == 0)
         c = (s.z >= x) ? 'bg_inc':'bg_dec';
@@ -144,11 +142,10 @@ function updateResult() {
 }
 
 function parseStockJSON(objs) {
-  console.log('parseStockInfo');
 
   // add pct
   for (let s of objs) {
-    s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
+    s.ma60_pct = s.ma60 ? (s.z / s.ma60 * 100 - 100) : 0;
     s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
@@ -156,18 +153,11 @@ function parseStockJSON(objs) {
   updateTags(objs);
   updateResult();
 
-  if (interval_id == null)
-  {
-    const today = new Date();
-    const isWeekend = today.getDay()%6==0;
-    if (!isWeekend)
-      interval_id = setInterval(updateStockInfo, 30000); // 30s
-  }
-
+  if (!interval_id && in_progress(8, 30, 16, 0))
+    interval_id = setInterval(updateStockInfo, 30000); // 30s
 }
 
 function updateStockInfo() {
-  console.log('updateStockInfo');
   $.ajax({
     url: 'load.py?n=stock',
     dataType: 'json',

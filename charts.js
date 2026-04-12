@@ -12,8 +12,6 @@ function updateResult(obj) {
 }
 
 function updateStockInfo() {
-  console.log('updateStockInfo');
-
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
   const q = urlParams.get('q');

@@ -13,11 +13,20 @@ function updateInfo(obj) {
     '鉅亨網':`https://www.cnyes.com/twstock/${code}`,
     '整合資訊':`https://www.twse.com.tw/pdf/ch/${code}_ch.pdf`,
   };
+  const dict_etf = {
+    '持股':`https://www.cmoney.tw/forum/stock/${code}?s=constituent`,
+    '新聞':`https://tw.stock.yahoo.com/q/h?s=${code}`,
+    'Ｋ線':`chart.html?c=${code}`,
+    '股利':`https://www.wantgoo.com/stock/etf/${code}/dividend-policy/ex-dividend`,
+    'CMoney':`https://www.cmoney.tw/forum/stock/${code}`,
+    '玩股網':`https://www.wantgoo.com/stock/${code}`,
+    '鉅亨網':`https://www.cnyes.com/twstock/${code}`,
+  };
 
   var text = '';
   text += `<span class="title">${code} ${obj.name}</span><br>`;
 
-  for (const [name, link] of Object.entries(dict)) {
+  for (const [name, link] of Object.entries(code.startsWith('00') ? dict_etf : dict)) {
     text += `<span class="link"><a href="${link}" target="_blank">${name}</a></span>`;
   }
 

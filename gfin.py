@@ -7,7 +7,7 @@ import argparse
 import pandas as pd
 
 class defvals:
-    expiration = 86400
+    expiration = 18000
     spreadsheets = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'
     cached = {}
     verbose = False
@@ -36,7 +36,7 @@ def load_df(sheet, expiration=defvals.expiration):
         return defvals.cached[sheet]['df']
 
     path = load_sheet(sheet, expiration)
-    new_names = ['code', 'name', 'z', 'y', 'h', 'l', 'v', 'days_hi', 'days_lo', 'ma', 'mv']
+    new_names = ['code', 'name', 'z', 'y', 'h', 'l', 'v', 'days_lo', 'days_hi', 'ma20', 'ma60', 'mv']
     df = pd.read_csv(path, names=new_names, header=0, dtype={'code':str})
     defvals.cached[sheet] = {'df':df, 't':os.path.getmtime(path)}
 

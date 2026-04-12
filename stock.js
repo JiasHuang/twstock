@@ -78,11 +78,11 @@ function getStockTableText(s) {
     notes.push(`<span class="nav">淨值 ${pct_fmt(s.nav, nav_pct)}</span> ${time_str}`);
   }
 
-  if (s.ma) {
-    let ma_pct_cls = (s.ma_pct <= -10) ? 'bg_hl' : '';
-    let ma_str = `<span class="MA">均線 ${pct_fmt(s.ma, s.ma_pct, ma_pct_cls)}</span>`;
+  if (s.ma60) {
+    let ma60_pct_cls = (s.ma60_pct <= -10) ? 'bg_hl' : '';
+    let ma60_str = `<span class="MA">均線 ${pct_fmt(s.ma60, s.ma60_pct, ma60_pct_cls)}</span>`;
     let h_str = `<span class="h_pct">H(${s.h_pct})</span>`;
-    notes.push(`${ma_str} ${h_str}`);
+    notes.push(`${ma60_str} ${h_str}`);
   }
 
   text += '<td class="note">' + notes.join('<br>') + '</td>';
@@ -179,10 +179,10 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
   } else if (sort_by == 'dec') {
     stocks = stocks.slice(0).sort((b, a) => b.pz_pct - a.pz_pct);
-  } else if (sort_by == 'ma_inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.ma_pct - a.ma_pct);
-  } else if (sort_by == 'ma_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.ma_pct - a.ma_pct);
+  } else if (sort_by == 'ma60_inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.ma60_pct - a.ma60_pct);
+  } else if (sort_by == 'ma60_dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.ma60_pct - a.ma60_pct);
   }
 
   for (const s of stocks)
@@ -198,7 +198,7 @@ function parseStockJSON(objs) {
   // add pct
   for (let s of objs) {
     s.pz_pct = s.y ? (s.z / s.y * 100 - 100) : 0;
-    s.ma_pct = s.ma ? (s.z / s.ma * 100 - 100) : 0;
+    s.ma60_pct = s.ma60 ? (s.z / s.ma60 * 100 - 100) : 0;
     s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
     s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
   }
@@ -206,27 +206,15 @@ function parseStockJSON(objs) {
   cur_objs = objs;
   updateResult();
 
-  if (interval_id == null)
-  {
-    const today = new Date();
-    const isWeekend = today.getDay()%6==0;
-    if (!isWeekend)
-      interval_id = setInterval(updateStockInfo, 30000); // 30s
-  }
-
+  if (!interval_id && in_progress(8, 30, 16, 0))
+    interval_id = setInterval(updateStockInfo, 30000); // 30s
 }
 
 function parseExchangeRateJSON(objs) {
   $('#exrs').html(getExchangeRateTableText(objs));
 
-  if (interval_id_exr == null)
-  {
-    const today = new Date();
-    const isWeekend = today.getDay()%6==0;
-    if (!isWeekend)
-      interval_id_exr = setInterval(updateExchangeRateInfo, 60000); // 60s
-  }
-
+  if (!interval_id_exr && in_progress(8, 30, 16, 0))
+    interval_id_exr = setInterval(updateExchangeRateInfo, 60000); // 60s
 }
 
 function showLoading() {

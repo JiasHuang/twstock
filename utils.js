@@ -1,13 +1,4 @@
 
-String.format = function() {
-  var s = arguments[0];
-  for (var i = 0; i < arguments.length - 1; i++) {
-    var reg = new RegExp("\\{" + i + "\\}", "gm");
-    s = s.replace(reg, arguments[i + 1]);
-  }
-  return s;
-}
-
 function onGotoSelectChange() {
   window.location.href = $(this).val();;
 }
@@ -28,25 +19,40 @@ function loadTopMenu() {
       <option value="strategy.html">Strategy</option>
       <option value="calendar.html">Calendar</option>
       <option value="sheet.html?q=TPE&s=amount">TPE</option>
-      <option value="sheet.html?q=TPE_ETF&s=amount">TPE - ETF</option>
+      <option value="sheet.html?q=TPE_ETF&s=amount">TPE_ETF</option>
       <option value="map.html">Map</option>
-      <option value="charts.html?q=global">Charts - Global</option>
-      <option value="charts.html?q=local">Charts - Local</option>
+      <option value="charts.html?q=global">Charts_Global</option>
+      <option value="charts.html?q=local">Charts_Local</option>
     </select>
     </td>
   `;
-  
+
   text += '</tr>';
   text += '</table>';
   text += '<hr>';
 
-  var path = window.location.pathname.split('/');
-  var file = path[path.length - 1];
-  text = text.replace('"' + file + '"', '"' + file + '" selected');
+  const path = window.location.pathname.split('/');
+  const file = path[path.length - 1];
+  const queryString = window.location.search;
+  text = text.replace('"' + file + queryString + '"', '"' + file + queryString + '" selected');
 
   $('#topmenu').html(text);
 }
 
-function numFmt(n, p=2) {
-  return ((n > 0) ? '+':'') + n.toFixed(p);
+function in_progress(a_h, a_m, b_h, b_m) {
+  const today = new Date();
+  const isWeekend = today.getDay()%6==0;
+  const h = today.getHours();
+  const m = today.getMinutes();
+
+  if (isWeekend)
+    return false;
+
+  if (h < a_h || (h == a_h && m < a_m))
+    return false;
+
+  if (h > b_h || (h == b_h && m > b_m))
+    return false;
+
+  return true;
 }

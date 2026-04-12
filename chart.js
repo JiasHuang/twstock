@@ -2,6 +2,12 @@
 const mv_days = 30;
 const ma_days = 60;
 
+function pct_fmt(pct) {
+  let cls = pct == 0 ? '' : (pct < 0 ? 'dec' : 'inc');
+  let str = pct.toLocaleString('en-US', {signDisplay:'always', maximumFractionDigits:2});
+  return `<span class="${cls}">${str}%</span>`;
+}
+
 function calculate_sma(data, idx, days, attr='close') {
   if (idx < days)
     return null;
@@ -96,7 +102,7 @@ function updateChart(obj) {
   const data = obj.data;
   const pz = data[data.length - 1].close;
   const [hi, lo, strip_line] = add_strip_line(data);
-  var dp_price = [], dp_mv = [], dp_ma = [], dp_close = [];
+  var dp_pz = [], dp_vol = [], dp_ma = [];
   var stockChart = new CanvasJS.StockChart("chartContainer",{
     theme: "light2",
     title: {
@@ -136,18 +142,18 @@ function updateChart(obj) {
         name: "Price",
         yValueFormatString: "#,###.##",
         type: "line",
-        dataPoints : dp_price,
+        dataPoints : dp_pz,
         color: "DodgerBlue"
       }]
     },
     {
       height: 100,
       title: {
-        text: "MV%"
+        text: "Vol"
       },
       toolTip: {
         shared: true,
-        content: "MV% {y}"
+        content: "vol {y}"
       },
       axisX: {
         crosshair: {
@@ -164,8 +170,8 @@ function updateChart(obj) {
       },
       data: [{
         yValueFormatString: "#,###.##",
-        name: "MV%",
-        dataPoints : dp_mv
+        name: "Vol",
+        dataPoints : dp_vol
       }]
     },
     {
@@ -197,44 +203,30 @@ function updateChart(obj) {
       }]
     }],
     navigator: {
-      enabled: false,
-      data: [{
-        dataPoints: dp_close
-      }],
+      enabled: false
     }
   });
 
   // dp_price
-  for (let d of data) {
-    dp_price.push({x: new Date(d.date), y: Number(d.close)});
-  }
+  for (let d of data)
+    dp_pz.push({x: new Date(d.date), y: Number(d.close)});
+  mark_price(dp_pz);
 
-  // dp_mv
-  for (var i = 0; i < data.length; i++) {
-    var pct = null;
-    var sma = calculate_sma(data, i, mv_days, 'volume');
-    if (sma != null)
-      pct = Math.round(data[i].volume / sma * 100);
-    dp_mv.push({x: new Date(data[i].date), y: pct});
-  }
+  // dp_vol
+  for (let d of data)
+    dp_vol.push({x: new Date(d.date), y: Number(d.volume)});
 
   // dp_ma
-  for (var i = 0; i < data.length; i++) {
-    var pct = null;
-    var sma = calculate_sma(data, i, ma_days);
-    if (sma != null)
-      pct = data[i].close / sma * 100 - 100;
-    dp_ma.push({x: new Date(data[i].date), y: pct});
+  if (data.length > ma_days) {
+    for (var i = 0; i < data.length; i++) {
+      var pct = null;
+      var sma = calculate_sma(data, i, ma_days);
+      if (sma != null)
+        pct = data[i].close / sma * 100 - 100;
+      dp_ma.push({x: new Date(data[i].date), y: pct});
+    }
+    mark_label(dp_ma);
   }
-
-  // dp_close
-  for (let d of data) {
-    dp_close.push({x: new Date(d.date), y: Number(d.close)});
-  }
-
-  mark_price(dp_price);
-  mark_label(dp_ma);
-  mark_label(dp_mv);
 
   stockChart.render();
 
@@ -275,7 +267,7 @@ function updateChart(obj) {
 
 function updateResult(obj) {
   const data = obj.data;
-  const cols = ['date', 'close', 'chg%', 'MA5', 'MA20', 'MA', 'MA%', 'H%', 'vol', 'MV%'];
+  const cols = ['date', 'close', 'chg%', 'MA20', 'MA20%', 'MA60', 'MA60%', 'H%', 'vol', 'MV%'];
   const tail = Math.min(data.length, 5);
   const vals = data.map(x => x.close);
   const hi = Math.max(...vals);
@@ -289,14 +281,14 @@ function updateResult(obj) {
     let idx = data.length - tail + i;
     let d = data[idx];
     let pz_pct = idx > 0 ? (d.close / data[idx-1].close * 100 - 100): 0;
-    let ma5 = calculate_sma(data, idx, 5);
     let ma20 = calculate_sma(data, idx, 20);
-    let ma = calculate_sma(data, idx, ma_days);
+    let ma20_pct = ma20 ? (d.close / ma20 * 100 - 100) : 0;
+    let ma60 = calculate_sma(data, idx, 60);
+    let ma60_pct = ma60 ? (d.close / ma60 * 100 - 100) : 0;
     let mv = calculate_sma(data, idx, mv_days, 'volume');
-    let ma_pct = d.close / ma * 100 - 100;
-    let mv_pct = Math.round(d.volume / mv * 100);
+    let mv_pct = mv ? Math.round(d.volume / mv * 100) : 0;
     let h_pct = Math.round((d.close - hi) / (hi - lo) * 100);
-    let vals = [d.date, d.close, pz_pct.toFixed(2),  ma5.toFixed(2), ma20.toFixed(2), ma.toFixed(2), ma_pct.toFixed(2), h_pct, d.volume.toLocaleString(), mv_pct];
+    let vals = [d.date, d.close, pct_fmt(pz_pct),  ma20 ? ma20.toFixed(2):'-', pct_fmt(ma20_pct), ma60 ? ma60.toFixed(2):'-', pct_fmt(ma60_pct), h_pct, d.volume.toLocaleString(), mv ? mv_pct:'-'];
     text += '<tr><td>' + vals.join('</td><td>') + '</tr>';
   }
 

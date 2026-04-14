@@ -11,6 +11,7 @@ class defvals:
     spreadsheets = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'
     cached = {}
     verbose = False
+    unsupport = ['00631L']
 
 def is_cached(path, expiration):
     if os.path.exists(path):
@@ -43,6 +44,8 @@ def load_df(sheet, expiration=defvals.expiration):
     return df
 
 def query(code):
+    if code in defvals.unsupport:
+        return None
     df = load_df('TPE_ETF') if code.startswith('00') else load_df('TPE')
     flt = df[df['code'] == code]
     if len(flt.index):

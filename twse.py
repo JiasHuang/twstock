@@ -10,7 +10,6 @@ import calendar
 import pandas as pd
 import numpy as np
 
-import yfin
 import xurl
 
 split_stocks = {
@@ -163,7 +162,7 @@ def get_etf_msg(data, code):
 def update_etf_nav(infos):
     url = 'https://mis.twse.com.tw/stock/data/all_etf.txt'
     now_time = datetime.datetime.now().time()
-    cache = now_time < datetime.time(8, 0) or now_time > datetime.time(15, 30)
+    cache = now_time < datetime.time(8, 0) or now_time > datetime.time(17, 0)
     txt = xurl.load(url, cache=cache)
     data = json.loads(txt)
     parsed = {x.code:x for x in infos}
@@ -230,9 +229,6 @@ def get_data(code, start, end):
         start = datetime.datetime.strptime(start, '%Y%m%d')
     if isinstance(end, str):
         end = datetime.datetime.strptime(end, '%Y%m%d')
-
-    if ex == 'TSE':
-        return yfin.get_data(code, start, end)
 
     idx_s = start.year * 12 + start.month - 1
     idx = end.year * 12 + end.month - 1

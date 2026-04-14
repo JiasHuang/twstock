@@ -2,7 +2,10 @@
 const mv_days = 30;
 const ma_days = 60;
 
-function pct_fmt(pct) {
+function pct_fmt(z, y) {
+  if (!y)
+    return '-';
+  let pct = (z / y - 1) * 100;
   let cls = pct == 0 ? '' : (pct < 0 ? 'dec' : 'inc');
   let str = pct.toLocaleString('en-US', {signDisplay:'always', maximumFractionDigits:2});
   return `<span class="${cls}">${str}%</span>`;
@@ -103,7 +106,7 @@ function updateChart(obj) {
   const pz = data[data.length - 1].close;
   const [hi, lo, strip_line] = add_strip_line(data);
   var dp_pz = [], dp_vol = [], dp_ma = [];
-  var stockChart = new CanvasJS.StockChart("chartContainer",{
+  var stockChart = new CanvasJS.StockChart("chart",{
     theme: "light2",
     title: {
       text: `${obj.code} ${obj.name}`,
@@ -267,12 +270,8 @@ function updateChart(obj) {
 
 function updateResult(obj) {
   const data = obj.data;
-  const cols = ['date', 'close', 'chg%', 'MA20', 'MA20%', 'MA60', 'MA60%', 'H%', 'vol', 'MV%'];
+  const cols = ['date', 'close', 'chg%', 'MA20', 'MA20%', 'MA60', 'MA60%', 'vol', 'MV%'];
   const tail = Math.min(data.length, 5);
-  const vals = data.map(x => x.close);
-  const hi = Math.max(...vals);
-  const lo = Math.min(...vals);
-
   var text = '';
 
   text += '<table><tr><th>' + cols.join('</th><th>'); + '</tr>';
@@ -280,15 +279,14 @@ function updateResult(obj) {
   for (var i=0; i<tail; i++) {
     let idx = data.length - tail + i;
     let d = data[idx];
-    let pz_pct = idx > 0 ? (d.close / data[idx-1].close * 100 - 100): 0;
+    let c = d.close;
+    let v = d.volume;
+    let y = idx > 0 ? data[idx-1].close : null;
     let ma20 = calculate_sma(data, idx, 20);
-    let ma20_pct = ma20 ? (d.close / ma20 * 100 - 100) : 0;
     let ma60 = calculate_sma(data, idx, 60);
-    let ma60_pct = ma60 ? (d.close / ma60 * 100 - 100) : 0;
     let mv = calculate_sma(data, idx, mv_days, 'volume');
-    let mv_pct = mv ? Math.round(d.volume / mv * 100) : 0;
-    let h_pct = Math.round((d.close - hi) / (hi - lo) * 100);
-    let vals = [d.date, d.close, pct_fmt(pz_pct),  ma20 ? ma20.toFixed(2):'-', pct_fmt(ma20_pct), ma60 ? ma60.toFixed(2):'-', pct_fmt(ma60_pct), h_pct, d.volume.toLocaleString(), mv ? mv_pct:'-'];
+    let mv_pct = mv ? Math.round(v / mv * 100) : '-';
+    let vals = [d.date, c, pct_fmt(c, y),  ma20 ? ma20.toFixed(2):'-', pct_fmt(c, ma20), ma60 ? ma60.toFixed(2):'-', pct_fmt(c, ma60), v.toLocaleString(), mv_pct];
     text += '<tr><td>' + vals.join('</td><td>') + '</tr>';
   }
 

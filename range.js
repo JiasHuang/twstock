@@ -3,7 +3,6 @@ var selected_tag = null;
 var selected_innerTag = null;
 var cur_objs = null;
 var sort_by = null;
-var interval_id = null;
 
 function pct_str(x, en_cls=false) {
   var cls = '';
@@ -152,9 +151,6 @@ function parseStockJSON(objs) {
   cur_objs = objs;
   updateTags(objs);
   updateResult();
-
-  if (!interval_id && in_progress(8, 30, 16, 0))
-    interval_id = setInterval(updateStockInfo, 30000); // 30s
 }
 
 function updateStockInfo() {

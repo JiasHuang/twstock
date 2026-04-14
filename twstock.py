@@ -76,7 +76,7 @@ def get_data(codes):
 
 def update_stat(infos):
     for info in infos:
-        d = gfin.query(info.code) or quote.get_stat(info.code)
+        d = quote.get_stat(info.code)
         if d:
             info.ma20, info.ma60, info.mv, info.days_hi, info.days_lo = d['ma20'], d['ma60'], d['mv'], d['days_hi'], d['days_lo']
     return
@@ -162,12 +162,36 @@ def update_stock_report_overall(obj):
         obj.capital_stock = float(m.group(1).replace(',',''))
     return
 
+def get_dividend(code):
+    url = 'https://www.cmoney.tw/forum/stock/{}?s=dividend'.format(code)
+    txt = xurl.load(url)
+    year = []
+    cash = []
+    date = []
+    c = 0
+    for tr in re.findall(r'<tr class="height-normal bg.*?>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
+        td = re.findall('>\s*([^\n<]+)\s*</td>', tr)
+        year.append(td[0])
+        cash.append(float(td[1]))
+        date.append(td[2])
+    if len(cash):
+        if year[0][-2] == 'H':
+            c = sum(cash[0:2]) if len(cash) >= 2 else sum(cash) / len(cash) * 2
+        elif year[0][-2] == 'Q':
+            c = sum(cash[0:4]) if len(cash) >= 4 else sum(cash) / len(cash) * 4
+        elif year[0][-2] == 'M':
+            c = sum(cash[0:12]) if len(cash) >= 12 else sum(cash) / len(cash) * 12
+        else:
+            c = cash[0]
+    return {'cash':c, 'date':date[0] if date else ''}
+
 def get_stock_report(code):
     name = twse.get_name(code)
     obj = stock_report(code, name)
-    update_stock_report_eps(obj)
-    update_stock_report_revenue(obj)
-    update_stock_report_overall(obj)
+    if not code.startswith('00'):
+        update_stock_report_eps(obj)
+        update_stock_report_revenue(obj)
+        update_stock_report_overall(obj)
     return obj
 
 def load_json(fn):
@@ -205,10 +229,11 @@ def load_strategy(args):
     msg = twse.get_msg(codes)
     parsed = {m['c']:twse.StockInfo(msg=m) for m in msg}
     for s in objs:
-        c = s['code']
-        if c in parsed:
-            s['z'] = parsed[c].z
-            s['name'] = parsed[c].name
+        code = s['code']
+        if code in parsed:
+            s['z'] = parsed[code].z
+            s['name'] = parsed[code].name
+            s['dividend'] = get_dividend(code)
     return json.dumps(objs, indent=4)
 
 def load_csv(args):
@@ -237,10 +262,8 @@ def load_code(args):
         return json.dumps(obj, indent=4)
     if q == 'local':
         objs = load_json('stocks.json')
-        codes = [s['code'] for s in objs if s['code'].startswith('00')]
-        parsed = {c:twse.get_name(c) for c in codes}
+        parsed = {s['code']:twse.get_name(s['code']) for s in objs}
         return json.dumps(parsed, indent=4)
-
     return None
 
 def load(args):

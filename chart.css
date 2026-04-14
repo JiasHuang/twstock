@@ -10,6 +10,12 @@
   text-align: right;
 }
 
+#chart {
+  width: 1600px;
+  height: 800px;
+  margin: 20px;
+}
+
 .flex {
   display: flex;
   justify-content: center; /* Horizontal centering */

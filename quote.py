@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 import twse
+import yfin
 import gfin
 import xurl
 
@@ -52,7 +53,7 @@ def load_csv(code, start, end):
     ex, name = twse.get_ex_name(code)
     if not ex:
         return gfin.load_sheet(code)
-    data = twse.get_data(code, start, end)
+    data = yfin.get_data(code, start, end) if ex == 'TSE' else twse.get_data(code, start, end)
     df = pd.DataFrame(data)
     os.makedirs('csv', exist_ok=True)
     df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
@@ -77,6 +78,9 @@ def get_data_by_days(code, days, end=None):
     return get_data(code, start, end)
 
 def get_stat(code, days=360):
+    d = gfin.query(code)
+    if d:
+        return {'ma20':d['ma20'], 'ma60':d['ma60'], 'mv':d['mv'], 'days_hi':d['days_hi'], 'days_lo':d['days_lo']}
     df = get_data_by_days(code, days)
     if len(df.index):
         ma20 = round(df['close'].tail(20).mean(), 2)
@@ -95,15 +99,6 @@ def add_sma(df, days, col='close'):
 def add_pct(df, col_a, col_b):
     vals = [(a / b * 100 - 100) if b else 0 for a, b in zip(df[col_a], df[col_b])]
     return vals
-
-def get_percent_color(pct):
-    if pct == 0:
-        return 'green'
-    if pct in [-10, 10]:
-        return 'orange'
-    if pct in [-20, 20]:
-        return 'red'
-    return 'grey'
 
 def plot(df, title, output=None):
 
@@ -124,16 +119,15 @@ def plot(df, title, output=None):
     # improve readability by rotating labels
     plt.xticks(rotation=45, ha='right')
 
-    ma60 = df['ma60'].to_numpy()
-    for pct in np.arange(-20, 25, 5):
-        new_vals = [v * (100 + pct) / 100 if v else None for v in ma60]
-        if pct == 0:
-            ax.plot(x, new_vals, color='green', linestyle='dashed', linewidth=1, zorder=0, label='ma60')
-        else:
-            ax.plot(x, new_vals, color='grey', linestyle='dashed', linewidth=0.5, zorder=0)
-
     ma20 = df['ma20'].to_numpy()
     ax.plot(x, ma20, color='deeppink', linestyle='dashed', linewidth=1, zorder=1, label='ma20')
+
+    ma60 = df['ma60'].to_numpy()
+    ax.plot(x, ma60, color='green', linestyle='dashed', linewidth=1, zorder=0, label='ma60')
+
+    for pct in [-20, -15, -10, -5, 5, 10, 15, 20]:
+        new_vals = [v * (100 + pct) / 100 if v else None for v in ma60]
+        ax.plot(x, new_vals, color='grey', linestyle='dashed', linewidth=0.5, zorder=0)
 
     hi = max(y)
     lo = min(y)
@@ -178,10 +172,10 @@ def chart(code, output, days=540):
     pz = df['close'].iloc[-1]
     y = df['close'].iloc[-2]
     chg_pct = (pz / y - 1) * 100
-    ma20 = df['ma20'].iloc[-1]
-    ma20_pct = (pz / ma20 - 1) * 100
-    ma60 = df['ma60'].iloc[-1]
-    ma60_pct = (pz / ma60 - 1) * 100
+    ma20 = df['ma20'].iloc[-1] or 0
+    ma20_pct = (pz / ma20 - 1) * 100 if ma20 else 0
+    ma60 = df['ma60'].iloc[-1] or 0
+    ma60_pct = (pz / ma60 - 1) * 100 if ma60 else 0
     mv = round(df['volume'].tail(30).mean())
     title = '{} {} ${} ({:+.2f}%)\n[{}] MA20 {:.2f} ({:+.2f}%) MA60 {:.2f} ({:+.2f}%)均量 {:,}'.format(code, name, pz, chg_pct, date, ma20, ma20_pct, ma60, ma60_pct, mv)
 

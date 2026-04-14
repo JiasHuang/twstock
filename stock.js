@@ -75,7 +75,8 @@ function getStockTableText(s) {
     let nav_pct = (s.nav / s.z - 1) * 100;
     let time = s.nav_time.substring(0, 5);
     let time_str = `<span class="nav_time">${time}</span>`;
-    notes.push(`<span class="nav">淨值 ${pct_fmt(s.nav, nav_pct)}</span> ${time_str}`);
+    let pct_cls = nav_pct == 0 ? '' : (nav_pct > 0 ? 'inc':'dec');
+    notes.push(`<span class="nav">淨值 ${pct_fmt(s.nav, nav_pct, pct_cls)}</span> ${time_str}`);
   }
 
   if (s.ma60) {
@@ -175,10 +176,16 @@ function updateResult() {
 
   if (sort_by == 'vol') {
     stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
+  } else if (sort_by == 'amount') {
+    stocks = stocks.slice(0).sort((a, b) => (b.z * b.v) - (a.z * a.v));
   } else if (sort_by == 'inc') {
     stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
   } else if (sort_by == 'dec') {
     stocks = stocks.slice(0).sort((b, a) => b.pz_pct - a.pz_pct);
+  } else if (sort_by == 'ma20_inc') {
+    stocks = stocks.slice(0).sort((a, b) => b.ma20_pct - a.ma20_pct);
+  } else if (sort_by == 'ma20_dec') {
+    stocks = stocks.slice(0).sort((b, a) => b.ma20_pct - a.ma20_pct);
   } else if (sort_by == 'ma60_inc') {
     stocks = stocks.slice(0).sort((a, b) => b.ma60_pct - a.ma60_pct);
   } else if (sort_by == 'ma60_dec') {

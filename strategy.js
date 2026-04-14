@@ -1,41 +1,60 @@
 
+function pct_str(x) {
+  let cls = x == 0 ? 'grey' : (x < 0 ? 'dec':'inc');
+  let str = x.toLocaleString('en-US', {signDisplay: 'always', maximumFractionDigits:2});
+  return `<span class="${cls}">${str}%</span>`;
+}
+
+function get_tr_text(vals, clss) {
+  var text = '';
+  text += '<tr>';
+  for (var i=0; i<vals.length; i++) {
+    const val = vals[i];
+    const cls = clss[i];
+    if (cls == 'edit')
+      text += `<td contenteditable=true><span class="${cls}">${val}</span></td>`;
+    else if (cls == 'pct' && val != '')
+      text += '<td>' + pct_str(val) + '</td>';
+    else if (val == 0)
+      text += `<td><span class="${cls} grey">${val}</span></td>`;
+    else
+      text += `<td><span class="${cls}">${val}</span></td>`;
+  }
+  text += '</tr>';
+
+  return text;
+}
+
 function updateResult(objs) {
   var text = '';
   var td_na = '<td><span class="grey">-</span></td>';
 
+  const cols = ['代碼', '名稱', '參考價', '市價', '漲跌', '股利', '殖利率', ''];
+
   text += '<table id="stocks">';
-  text += '<tr><th>代碼</th><th>名稱</th><th>參考價</th>'; // 0:代碼, 1:名稱, 2:參考價
-  text += '<th>市價</th><th>漲跌</th><th>殖利率</th><th>備註</th>'; // 3:市價, 4:漲跌, 5:殖利率, 6:備註
+  text += '<tr><th>' + cols.join('</th><th>') + '</th></tr>';
   text += '</tr>';
 
+  var cls = new Array(cols.length).fill('');
+  cls[0] = 'edit';
+  cls[2] = 'edit';
+  cls[4] = 'pct';
+
   for (const s of objs) {
-    let z_pct = ((s.z / s.ref_pz - 1) * 100).toFixed(2);
-    let z_pct_cls = z_pct < 0 ? 'dec':'grey';
+    let z_pct = (s.z / s.ref_pz - 1) * 100;
+    let yield = s.dividend.cash / s.z * 100;
+    let notes = [];
 
-    var regexp = /現金股利\s*([\d|.]+)/g;
-    var m = regexp.exec(s.note);
-    var yield = m ? (parseFloat(m[1]) / s.z * 100).toFixed(2) : 0;
-    var yield_cls = yield > 0 ? '':'grey';
+    if (yield > 0)
+      notes.push(`除息 ${s.dividend.date}`);
 
-    text += '<tr>';
-    text += `<td class="edit" contenteditable=true>${s.code}</td>`;
-    text += `<td>${s.name}</td>`;
-    text += `<td class="edit" contenteditable=true><span class="grey">${s.ref_pz}</span></td>`;
-    text += `<td>${s.z}</td>`;
-    text += `<td><span class="${z_pct_cls}">${z_pct}%</span></td>`;
-    text += `<td><span class="${yield_cls}">${yield}%</span></td>`;
-    text += `<td class="note" contenteditable=true>${s.note}</td>`;
-    text += '</tr>';
+    let vals = [s.code, s.name, s.ref_pz, s.z, z_pct, s.dividend.cash.toFixed(3), yield.toFixed(2), notes.join('\n')];
+    text += get_tr_text(vals, cls);
   }
 
   for (var i=0; i<3; i++) {
-    text += '<tr>';
-    text += '<td contenteditable=true></td>';
-    text += td_na;
-    text += '<td contenteditable=true></td>';
-    text += td_na.repeat(3);
-    text += '<td contenteditable=true></td>';
-    text += '</tr>';
+    let vals = new Array(cols.length).fill('');
+    text += get_tr_text(vals, cls);
   }
 
   text += '</table>';

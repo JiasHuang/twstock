@@ -177,7 +177,7 @@ def chart(code, output, days=540):
     ma60 = df['ma60'].iloc[-1] or 0
     ma60_pct = (pz / ma60 - 1) * 100 if ma60 else 0
     mv = round(df['volume'].tail(30).mean())
-    title = '{} {} ${} ({:+.2f}%)\n[{}] MA20 {:.2f} ({:+.2f}%) MA60 {:.2f} ({:+.2f}%)均量 {:,}'.format(code, name, pz, chg_pct, date, ma20, ma20_pct, ma60, ma60_pct, mv)
+    title = '{} {} {} ({:+.2f}%)\n[{}] MA20 {:.2f} ({:+.2f}%) MA60 {:.2f} ({:+.2f}%)均量 {:,}'.format(code, name, pz, chg_pct, date, ma20, ma20_pct, ma60, ma60_pct, mv)
 
     if not output:
         print(df.head(10).round(2))

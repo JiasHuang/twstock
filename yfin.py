@@ -33,6 +33,9 @@ def load(code, start, end, cacheOnly=False):
     except:
         return []
 
+    if not ts:
+        return []
+
     ov = quote.get('open')
     hv = quote.get('high')
     lv = quote.get('low')
@@ -74,7 +77,7 @@ def get_data(code, start, end, cacheOnly=False):
     y = start.year
     while y != end.year:
         s = datetime.datetime(y, 1, 1, 0, 0)
-        e = datetime.datetime(y, 12, 31, 23, 59)
+        e = datetime.datetime(y, 12, 31, 23, 0)
         data = data + load(code, s, e, True)
         y += 1
 
@@ -82,13 +85,21 @@ def get_data(code, start, end, cacheOnly=False):
     if end.month != 1:
           weekday, days = calendar.monthrange(end.year, end.month - 1)
           s = datetime.datetime(y, 1, 1, 0, 0)
-          e = datetime.datetime(y, end.month - 1, days, 23, 59)
+          e = datetime.datetime(y, end.month - 1, days, 23, 0)
           data = data + load(code, s, e, True)
 
     # this month
     s = datetime.datetime(end.year, end.month, 1, 0, 0)
-    e = datetime.datetime(end.year, end.month, end.day, 23, 59)
+    e = datetime.datetime(end.year, end.month, end.day, 23, 0)
     data = data + load(code, s, e, False)
+
+    # today
+    if end.day != 1:
+        s = datetime.datetime(end.year, end.month, end.day, 0, 0)
+        e = datetime.datetime(end.year, end.month, end.day, 23, 0)
+        ret = load(code, s, e, False)
+        if len(ret) and ret[0]['date'] != data[-1]['date']:
+            data = data + ret
 
     filtered = []
     for d in data:

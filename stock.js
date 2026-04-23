@@ -123,7 +123,6 @@ function getTagsText(objs) {
     text += '<button onclick=selectInnerTag("hv")>hv</button>';
     for (const tag of tags)
       text += `<button onclick=selectTag("${tag}")>${tag}</button>`;
-    text += '<button onclick=selectInnerTag("na")>na</button>';
   }
 
   return text;
@@ -159,10 +158,6 @@ function filterTag() {
     $('table').filter('.stockinfo').hide();
     $('span').filter('.bg_hv').closest('table').show();
   }
-  else if (selected_innerTag == 'na') {
-    $('table').filter('.stockinfo').hide();
-    $('table[class="stockinfo "]').show();
-  }
 }
 
 function updateResult() {
@@ -182,10 +177,6 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
   } else if (sort_by == 'dec') {
     stocks = stocks.slice(0).sort((b, a) => b.pz_pct - a.pz_pct);
-  } else if (sort_by == 'ma20_inc') {
-    stocks = stocks.slice(0).sort((a, b) => b.ma20_pct - a.ma20_pct);
-  } else if (sort_by == 'ma20_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.ma20_pct - a.ma20_pct);
   } else if (sort_by == 'ma60_inc') {
     stocks = stocks.slice(0).sort((a, b) => b.ma60_pct - a.ma60_pct);
   } else if (sort_by == 'ma60_dec') {

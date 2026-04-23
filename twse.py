@@ -178,6 +178,8 @@ def update_etf_nav(infos):
                     info.nav = float(nav)
                 info.nav_date = msg['i']
                 info.nav_time = msg['j']
+                if hasattr(info, 'pz'):
+                    info.pz = msg['e']
     return True
 
 def get_tse_month_data(code, year, month, cache, cacheOnly):

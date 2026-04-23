@@ -24,7 +24,7 @@ function updateInfo(obj) {
   };
 
   var text = '';
-  text += `<span class="title">${code} ${obj.name}</span><br>`;
+  text += `<span class="title">${code} ${obj.name} (${obj.pz}, 淨值 ${obj.nav})</span><br>`;
 
   for (const [name, link] of Object.entries(code.startsWith('00') ? dict_etf : dict)) {
     text += `<span class="link"><a href="${link}" target="_blank">${name}</a></span>`;

@@ -60,6 +60,7 @@ class stock_report:
         self.revenue = []
         self.close = 0
         self.per = 0
+        self.pz = 0
         self.nav = 0
         self.debt_ratio = 0
         self.per_year = []
@@ -188,7 +189,9 @@ def get_dividend(code):
 def get_stock_report(code):
     name = twse.get_name(code)
     obj = stock_report(code, name)
-    if not code.startswith('00'):
+    if code.startswith('00'):
+        twse.update_etf_nav([obj])
+    else:
         update_stock_report_eps(obj)
         update_stock_report_revenue(obj)
         update_stock_report_overall(obj)

@@ -41,7 +41,7 @@ function updateResult(objs) {
   cls[4] = 'pct';
 
   for (const s of objs) {
-    let z_pct = (s.z / s.ref_pz - 1) * 100;
+    let z_pct = s.ref_pz ? (s.z / s.ref_pz - 1) * 100 : 0;
     let yield = s.dividend.cash / s.z * 100;
     let notes = [];
 
@@ -83,12 +83,10 @@ function onSave() {
   for (var i = 1, row; row = table.rows[i]; i++) {
     let code = row.cells[0].textContent;
     let ref_pz = row.cells[2].textContent;
-    let note = row.cells[6].textContent;
     if (code.length) {
       let obj = {};
       obj.code = code;
       obj.ref_pz = ref_pz;
-      obj.note = note;
       if (code.indexOf('>') != -1) {
         sep_index = obj.code.indexOf('>');
         obj.code = code.substring(0, sep_index);

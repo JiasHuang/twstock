@@ -1,6 +1,6 @@
 [
 	{"code":"0050","tags":["etf"],"flts":["z<=63"]},
-	{"code":"00720B","tags":["bond"],"flts":["z<=33","z>=34.2"]},
+	{"code":"00720B","tags":["bond"],"flts":["z<=32.6","z>=34.2"]},
 	{"code":"00751B","tags":["bond"],"flts":["z>=33"]},
 	{"code":"2379","tags":["tech"],"flts":[]},
 	{"code":"2454","tags":["tech"],"flts":[]},
@@ -12,7 +12,7 @@
 	{"code":"00937B","tags":["bond"],"flts":["z<=14.7","z>=15.3"]},
 	{"code":"00662","tags":["etf"],"flts":["z<=95"]},
 	{"code":"00955","tags":["etf"],"flts":["z<=12.5"]},
-	{"code":"00725B","tags":["bond"],"flts":["z<=35","z>=36.3"]},
+	{"code":"00725B","tags":["bond"],"flts":["z<=34.7","z>=36.3"]},
 	{"code":"00646","tags":["etf"],"flts":["z<=60"]},
 	{"code":"2301","tags":["tech"],"flts":[]},
 	{"code":"00675L","tags":["L"],"flts":["z<=130"]},

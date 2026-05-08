@@ -1,22 +1,12 @@
 
-#tags {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#menu {
+  float: right;
 }
 
-#tags button {
-  background-color: #4682B4;
-  border: none;
-  border-radius: 20px;
-  color: white;
-  padding: 5px 15px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 24px;
-  margin: 12px 12px;
-  cursor: pointer;
+#menu select {
+  font-size: 18px;
+  padding: 4px 16px;
+  border: 1px solid black;
 }
 
 #result table {
@@ -31,6 +21,7 @@
   border: 1px solid;
   padding: 0px 10px;
   white-space: pre;
+  text-align: right;
 }
 
 #result tr:nth-child(odd) {
@@ -47,5 +38,9 @@
 
 #result tr:hover {
   background-color: #A2F4FD;
+}
+
+.nav_time {
+  font-size: 12px;
 }
 

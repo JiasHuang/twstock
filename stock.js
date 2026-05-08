@@ -204,7 +204,7 @@ function parseStockJSON(objs) {
   cur_objs = objs;
   updateResult();
 
-  if (!interval_id && in_progress(8, 30, 16, 0))
+  if (!interval_id && in_progress(8, 0, 16, 0))
     interval_id = setInterval(updateStockInfo, 30000); // 30s
 }
 

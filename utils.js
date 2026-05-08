@@ -18,11 +18,7 @@ function loadTopMenu() {
       <option value="report.html">Report</option>
       <option value="strategy.html">Strategy</option>
       <option value="calendar.html">Calendar</option>
-      <option value="sheet.html?q=TPE&s=amount">TPE</option>
-      <option value="sheet.html?q=TPE_ETF&s=amount">TPE_ETF</option>
-      <option value="map.html">Map</option>
-      <option value="charts.html?q=global">Charts_Global</option>
-      <option value="charts.html?q=local">Charts_Local</option>
+      <option value="etf.html">ETF</option>
     </select>
     </td>
   `;

@@ -253,6 +253,10 @@ def load_sheet(args):
     df = gfin.load_df(q)
     return df.to_json(orient='records', indent=4)
 
+def load_etf(args):
+    objs = twse.load_etf()
+    return json.dumps(objs, indent=4)
+
 def load_report(args):
     code = args.get('c', '0050')
     obj = get_stock_report(code)

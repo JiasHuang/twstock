@@ -7,7 +7,7 @@ import argparse
 import pandas as pd
 
 class defvals:
-    expiration = 18000
+    expiration = 1800
     spreadsheets = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'
     cached = {}
     verbose = False

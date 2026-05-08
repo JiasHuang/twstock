@@ -159,6 +159,14 @@ def get_etf_msg(data, code):
                     return msg
     return None
 
+def parse_float(x):
+    if isinstance(x, str):
+        try:
+            return float(x.replace(',', ''))
+        except:
+            return 0
+    return x
+
 def update_etf_nav(infos):
     url = 'https://mis.twse.com.tw/stock/data/all_etf.txt'
     now_time = datetime.datetime.now().time()
@@ -171,16 +179,32 @@ def update_etf_nav(infos):
             code = msg['a']
             if code in parsed:
                 info = parsed[code]
-                nav = msg['f']
-                if isinstance(nav, float):
-                    info.nav = nav
-                elif isinstance(nav, str) and not nav.startswith('-'):
-                    info.nav = float(nav)
+                info.nav = parse_float(msg['f'])
                 info.nav_date = msg['i']
                 info.nav_time = msg['j']
                 if hasattr(info, 'pz'):
                     info.pz = msg['e']
     return True
+
+def load_etf():
+    url = 'https://mis.twse.com.tw/stock/data/all_etf.txt'
+    now_time = datetime.datetime.now().time()
+    cache = now_time < datetime.time(8, 0) or now_time > datetime.time(17, 0)
+    txt = xurl.load(url, cache=cache)
+    data = json.loads(txt)
+    objs = []
+    for a1 in data.get('a1', []):
+        for msg in a1.get('msgArray', []):
+            code = msg['a']
+            name = msg['b']
+            units = parse_float(msg['c'])
+            pz = msg['e']
+            nav = parse_float(msg['f'])
+            nav_y = parse_float(msg['h'])
+            nav_date = msg['i']
+            nav_time = msg['j']
+            objs.append({'code':code, 'name':name, 'units':units, 'pz':pz, 'nav':nav, 'nav_y':nav_y, 'nav_date':nav_date, 'nav_time':nav_time})
+    return objs
 
 def get_tse_month_data(code, year, month, cache, cacheOnly):
     data = []

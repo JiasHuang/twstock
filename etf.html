@@ -5,13 +5,13 @@
 
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-<title>Range</title>
+<title>ETF</title>
 
 <link rel="stylesheet" href="utils.css?v=20260331">
-<link rel="stylesheet" href="range.css?v=20260410">
+<link rel="stylesheet" href="etf.css?v=20260603">
 
 <script type="text/javascript" src="utils.js?v=20260604"></script>
-<script type="text/javascript" src="range.js?v=20260416"></script>
+<script type="text/javascript" src="etf.js?v=20260604"></script>
 
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 
@@ -24,18 +24,17 @@
 <body bgcolor=silver>
 
   <div id="topmenu"></div>
+
   <div id="menu">
-    <select onchange="onSelectChange.call(this)">
+    <select id="sort" onchange="onSelectChange.call(this)">
       <option value="" disabled selected>Sort By</option>
       <option value="none">None</option>
-      <option value="inc">Inc</option>
-      <option value="dec">Dec</option>
-      <option value="ma60_inc">MA60_Inc</option>
-      <option value="ma60_dec">MA60_Dec</option>
+      <option value="nav">Nav</option>
+      <option value="nav_chg">Nav_Chg</option>
+      <option value="amount">Amount</option>
     </select>
   </div>
 
-  <div id="tags"></div>
   <div id="result"></div>
 
 </body>

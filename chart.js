@@ -271,7 +271,7 @@ function updateChart(obj) {
 function updateResult(obj) {
   const data = obj.data;
   const cols = ['date', 'close', 'chg%', 'MA20', 'MA20%', 'MA60', 'MA60%', 'vol', 'MV%'];
-  const tail = Math.min(data.length, 5);
+  const tail = Math.min(data.length, 10);
   var text = '';
 
   text += '<table><tr><th>' + cols.join('</th><th>'); + '</tr>';

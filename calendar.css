@@ -34,6 +34,9 @@
   white-space: pre;
   text-align: center;
   background-color: #FF8C00;
+  position: sticky;
+  top: 0;
+  z-index: 1;                /* Keeps headers layered on top of table body cells */
 }
 
 #result td {

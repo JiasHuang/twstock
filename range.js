@@ -39,7 +39,6 @@ function updateTags(objs) {
     text += '<button onclick=selectInnerTag("all")>all</button>';
     for (const tag of tags)
       text += `<button onclick=selectTag("${tag}")>${tag}</button>`;
-    text += '<button onclick=selectInnerTag("na")>na</button>';
   }
 
   $('#tags').html(text);
@@ -63,9 +62,6 @@ function filterTag() {
   if (selected_tag) {
     $('tr').filter('.stockinfo').hide();
     $('tr').filter('.stockinfo.'+selected_tag).show();
-  }  else if (selected_innerTag == 'na') {
-    $('tr').filter('.stockinfo').hide();
-    $('tr[class="stockinfo "]').show();
   }  else if (selected_innerTag == 'all') {
     $('tr').filter('.stockinfo').show();
   }

@@ -145,8 +145,8 @@ def plot(df, title, output=None):
     hi_x = df[df['close'] == hi]['date'].iloc[-1]
     lo_x = df[df['close'] == lo]['date'].iloc[-1]
 
-    ax.text(hi_x, hi, '{:.2f}'.format(hi))
-    ax.text(lo_x, lo, '{:.2f}'.format(lo))
+    ax.text(hi_x, hi, '{} ${}'.format(hi_x.date(), hi))
+    ax.text(lo_x, lo, '{} ${}'.format(lo_x.date(), lo))
 
     plt.ylim(lo, hi)
     plt.title(title, pad=20)
@@ -177,7 +177,7 @@ def chart(code, output, days=540):
     ma60 = df['ma60'].iloc[-1] or 0
     ma60_pct = (pz / ma60 - 1) * 100 if ma60 else 0
     mv = round(df['volume'].tail(30).mean())
-    title = '{} {} {} ({:+.2f}%)\n[{}] MA20 {:.2f} ({:+.2f}%) MA60 {:.2f} ({:+.2f}%)均量 {:,}'.format(code, name, pz, chg_pct, date, ma20, ma20_pct, ma60, ma60_pct, mv)
+    title = '[{}] {} ${} ({:+.2f}%)\n[{}] MA20 {:.2f} ({:+.2f}%) MA60 {:.2f} ({:+.2f}%)均量 {:,}'.format(code, name, pz, chg_pct, date, ma20, ma20_pct, ma60, ma60_pct, mv)
 
     if not output:
         print(df.head(10).round(2))

@@ -2,5 +2,7 @@
     "SPY": "SPDR標普500",
     "QQQ": "Invesco納斯達克100",
     "TLT": "iShares 20年期以上美國公債",
-    "LQD": "iShares-iBoxx投資等級公司債券"
+    "LQD": "iShares-iBoxx投資等級公司債券",
+    "NYFSEQI": "NYSE FactSet美國電力基建息收指數",
+    "NDXEG": "納斯達克100增強成長指數"
 }

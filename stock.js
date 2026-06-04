@@ -204,7 +204,7 @@ function parseStockJSON(objs) {
   cur_objs = objs;
   updateResult();
 
-  if (!interval_id && in_progress(8, 0, 16, 0))
+  if (!interval_id)
     interval_id = setInterval(updateStockInfo, 30000); // 30s
 }
 
@@ -220,6 +220,10 @@ function showLoading() {
 }
 
 function updateStockInfo() {
+
+  if (interval_id && !in_progress(8, 0, 16, 0))
+    return;
+
   $.ajax({
     url: 'load.py?n=stock&nav=1',
     dataType: 'json',

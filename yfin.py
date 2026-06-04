@@ -13,6 +13,7 @@ split_stocks = {
     '00631L': {'date':datetime.datetime(2026, 3, 23), 'rate':22},
     #'00663L': {'date':datetime.datetime(2025, 6, 11), 'rate':7},
     '00663L': {'date':datetime.datetime(2025, 6, 2), 'rate':7},
+    '0052': {'date':datetime.datetime(2025, 11, 17), 'rate':7},
 }
 
 def get_epoch(date):

@@ -1,6 +1,5 @@
 
-.flex {
-  display: flex;
-  justify-content: center; /* Horizontal centering */
+#result {
+  text-align: center;
 }
 

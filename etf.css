@@ -16,6 +16,13 @@
   width: 80%;
 }
 
+#result th {
+  position: sticky;
+  top: 0;
+  background-color: #ff8c00; /* Prevents underlying text from showing through */
+  z-index: 1;                /* Keeps headers layered on top of table body cells */
+}
+
 #result th, #result td {
   font-size: 16px;
   border: 1px solid;
@@ -30,10 +37,6 @@
 
 #result tr:nth-child(even) {
   background-color: #F5DEB3;
-}
-
-#result tr:nth-child(1) {
-  background-color: #FF8C00;
 }
 
 #result tr:hover {

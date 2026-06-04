@@ -16,6 +16,7 @@ split_stocks = {
     '0050': {'date':20250618, 'rate':4},
     '00631L': {'date':20260331, 'rate':22},
     '00663L': {'date':20250611, 'rate':7},
+    '0052': {'date':20251117, 'rate':7},
 }
 
 parsed_name = {}
@@ -111,7 +112,8 @@ def get_ex_name(code):
         return parsed_name[code]
     tse_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/tse-code-list.json')
     otc_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/otc-code-list.json')
-    data = {'TSE':tse_output, 'OTC':otc_output}
+    global_output = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jsons/global.json')
+    data = {'TSE':tse_output, 'OTC':otc_output, '':global_output}
     ex, name = None, ''
     for k, v in data.items():
         with open(v, 'r') as f:

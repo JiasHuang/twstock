@@ -82,7 +82,7 @@ function getStockTableText(s) {
   if (s.ma60) {
     let ma60_pct_cls = (s.ma60_pct <= -10) ? 'bg_hl' : '';
     let ma60_str = `<span class="MA">均線 ${pct_fmt(s.ma60, s.ma60_pct, ma60_pct_cls)}</span>`;
-    let h_str = `<span class="h_pct">H(${s.h_pct})</span>`;
+    let h_str = `<span class="r_pct">R(${s.r_pct})</span>`;
     notes.push(`${ma60_str} ${h_str}`);
   }
 
@@ -173,14 +173,12 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
   } else if (sort_by == 'amount') {
     stocks = stocks.slice(0).sort((a, b) => (b.z * b.v) - (a.z * a.v));
-  } else if (sort_by == 'inc') {
+  } else if (sort_by == 'change') {
     stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
-  } else if (sort_by == 'dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.pz_pct - a.pz_pct);
-  } else if (sort_by == 'ma60_inc') {
+  } else if (sort_by == 'ma60') {
     stocks = stocks.slice(0).sort((a, b) => b.ma60_pct - a.ma60_pct);
-  } else if (sort_by == 'ma60_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.ma60_pct - a.ma60_pct);
+  } else if (sort_by == 'range') {
+    stocks = stocks.slice(0).sort((a, b) => b.r_pct - a.r_pct);
   }
 
   for (const s of stocks)
@@ -198,7 +196,7 @@ function parseStockJSON(objs) {
     s.pz_pct = s.y ? (s.z / s.y * 100 - 100) : 0;
     s.ma60_pct = s.ma60 ? (s.z / s.ma60 * 100 - 100) : 0;
     s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
-    s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
+    s.r_pct =  s.days_hi ? Math.round((s.z - s.days_lo) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
   cur_objs = objs;

@@ -74,17 +74,15 @@ function updateResult() {
   var stocks = cur_objs;
   var text = '';
 
-  if (sort_by == 'inc') {
+  if (sort_by == 'change') {
     stocks = stocks.slice(0).sort((a, b) => b.z/b.y - a.z/a.y);
-  } else if (sort_by == 'dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.z/b.y - a.z/a.y);
-  } else if (sort_by == 'ma60_inc') {
+  } else if (sort_by == 'ma60') {
     stocks = stocks.slice(0).sort((a, b) => b.ma60_pct - a.ma60_pct);
-  } else if (sort_by == 'ma60_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.ma60_pct - a.ma60_pct);
+  } else if (sort_by == 'range') {
+    stocks = stocks.slice(0).sort((a, b) => b.r_pct - a.r_pct);
   }
 
-  var cols = ['code', 'name', 'Pz', 'Pz%', 'H%', 'MA60%'];
+  var cols = ['code', 'name', 'pz', 'chg%', 'R%', 'MA60%'];
   for (var r=r_min; r<=r_max; r+=r_step)
     cols.push(r == 0 ? 'MA60':pct_str(r));
 
@@ -95,7 +93,7 @@ function updateResult() {
     let s = stocks[i];
     let link = `<a href="report.html?c=${s.code}" target="_blank">${s.code}</a>`;
     let pct = (s.z / s.y - 1) * 100;
-    let vals = [link, s.name, s.z,  pct_str(pct, true), s.h_pct, pct_str(s.ma60_pct, true)];
+    let vals = [link, s.name, s.z,  pct_str(pct, true), s.r_pct, pct_str(s.ma60_pct, true)];
     const step = s.ma60 * r_step / 200;
 
     let kv_list = [
@@ -141,7 +139,7 @@ function parseStockJSON(objs) {
   // add pct
   for (let s of objs) {
     s.ma60_pct = s.ma60 ? (s.z / s.ma60 * 100 - 100) : 0;
-    s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
+    s.r_pct =  s.days_hi ? Math.round((s.z - s.days_lo) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
   cur_objs = objs;

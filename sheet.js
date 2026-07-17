@@ -16,21 +16,17 @@ function updateResult() {
     stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
   } else if (sort_by == 'amount') {
     stocks = stocks.slice(0).sort((a, b) => (b.z * b.v) - (a.z * a.v));
-  } else if (sort_by == 'inc') {
+  } else if (sort_by == 'change') {
     stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
-  } else if (sort_by == 'dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.pz_pct - a.pz_pct);
-  } else if (sort_by == 'ma20_inc') {
+  } else if (sort_by == 'ma20') {
     stocks = stocks.slice(0).sort((a, b) => b.ma20_pct - a.ma20_pct);
-  } else if (sort_by == 'ma20_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.ma20_pct - a.ma20_pct);
-  } else if (sort_by == 'ma60_inc') {
+  } else if (sort_by == 'ma60') {
     stocks = stocks.slice(0).sort((a, b) => b.ma60_pct - a.ma60_pct);
-  } else if (sort_by == 'ma60_dec') {
-    stocks = stocks.slice(0).sort((b, a) => b.ma60_pct - a.ma60_pct);
+  } else if (sort_by == 'range') {
+    stocks = stocks.slice(0).sort((a, b) => b.r_pct - a.r_pct);
   }
 
-  const cols = ['code', 'name', 'pz', 'pz%', 'MA20', 'MA20%', 'MA60', 'MA60%', 'high', 'low', 'H%', 'vol', 'MV%'];
+  const cols = ['code', 'name', 'pz', 'chg%', 'MA20', 'MA20%', 'MA60', 'MA60%', 'high', 'low', 'R%', 'vol', 'MV%'];
 
   text += '<table id="stocks">';
   text += '<tr><th>' + cols.join('</th><th>') + '</th></tr>';
@@ -54,7 +50,7 @@ function updateResult() {
     if (!flt_ret)
       continue;
     const link = `<a href="report.html?c=${s.code}" target="_blank">${s.code}</a>`;
-    const vals = [link, s.name, s.z, pct_fmt(s.pz_pct), s.ma20.toFixed(2), pct_fmt(s.ma20_pct), s.ma60.toFixed(2), pct_fmt(s.ma60_pct), s.days_hi, s.days_lo, s.h_pct, s.v.toLocaleString(), s.mv_pct];
+    const vals = [link, s.name, s.z, pct_fmt(s.pz_pct), s.ma20.toFixed(2), pct_fmt(s.ma20_pct), s.ma60.toFixed(2), pct_fmt(s.ma60_pct), s.days_hi, s.days_lo, s.r_pct, s.v.toLocaleString(), s.mv_pct];
     text += '<tr><td>' + vals.join('</td><td>') + '</td></tr>';
   }
 
@@ -71,7 +67,7 @@ function parseStockJSON(objs) {
     s.ma20_pct = s.ma20 ? (s.z / s.ma20 * 100 - 100) : 0;
     s.ma60_pct = s.ma60 ? (s.z / s.ma60 * 100 - 100) : 0;
     s.mv_pct = s.mv ? Math.round(s.v / s.mv * 100) : 0;
-    s.h_pct =  s.days_hi ? Math.round((s.z - s.days_hi) / (s.days_hi - s.days_lo) * 100) : 0;
+    s.r_pct =  s.days_hi ? Math.round((s.z - s.days_lo) / (s.days_hi - s.days_lo) * 100) : 0;
   }
 
   cur_objs = objs;

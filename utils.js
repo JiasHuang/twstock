@@ -6,31 +6,33 @@ function onGotoSelectChange() {
 function loadTopMenu() {
   var text = '';
 
+  const path = window.location.pathname.split('/');
+  const file = path[path.length - 1];
+
   text += '<table>';
   text += '<tr>';
+  text += '<td><select onchange="onGotoSelectChange.call(this)">\n';
 
-  text += `
-    <td>
-    <select onchange="onGotoSelectChange.call(this)">
-      <option value="stock.html">Stock</option>
-      <option value="edit.html">Edit</option>
-      <option value="range.html">Range</option>
-      <option value="report.html">Report</option>
-      <option value="strategy.html">Strategy</option>
-      <option value="calendar.html">Calendar</option>
-      <option value="etf.html">ETF</option>
-    </select>
-    </td>
-  `;
+  const opts = ['stock', 'edit', 'report', 'range', 'strategy', 'calendar', 'etf'];
+  var found = false;
 
+  for (let opt of opts) {
+    let attr = '';
+    if (file == opt + '.html') {
+      attr = 'selected';
+      found = true;
+    }
+    text += `<option value="${opt}.html" ${attr}>${opt}</option>\n`;
+  }
+
+  if (!found) {
+    text += `<option value="" selected></option>\n`;
+  }
+
+  text += '</td>';
   text += '</tr>';
   text += '</table>';
   text += '<hr>';
-
-  const path = window.location.pathname.split('/');
-  const file = path[path.length - 1];
-  const queryString = window.location.search;
-  text = text.replace('"' + file + queryString + '"', '"' + file + queryString + '" selected');
 
   $('#topmenu').html(text);
 }

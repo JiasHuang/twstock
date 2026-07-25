@@ -68,9 +68,9 @@ function filterTag() {
 }
 
 function updateResult() {
-  const r_min = -20;
-  const r_max = 20;
-  const r_step = 2.5;
+  const r_min = -30;
+  const r_max = 30;
+  const r_step = 5;
   var stocks = cur_objs;
   var text = '';
 

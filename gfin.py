@@ -11,14 +11,17 @@ class defvals:
     spreadsheets = '1Y3WzCZ2yuMKJvjNjK_f5vworkBUcGYRcRJGaRY7ivRA'
     cached = {}
     verbose = False
-    unsupport = ['00631L']
+    unsupport = ['00685L']
 
 def is_cached(path, expiration):
-    if os.path.exists(path):
-        t0 = os.path.getmtime(path)
-        t1 = time.time()
-        return (t1 - t0) <= expiration
-    return False
+    if not os.path.exists(path):
+        return False
+    with open(path, 'r') as fd:
+        if len(fd.readlines()) < 2:
+            return False
+    t0 = os.path.getmtime(path)
+    t1 = time.time()
+    return (t1 - t0) <= expiration
 
 def load_sheet(sheet, expiration=defvals.expiration):
     output = 'csv/{}.csv'.format(sheet)

@@ -169,12 +169,10 @@ function updateResult() {
     is_StockTags_loaded = true;
   }
 
-  if (sort_by == 'vol') {
-    stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
-  } else if (sort_by == 'amount') {
-    stocks = stocks.slice(0).sort((a, b) => (b.z * b.v) - (a.z * a.v));
-  } else if (sort_by == 'change') {
+  if (sort_by == 'change') {
     stocks = stocks.slice(0).sort((a, b) => b.pz_pct - a.pz_pct);
+  } else if (sort_by == 'vol') {
+    stocks = stocks.slice(0).sort((a, b) => b.mv_pct - a.mv_pct);
   } else if (sort_by == 'ma60') {
     stocks = stocks.slice(0).sort((a, b) => b.ma60_pct - a.ma60_pct);
   } else if (sort_by == 'range') {

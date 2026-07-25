@@ -42,13 +42,14 @@ function updateResult(objs) {
 
   for (const s of objs) {
     let z_pct = s.ref_pz ? (s.z / s.ref_pz - 1) * 100 : 0;
-    let yield = s.dividend.cash / s.z * 100;
+    let cash = s.dividend ? s.dividend.cash : 0;
+    let yield = cash / s.z * 100;
     let notes = [];
 
     if (yield > 0)
       notes.push(`除息 ${s.dividend.date}`);
 
-    let vals = [s.code, s.name, s.ref_pz, s.z, z_pct, s.dividend.cash.toFixed(3), yield.toFixed(2), notes.join('\n')];
+    let vals = [s.code, s.name, s.ref_pz, s.z, z_pct, cash.toFixed(3), yield.toFixed(2), notes.join('\n')];
     text += get_tr_text(vals, cls);
   }
 

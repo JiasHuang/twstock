@@ -70,18 +70,15 @@ def get_data(code, start, end):
 
     return df[(df['date'] >= start_64) & (df['date'] <= end_64)].copy()
 
-def get_data_by_days(code, days, end=None):
-    if not end:
-        end = datetime.datetime.now() - datetime.timedelta(days=1)
-    adjust_days = max(int(days * 7 / 5), 15)
-    start = end - datetime.timedelta(days=adjust_days)
-    return get_data(code, start, end)
-
-def get_stat(code, days=360):
+def get_stat(code, days=540):
     d = gfin.query(code)
     if d:
         return {'ma20':d['ma20'], 'ma60':d['ma60'], 'mv':d['mv'], 'days_hi':d['days_hi'], 'days_lo':d['days_lo']}
-    df = get_data_by_days(code, days)
+
+    end = datetime.datetime.now() - datetime.timedelta(days=1)
+    start = end - datetime.timedelta(days=days)
+    df = get_data(code, start, end)
+
     if len(df.index):
         ma20 = round(df['close'].tail(20).mean(), 2)
         ma60 = round(df['close'].tail(60).mean(), 2)

@@ -3,6 +3,7 @@
 import os
 import re
 import argparse
+import cchardet
 
 html_text = '''
 <html>
@@ -52,11 +53,15 @@ def exit_fo(fo):
     fo.write('</body></html>')
     fo.close()
 
-def encode_to_utf8(f):
-    dst = os.path.join(os.path.basename(f))
-    if dst != f:
-        os.system('iconv -c -f gbk -t utf-8 {} -o {}'.format(f, dst))
-    return dst
+def encode_to_utf8(path):
+    with open(path, 'rb') as f:
+        encoding = cchardet.detect(f.read())['encoding']
+        if encoding != 'UTF-8':
+            dst = os.path.basename(path).replace('.txt', '.utf-8.txt')
+            print('{} ({}) -> {}'.format(path, encoding, dst))
+            os.system('iconv -c -f {} -t utf-8 {} -o {}'.format(encoding, path, dst))
+            return dst
+    return path
 
 def txt_to_html(src, args):
     index = 0
@@ -105,7 +110,6 @@ def main():
     parser.add_argument('--linewrap', type=int, default=60)
     parser.add_argument('--margin', type=int, default=30)
     parser.add_argument('--split', type=int, default=100)
-    parser.add_argument('--encode', action="store_true", default=False)
     args, unparsed = parser.parse_known_args()
     for f in unparsed:
         print(f)
@@ -114,8 +118,7 @@ def main():
         elif f.endswith('.webp'):
             webp_to_jpg(f)
         elif f.endswith('.txt'):
-            if args.encode:
-                f = encode_to_utf8(f)
+            f = encode_to_utf8(f)
             txt_to_html(f, args)
     return
 

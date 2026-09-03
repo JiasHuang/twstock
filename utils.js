@@ -13,7 +13,7 @@ function loadTopMenu() {
   text += '<tr>';
   text += '<td><select onchange="onGotoSelectChange.call(this)">\n';
 
-  const opts = ['stock', 'edit', 'report', 'range', 'strategy', 'calendar', 'etf'];
+  const opts = ['stock', 'edit', 'report', 'range', 'dividend', 'calendar', 'etf'];
   var found = false;
 
   for (let opt of opts) {

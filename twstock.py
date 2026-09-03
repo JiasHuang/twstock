@@ -164,6 +164,8 @@ def update_stock_report_overall(obj):
     return
 
 def get_dividend(code):
+    if not code.startswith('00'):
+        return {'cash':0, 'date':''}
     url = 'https://www.cmoney.tw/forum/stock/{}?s=dividend'.format(code)
     txt = xurl.load(url)
     year = []
@@ -226,17 +228,14 @@ def load_watchlist(args):
         s['name'] = twse.get_name(s['code'])
     return json.dumps(objs, indent=4)
 
-def load_strategy(args):
-    objs = load_json('strategy.json')
-    codes = [s['code'] for s in objs]
-    msg = twse.get_msg(codes)
-    parsed = {m['c']:twse.StockInfo(msg=m) for m in msg}
-    for s in objs:
-        code = s['code']
-        if code in parsed:
-            s['z'] = parsed[code].z
-            s['name'] = parsed[code].name
-            s['dividend'] = get_dividend(code)
+def load_dividend(args):
+    objs = load_json('stocks.json')
+    parsed = {s['code']:s for s in objs}
+    data = get_data(list(parsed.keys()))
+    for d in data:
+        parsed[d.code]['name'] = d.name
+        parsed[d.code]['z'] = d.z
+        parsed[d.code]['dividend'] = get_dividend(d.code)
     return json.dumps(objs, indent=4)
 
 def load_csv(args):

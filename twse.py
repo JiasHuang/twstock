@@ -199,7 +199,7 @@ def load_etf():
     for a1 in data.get('a1', []):
         for msg in a1.get('msgArray', []):
             code = msg['a']
-            name = msg['b']
+            name = get_name(code)
             units = parse_float(msg['c'])
             pz = msg['e']
             nav = parse_float(msg['f'])

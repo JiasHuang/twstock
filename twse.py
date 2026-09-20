@@ -138,12 +138,15 @@ def get_msg(codes):
     step = 25
     result = []
     idx = 0
-    now_time = datetime.datetime.now().time()
-    cache = now_time < datetime.time(9, 0) or now_time > datetime.time(13, 30)
+    now = datetime.datetime.now()
+    now_time = now.time()
+    cache = now_time < datetime.time(9, 0) or now_time > datetime.time(13, 35)
     while idx < len(codes):
         count = min(len(codes) - idx, step)
         ex_ch = '|'.join([get_ex_code(x) for x in codes[idx:idx+count]])
         url = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=%s&json=1&delay=0' %(ex_ch)
+        if cache:
+            url = url + '&_=' + now.strftime('%m%d') # force to get the final data
         data = xurl.load_json(url, cache=cache)
         if data:
             for msg in data.get('msgArray', []):
@@ -277,9 +280,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--code', default='0050')
     parser.add_argument('-v', '--verbose', action="store_true", default=False)
+    parser.add_argument('-m', '--msg', action="store_true", default=False)
     args, unparsed = parser.parse_known_args()
 
     xurl.set_verbose(args.verbose)
+
+    if args.msg:
+        msg = get_msg([args.code])
+        data = StockInfo(msg=msg[0])
+        print(msg[0])
+        print(data.z)
+        return
 
     code = unparsed[0] if unparsed else args.code
     objs = get_data(code, '20260101', '20260430')

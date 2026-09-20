@@ -80,7 +80,7 @@ def txt_to_html(src, args):
             offset = 0
             if total == 0:
                 continue
-            m = re.search(r'^第(.*)章', line)
+            m = re.search(r'^[0-9.]*第(.*)章', line)
             if m:
                 index = index + 1
                 if index % args.split == 0:

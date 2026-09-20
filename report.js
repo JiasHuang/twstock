@@ -56,7 +56,8 @@ function updateChart(id, dp_data) {
       labelFontSize: 14,
       crosshair: {
         enabled: true,
-        snapToDataPoint: true
+        snapToDataPoint: true,
+        valueFormatString: "YY/MM"
       }
     },
     axisY: {

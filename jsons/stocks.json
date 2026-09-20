@@ -20,5 +20,6 @@
 	{"code":"00752","tags":["etf"],"flts":[]},
 	{"code":"00685L","tags":["etf"],"flts":["z<=11"]},
 	{"code":"00830","tags":["etf"],"flts":[]},
-	{"code":"009821","tags":["etf"],"flts":[]}
+	{"code":"009821","tags":["etf"],"flts":["z<=13"]},
+	{"code":"00708L","tags":["etf"],"flts":["z<=70"]}
 ]

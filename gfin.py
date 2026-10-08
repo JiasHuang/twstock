@@ -24,10 +24,10 @@ def is_cached(path, expiration):
     return (t1 - t0) <= expiration
 
 def load_sheet(sheet, expiration=defvals.expiration):
-    output = 'csv/{}.csv'.format(sheet)
+    output = '/tmp/{}.csv'.format(sheet)
     if is_cached(output, expiration):
         return output
-    cmd = 'curl -s -o {} --create-dirs \"https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}\"'.format(output, defvals.spreadsheets, sheet)
+    cmd = 'curl_chrome116 -s -o {} --create-dirs \"https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet={}\"'.format(output, defvals.spreadsheets, sheet)
 
     if defvals.verbose:
         print(cmd)

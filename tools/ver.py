@@ -14,7 +14,7 @@ def main():
             continue
         for code in codes:
             ver = time.strftime('%Y%m%d', time.gmtime(os.path.getmtime(code)))
-            os.system('sed -i -r \'s/%s([^"]*)/%s\?v=%s/g\' %s' %(code, code, ver, html))
+            os.system('sed -i -r \'s/%s([^"]*)/%s\\?v=%s/g\' %s' %(code, code, ver, html))
 
     return
 

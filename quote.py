@@ -49,13 +49,12 @@ def round_tick(pz, tick):
     return round(pz / tick) * tick
 
 def load_csv(code, start, end):
-    path = 'csv/{}.csv'.format(code)
+    path = '/tmp/{}.csv'.format(code)
     ex, name = twse.get_ex_name(code)
     if not ex:
         return gfin.load_sheet(code)
     data = yfin.get_data(code, start, end) if ex == 'TSE' else twse.get_data(code, start, end)
     df = pd.DataFrame(data)
-    os.makedirs('csv', exist_ok=True)
     df.to_csv(path, index=False, quotechar='"', quoting=csv.QUOTE_ALL)
     return path
 

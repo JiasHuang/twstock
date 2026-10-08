@@ -9,3 +9,12 @@ sudo a2enmod cgid
         Options +ExecCGI
         AddHandler cgi-script .py
 </Directory>
+
+# fonts
+
+cp -rf fonts ~/.fonts
+rm ~/.cache/matplotlib
+
+# /etc/apache2/envvars
+export APACHE_RUN_USER=www-data
+export APACHE_RUN_GROUP=www-data

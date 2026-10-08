@@ -173,7 +173,7 @@ def get_dividend(code):
     date = []
     c = 0
     for tr in re.findall(r'<tr class="height-normal bg.*?>(.*?)</tr>', txt, re.MULTILINE | re.DOTALL):
-        td = re.findall('>\s*([^\n<]+)\s*</td>', tr)
+        td = re.findall(r'>\s*([^\n<]+)\s*</td>', tr)
         year.append(td[0])
         cash.append(float(td[1]))
         date.append(td[2])

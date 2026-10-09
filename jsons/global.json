@@ -4,5 +4,7 @@
     "LQD": "iShares-iBoxx投資等級公司債券",
     "NYFSEQI": "NYSE FactSet美國電力基建息收指數",
     "SOXQ": "Invesco費城半導體指數",
-    "TSM": "台積電ADR"
+    "TSM": "台積電ADR",
+    "GOLD":"黃金期貨",
+    "NYTPGRE":"NYSE TIP全球稀土與關鍵資源指數"
 }

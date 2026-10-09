@@ -27,6 +27,14 @@ class bcolors:
     BLUE = '\33[34m'
     ENDC = '\x1b[0m'
 
+class point:
+    def __init__(self, x=None, y=None):
+        self.x = x
+        self.y = y
+    def set(self, x, y):
+        self.x = x
+        self.y = y
+
 def get_tick(pz):
     if pz < 10:
         return 0.01
@@ -125,26 +133,42 @@ def plot(df, title, output=None):
         new_vals = [v * (100 + pct) / 100 if v else None for v in ma60]
         ax.plot(x, new_vals, color='grey', linestyle='dashed', linewidth=0.5, zorder=0)
 
-    hi = max(y)
-    lo = min(y)
+    hi = point()
+    lo = point()
+    points = []
+    days = 90
+
+    for i in range(len(x)):
+        if not hi.y or y[i] >= hi.y:
+            hi.set(x[i], y[i])
+        if not lo.y or y[i] <= lo.y:
+            lo.set(x[i], y[i])
+        if i > days:
+            j = i - int(days / 2)
+            if y[j] == min(y[i-days:i]):
+                points.append(point(x[j], y[j]))
+            if y[j] == max(y[i-days:i]):
+                points.append(point(x[j], y[j]))
+
     pz = y[-1]
-    pz_pct = (pz - hi) / (hi - lo) * 100
+    pz_pct = (pz - hi.y) / (hi.y - lo.y) * 100
 
     for pct in [-23.6, -38.2, -61.8]:
-        v = hi + (hi - lo) * pct / 100
+        v = hi.y + (hi.y - lo.y) * pct / 100
         plt.axhline(y=v, color='grey', linestyle='--', linewidth=1)
         ax.text(ax.get_xlim()[1], v, ' {:.2f} ({}%)'.format(v, pct), color='grey')
 
     plt.axhline(y=pz, color='red', linestyle='--', linewidth=1)
     ax.text(ax.get_xlim()[1], pz, ' {:.2f} ({:.2f}%)'.format(pz, pz_pct), color='red', backgroundcolor='white')
 
-    hi_x = df[df['close'] == hi]['date'].iloc[-1]
-    lo_x = df[df['close'] == lo]['date'].iloc[-1]
+    ax.text(hi.x, hi.y, '{} ${}'.format(str(hi.x)[5:10], hi.y))
+    ax.text(lo.x, lo.y, '{} ${}'.format(str(lo.x)[5:10], lo.y))
 
-    ax.text(hi_x, hi, '{} ${}'.format(hi_x.date(), hi))
-    ax.text(lo_x, lo, '{} ${}'.format(lo_x.date(), lo))
+    for p in points:
+        if p.y != hi.y and p.y != lo.y:
+            ax.text(p.x, p.y, '{} ${}'.format(str(p.x)[5:10], p.y))
 
-    plt.ylim(lo, hi)
+    plt.ylim(lo.y, hi.y)
     plt.title(title, pad=20)
     plt.legend()
 

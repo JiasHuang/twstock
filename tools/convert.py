@@ -3,7 +3,7 @@
 import os
 import re
 import argparse
-import cchardet
+import chardet
 
 html_text = '''
 <html>
@@ -55,7 +55,9 @@ def exit_fo(fo):
 
 def encode_to_utf8(path):
     with open(path, 'rb') as f:
-        encoding = cchardet.detect(f.read())['encoding']
+        encoding = chardet.detect(f.read()[:100])['encoding']
+        if encoding in ['GB2312', 'GBK']:
+            encoding = 'GB18030'
         if encoding != 'UTF-8':
             dst = os.path.basename(path).replace('.txt', '.utf-8.txt')
             print('{} ({}) -> {}'.format(path, encoding, dst))

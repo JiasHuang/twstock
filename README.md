@@ -15,6 +15,3 @@ sudo a2enmod cgid
 cp -rf fonts ~/.fonts
 rm ~/.cache/matplotlib
 
-# /etc/apache2/envvars
-export APACHE_RUN_USER=www-data
-export APACHE_RUN_GROUP=www-data

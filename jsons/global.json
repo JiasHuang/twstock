@@ -1,10 +1,8 @@
 {
     "SPY": "SPDR標普500",
     "QQQ": "Invesco納斯達克100",
-    "LQD": "iShares-iBoxx投資等級公司債券",
-    "NYFSEQI": "NYSE FactSet美國電力基建息收指數",
     "SOXQ": "Invesco費城半導體指數",
+    "LQD": "iShares-iBoxx投資等級公司債券",
     "TSM": "台積電ADR",
-    "GOLD":"黃金期貨",
-    "NYTPGRE":"NYSE TIP全球稀土與關鍵資源指數"
+    "GOLD":"黃金期貨"
 }

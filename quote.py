@@ -15,18 +15,6 @@ import yfin
 import gfin
 import xurl
 
-class bcolors:
-    BLACK_ON_RED = '\x1b[3;30;41m'
-    BLACK_ON_GREEN = '\x1b[3;30;42m'
-    BLACK_ON_YELLOW = '\x1b[3;30;43m'
-    BLACK_ON_BLUE = '\x1b[3;30;44m'
-    BLACK_ON_WHITE = '\x1b[3;30;47m'
-    RED = '\33[31m'
-    GREEN = '\33[32m'
-    YELLOW = '\33[33m'
-    BLUE = '\33[34m'
-    ENDC = '\x1b[0m'
-
 class point:
     def __init__(self, x=None, y=None):
         self.x = x
@@ -34,27 +22,6 @@ class point:
     def set(self, x, y):
         self.x = x
         self.y = y
-
-def get_tick(pz):
-    if pz < 10:
-        return 0.01
-    if pz < 50:
-        return 0.05
-    if pz < 100:
-        return 0.1
-    if pz < 500:
-        return 0.5
-    if pz < 1000:
-        return 1
-    return 5
-
-def get_etf_tick(pz):
-    if pz < 50:
-        return 0.01
-    return 0.05
-
-def round_tick(pz, tick):
-    return round(pz / tick) * tick
 
 def load_csv(code, start, end):
     path = '/tmp/{}.csv'.format(code)
@@ -113,8 +80,10 @@ def plot(df, title, output=None):
 
     x = df['date'].to_numpy()
     y = df['close'].to_numpy()
+    pz = y[-1]
 
     ax.plot(x, y, zorder=10)
+    ax.set_xmargin(0.1)
 
     ax.set_ylabel('close')
     date_formatter = mdates.DateFormatter('%Y-%m-%d')
@@ -131,7 +100,8 @@ def plot(df, title, output=None):
 
     for pct in [-20, -15, -10, -5, 5, 10, 15, 20]:
         new_vals = [v * (100 + pct) / 100 if v else None for v in ma60]
-        ax.plot(x, new_vals, color='grey', linestyle='dashed', linewidth=0.5, zorder=0)
+        clr = 'brown' if pct % 10 == 0 else 'grey'
+        ax.plot(x, new_vals, color=clr, linestyle='dashed', linewidth=0.5, zorder=0)
 
     hi = point()
     lo = point()
@@ -150,25 +120,24 @@ def plot(df, title, output=None):
             if y[j] == max(y[i-days:i]):
                 points.append(point(x[j], y[j]))
 
-    pz = y[-1]
-    pz_pct = (pz - hi.y) / (hi.y - lo.y) * 100
-
-    for pct in [-23.6, -38.2, -61.8]:
+    for pct in [0, -23.6, -38.2, -61.8, -100]:
         v = hi.y + (hi.y - lo.y) * pct / 100
         plt.axhline(y=v, color='grey', linestyle='--', linewidth=1)
         ax.text(ax.get_xlim()[1], v, ' {:.2f} ({}%)'.format(v, pct), color='grey')
 
-    plt.axhline(y=pz, color='red', linestyle='--', linewidth=1)
-    ax.text(ax.get_xlim()[1], pz, ' {:.2f} ({:.2f}%)'.format(pz, pz_pct), color='red', backgroundcolor='white')
+    r_pct = (pz - hi.y) / (hi.y - lo.y) * 100
+    plt.axhline(y=pz, linestyle='--', linewidth=1)
+    ax.text(ax.get_xlim()[1], pz, ' {:.2f} ({:.2f}%)'.format(pz, r_pct))
 
-    ax.text(hi.x, hi.y, '{} ${}'.format(str(hi.x)[5:10], hi.y))
-    ax.text(lo.x, lo.y, '{} ${}'.format(str(lo.x)[5:10], lo.y))
+    if hi not in points:
+        points.append(hi)
+    if lo not in points:
+        points.append(lo)
 
     for p in points:
-        if p.y != hi.y and p.y != lo.y:
-            ax.text(p.x, p.y, '{} ${}'.format(str(p.x)[5:10], p.y))
+        ax.text(p.x, p.y, '{} ${}'.format(str(p.x)[5:10], p.y))
 
-    plt.ylim(lo.y, hi.y)
+    plt.ylim(lo.y * 0.95, hi.y * 1.05)
     plt.title(title, pad=20)
     plt.legend()
 
@@ -196,8 +165,12 @@ def chart(code, output, days=540):
     ma20_pct = (pz / ma20 - 1) * 100 if ma20 else 0
     ma60 = df['ma60'].iloc[-1] or 0
     ma60_pct = (pz / ma60 - 1) * 100 if ma60 else 0
+    hi = max(df['close'].to_numpy())
+    lo = min(df['close'].to_numpy())
     mv = round(df['volume'].tail(30).mean())
-    title = '[{}] {} ${} ({:+.2f}%)\n[{}] MA20 {:.2f} ({:+.2f}%) MA60 {:.2f} ({:+.2f}%)均量 {:,}'.format(code, name, pz, chg_pct, date, ma20, ma20_pct, ma60, ma60_pct, mv)
+
+    title = '[{}] [{}] {} ${} ({:+.2f}%)'.format(date, code, name, pz, chg_pct)
+    title += '\nMA20 {:.2f} ({:+.2f}%) MA60 {:.2f} ({:+.2f}%) 均量 {:,}'.format(ma20, ma20_pct, ma60, ma60_pct, mv)
 
     if not output:
         print(df.head(10).round(2))
